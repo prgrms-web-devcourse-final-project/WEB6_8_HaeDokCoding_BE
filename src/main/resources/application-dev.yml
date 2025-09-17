@@ -1,0 +1,38 @@
+spring:
+  # H2 Database 설정
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:./db_dev;MODE=MySQL
+    username: sa
+    password:
+
+  # H2 Console 설정
+  h2:
+    console: # H2 DB를 웹에서 관리할 수 있는 기능
+      enabled: true           # H2 Console 사용 여부
+      path: /h2-console       # H2 Console 접속 주소
+
+  # JPA 설정
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop  # 개발용: 시작할 때 테이블 생성, 종료할 때 삭제
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+
+# Swagger 설정
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+#  # AI 설정
+#  ai:
+#    openai:
+#      chat:
+#        options:
+#          model: "gemini-2.0-flash"
