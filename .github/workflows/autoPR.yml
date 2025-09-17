@@ -1,0 +1,74 @@
+# 워크플로우 이름
+name: PR 자동화
+
+# 실행 조건: main, dev/** 브랜치로 PR이 열렸을 때
+on:
+  pull_request:
+    branches: [ main, dev, 'dev/**' ]
+    types: [ opened ]
+
+# 실행할 작업
+jobs:
+  automate-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+      contents: read
+
+    steps:
+      # PR 작성자를 Assignee로 자동 할당
+      - name: PR 작성자를 담당자로 할당
+        uses: actions-ecosystem/action-assign@v1
+        with:
+          assignees: ${{ github.event.pull_request.user.login }}
+
+#        uses: li-sumup/actions-assigner@v1.0.2
+
+
+      # PR 제목에 따라 Label 자동 할당 (예시)
+      # - name: 제목에 'feat'가 있으면 'feature' 라벨 추가
+      #   if: contains(github.event.pull_request.title, 'feat')
+      #   uses: actions-ecosystem/action-add-labels@v1
+      #   with:
+      #     labels: feature
+
+
+      # PR 제목에 따라 Label 자동 할당
+      - name: design 라벨 할당
+        if: contains(github.event.pull_request.title, 'design')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: design
+
+      - name: feat 라벨 할당
+        if: contains(github.event.pull_request.title, 'feat')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: feat
+          
+      - name: fix 라벨 할당
+        if: contains(github.event.pull_request.title, 'fix')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: fix
+          
+      - name: refactor 라벨 할당
+        if: contains(github.event.pull_request.title, 'refactor')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: refactor
+          
+      - name: chore 라벨 할당
+        if: contains(github.event.pull_request.title, 'chore')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: chore
+
+
+      # '연습용 프로젝트'에 등록
+      - name: GitHub 프로젝트에 추가
+        uses: actions/add-to-project@v1.0.2
+        with:
+          project-url: "https://github.com/orgs/prgrms-web-devcourse-final-project/projects/145"
+          github-token: ${{ secrets.PROJECT_ACCESS_TOKEN }}
