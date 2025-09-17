@@ -47,14 +47,7 @@ jobs:
           labels: chore
           
 
-      # '연습용 프로젝트'에 자동 추가
-      # - name: GitHub 프로젝트에 추가
-      #   uses: actions/add-to-project@v1.0.2
-      #   with:
-      #     project-url: "https://github.com/users/EpicFn/projects/6"
-      #     github-token: ${{ secrets.PROJECT_ACCESS_TOKEN}}
-
-      # '연습용 프로젝트'의 'Backlog' 컬럼에 자동 추가
+      # GitHub 프로젝트의 'Backlog' 컬럼에 자동 추가
       - name : Github 프로젝트에 추가
         uses: jinhokim98/project-flow-add-issue-to-project@v1
         with:
