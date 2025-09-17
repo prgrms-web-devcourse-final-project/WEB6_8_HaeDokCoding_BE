@@ -22,6 +22,14 @@ spring:
         format_sql: true
         show_sql: true
 
+# Swagger 설정
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
 #  # AI 설정
 #  ai:
 #    openai:

@@ -4,3 +4,13 @@ spring:
     username: sa
     password:
     driver-class-name: org.h2.Driver
+
+  # JPA 설정
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop  # 테스트용: 시작할 때 테이블 생성, 종료할 때 삭제
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: false  # 테스트에서는 SQL 로그 비활성화
