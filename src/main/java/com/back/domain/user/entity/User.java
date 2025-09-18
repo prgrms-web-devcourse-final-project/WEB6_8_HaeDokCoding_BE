@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -33,15 +35,17 @@ public class User {
 
     private Double abvDegree;   // 알콜도수(회원 등급)
 
+    @CreatedDate    // JPA Auditing 적용
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;   // 생성 날짜
 
+    @LastModifiedDate    // JPA Auditing 적용
+    @Column(nullable = false)
     private LocalDateTime updatedAt;   // 수정 날짜
 
     @Builder.Default
     @Column(nullable = false, length = 20)
     private String role = "USER";
-
-    private String profileImgUrl;
 
     public boolean isAdmin() {
         return "ADMIN".equalsIgnoreCase(role);
