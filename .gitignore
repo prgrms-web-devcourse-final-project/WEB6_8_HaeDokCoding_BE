@@ -39,3 +39,6 @@ out/
 ### Custom ###
 db_dev.mv.db
 db_dev.trace.db
+
+### Environment Variables ###
+.env

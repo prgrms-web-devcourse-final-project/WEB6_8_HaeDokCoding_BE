@@ -2,8 +2,13 @@ package com.back.domain.user.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 @Entity
 @Table(name = "users")  // 예약어 충돌 방지를 위해 "users" 권장
@@ -37,4 +42,26 @@ public class User {
     private String role = "USER";
 
     private String profileImgUrl;
+
+    public boolean isAdmin() {
+        return "ADMIN".equalsIgnoreCase(role);
+    }
+
+    private List<String> getAuthoritiesAsStringList() {
+        List<String> authorities = new ArrayList<>();
+        if (isAdmin()) {
+            authorities.add("ADMIN");
+        } else {
+            authorities.add("USER");
+        }
+        return authorities;
+    }
+
+    // Member의 role을 Security가 사용하는 ROLE_ADMIN, ROLE_USER 형태로 변환
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return getAuthoritiesAsStringList()
+                .stream()
+                .map(auth -> new SimpleGrantedAuthority("ROLE_" + auth))
+                .toList();
+    }
 }
