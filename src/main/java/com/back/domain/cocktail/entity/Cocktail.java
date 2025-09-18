@@ -24,6 +24,7 @@ public class Cocktail {
     @Enumerated(EnumType.STRING)
     private AlcoholStrength alcoholStrength; // 칵테일 알콜 도수
 
+
     public enum AlcoholStrength {
         NON_ALCOHOLIC("논알콜 (0%)"),
         WEAK("약한 도수 (1~5%)"),
