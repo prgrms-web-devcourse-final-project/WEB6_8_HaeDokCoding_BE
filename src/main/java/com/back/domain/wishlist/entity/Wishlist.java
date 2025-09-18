@@ -1,5 +1,6 @@
 package com.back.domain.wishlist.entity;
 
+import com.back.domain.cocktail.entity.Cocktail;
 import com.back.domain.user.entity.User;
 import com.back.domain.wishlist.enums.WishlistStatus;
 import jakarta.persistence.*;
@@ -25,8 +26,8 @@ public class Wishlist {
     private User user;  // 찜한 사용자 (위시리스트의 주인)
 
 //    TODO: Cocktail 도메인 추가 후 활성화
-//    @ManyToOne
-//    private Cocktail cocktail;
+    @ManyToOne
+    private Cocktail cocktail;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
