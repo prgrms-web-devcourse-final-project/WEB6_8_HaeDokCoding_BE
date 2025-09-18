@@ -1,5 +1,6 @@
 package com.back.domain.cocktail.entity;
 
+import com.back.domain.wishlist.entity.Wishlist;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,7 +24,6 @@ public class Cocktail {
 
     @Enumerated(EnumType.STRING)
     private AlcoholStrength alcoholStrength; // 칵테일 알콜 도수
-
 
     public enum AlcoholStrength {
         NON_ALCOHOLIC("논알콜 (0%)"),
