@@ -1,8 +1,12 @@
 package com.back.domain.cocktail.entity;
 
+<<<<<<< HEAD
 import com.back.domain.cocktail.enums.AlcoholBaseType;
 import com.back.domain.cocktail.enums.AlcoholStrength;
 import com.back.domain.cocktail.enums.CocktailType;
+=======
+import com.back.domain.wishlist.entity.Wishlist;
+>>>>>>> a031134 ({fix}:Cocktail-Wishlist relation)
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
