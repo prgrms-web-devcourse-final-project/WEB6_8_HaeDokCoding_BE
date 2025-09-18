@@ -28,7 +28,7 @@ public class UserDto {
                 .id(user.getId())
                 .email(user.getEmail())
                 .nickname(user.getNickname())
-                .profileImgUrl(user.getProfileImgUrl())
+//                .profileImgUrl(user.getProfileImgUrl())
                 .abvDegree(user.getAbvDegree())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
