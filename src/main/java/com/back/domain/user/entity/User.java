@@ -31,4 +31,8 @@ public class User {
     private LocalDateTime createdAt;   // 생성 날짜
 
     private LocalDateTime updatedAt;   // 수정 날짜
+
+    @Builder.Default
+    @Column(nullable = false, length = 20)
+    private String role = "USER";
 }
