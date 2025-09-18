@@ -11,7 +11,7 @@ public class CocktailService {
   private final CocktailRepository cocktailRepository;
 
 //  public List<CocktailListDto> getNameImg(){
-//      return cocktailRepository.findAllNameImg
+//      return cocktailRepository.findAllNameImg;
 //  }
 
 
