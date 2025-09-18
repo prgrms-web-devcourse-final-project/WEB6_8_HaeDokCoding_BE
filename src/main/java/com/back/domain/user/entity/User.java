@@ -35,4 +35,6 @@ public class User {
     @Builder.Default
     @Column(nullable = false, length = 20)
     private String role = "USER";
+
+    private String profileImgUrl;
 }
