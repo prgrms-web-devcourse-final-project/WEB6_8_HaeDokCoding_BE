@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -23,6 +24,9 @@ public class Rq {
     private final HttpServletRequest req;
     private final HttpServletResponse resp;
     private final UserService userService;
+
+    @Value("${custom.cookie.secure:false}")
+    private boolean cookieSecure;
 
     public User getActor() {
         return Optional.ofNullable(
@@ -85,7 +89,7 @@ public class Rq {
         ResponseCookie cookie = ResponseCookie.from(name, value)
                 .path("/")
                 .maxAge(maxAge)
-                .secure(true)
+                .secure(cookieSecure)
                 .sameSite("None")
                 .httpOnly(true)
                 .build();

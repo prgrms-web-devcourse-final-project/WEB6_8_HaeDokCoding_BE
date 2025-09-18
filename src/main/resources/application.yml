@@ -40,13 +40,6 @@ spring:
 springdoc:
   default-produces-media-type: application/json;charset=UTF-8
 
-logging:
-  level:
-    org.hibernate.orm.jdbc.bind: TRACE
-    org.hibernate.orm.jdbc.extract: TRACE
-    org.springframework.transaction.interceptor: TRACE
-    com.back: DEBUG
-
 server:
   address: 0.0.0.0
   port: 8080
