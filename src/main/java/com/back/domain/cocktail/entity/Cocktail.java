@@ -22,7 +22,7 @@ public class Cocktail {
     private String cocktailName;
 
     @Enumerated(EnumType.STRING)
-    private AlcoholStrength alcoholStrength;
+    private AlcoholStrength alcoholStrength; // 칵테일 알콜 도수
 
     public enum AlcoholStrength {
         NON_ALCOHOLIC("논알콜 (0%)"),
@@ -43,10 +43,10 @@ public class Cocktail {
         }
     }
 
-    private String cocktailStory;
+    private String cocktailStory; // 칵테일 유래 등 이야기
 
     @Enumerated(EnumType.STRING)
-    private CocktailType cocktailType;
+    private CocktailType cocktailType; // 칵테일 컵에 따른 분류
 
     public enum CocktailType {
         SHORT("숏"),
@@ -66,8 +66,12 @@ public class Cocktail {
     }
 
     private String ingredient;
+
     private String recipe;
+
     private String imageUrl;
+
     private LocalDateTime createdAt;
+
     private LocalDateTime updatedAt;
 }
