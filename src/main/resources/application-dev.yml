@@ -22,6 +22,10 @@ spring:
         format_sql: true
         show_sql: true
 
+# 개발 환경 URL 설정
+FRONTEND_URL: http://localhost:3000
+BASE_URL: http://localhost:8080
+
 # Swagger 설정
 springdoc:
   api-docs:

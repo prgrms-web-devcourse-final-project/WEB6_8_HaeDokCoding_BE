@@ -31,6 +31,13 @@ public class User {
     @Column(nullable = false, unique = true, length = 50)
     private String nickname;   // 고유 닉네임
 
+    // OAuth2 관련 필드
+    @Column(unique = true, length = 100)
+    private String oauthId;     // OAuth 제공자별 고유 ID (예: kakao_123456789)
+
+    @Column(length = 20)
+    private String provider;    // OAuth 제공자 (KAKAO, GOOGLE, NAVER)
+
     private Double abvDegree;   // 알콜도수(회원 등급)
 
     private LocalDateTime createdAt;   // 생성 날짜

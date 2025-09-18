@@ -25,3 +25,20 @@ logging:
 custom:
   cookie:
     secure: true
+
+# OAuth2 배포 환경 설정
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            redirect-uri: '${BASE_URL}/api/{action}/oauth2/code/{registrationId}'
+          google:
+            redirect-uri: '${BASE_URL}/api/{action}/oauth2/code/{registrationId}'
+          naver:
+            redirect-uri: '${BASE_URL}/api/{action}/oauth2/code/{registrationId}'
+
+# 프로덕션 환경 URL 설정
+BASE_URL: ${BASE_URL}
+FRONTEND_URL: ${FRONTEND_URL}

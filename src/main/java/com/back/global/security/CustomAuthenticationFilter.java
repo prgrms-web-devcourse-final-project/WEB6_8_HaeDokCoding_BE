@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -120,8 +121,8 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
                 user.getId(),
                 user.getEmail(),
                 user.getNickname(),
-                "",
-                user.getAuthorities()
+                user.getAuthorities(),
+                Map.of() // JWT 인증에서는 빈 attributes
         );
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails,

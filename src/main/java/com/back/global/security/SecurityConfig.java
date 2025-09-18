@@ -18,6 +18,18 @@ import java.util.Arrays;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final CustomOAuth2LoginSuccessHandler oauth2SuccessHandler;
+    private final CustomOAuth2LoginFailureHandler oauth2FailureHandler;
+
+    public SecurityConfig(CustomOAuth2UserService customOAuth2UserService,
+                         CustomOAuth2LoginSuccessHandler oauth2SuccessHandler,
+                          CustomOAuth2LoginFailureHandler oauth2FailureHandler) {
+        this.customOAuth2UserService = customOAuth2UserService;
+        this.oauth2SuccessHandler = oauth2SuccessHandler;
+        this.oauth2FailureHandler = oauth2FailureHandler;
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -38,6 +50,11 @@ public class SecurityConfig {
                         .redirectionEndpoint(redirection -> redirection
                                 .baseUri("/api/login/oauth2/code/*")
                         )
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService)
+                        )
+                        .successHandler(oauth2SuccessHandler)
+                        .failureHandler(oauth2FailureHandler)
                 )
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
 
