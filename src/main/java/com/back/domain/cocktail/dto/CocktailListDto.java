@@ -4,6 +4,8 @@ import com.back.domain.cocktail.enums.AlcoholBaseType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 @AllArgsConstructor
 public class CocktailListDto {
@@ -14,4 +16,5 @@ public class CocktailListDto {
     private String alcoholStrength;
     private String cocktailType;
     private AlcoholBaseType alcoholBaseType;
+    private List<String> ingredientNames;
 }
