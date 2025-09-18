@@ -47,8 +47,6 @@ public class User {
     @Column(nullable = false, length = 20)
     private String role = "USER";
 
-    private String profileImgUrl;
-
     public boolean isAdmin() {
         return "ADMIN".equalsIgnoreCase(role);
     }
