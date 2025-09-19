@@ -1,6 +1,8 @@
 package com.back.domain.cocktail.dto;
 
-import com.back.domain.cocktail.entity.Cocktail;
+import com.back.domain.cocktail.enums.AlcoholBaseType;
+import com.back.domain.cocktail.enums.AlcoholStrength;
+import com.back.domain.cocktail.enums.CocktailType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -14,12 +16,13 @@ public class CocktailResponseDto {
 
     private long cocktailId;
     private String cocktailName;
-    private Cocktail.AlcoholStrength alcoholStrength;
+    private AlcoholStrength alcoholStrength;
     private String cocktailStory;
-    private Cocktail.CocktailType cocktailType;
+    private CocktailType cocktailType;
+    private AlcoholBaseType alcoholBaseType;
     private String ingredient;
     private String recipe;
-    private String imageUrl;
+    private String cocktailImgUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

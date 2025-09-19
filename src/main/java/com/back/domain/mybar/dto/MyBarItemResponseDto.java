@@ -20,7 +20,7 @@ public class MyBarItemResponseDto {
                 .id(m.getId())
                 .cocktailId(m.getCocktail().getCocktailId())
                 .cocktailName(m.getCocktail().getCocktailName())
-                .imageUrl(m.getCocktail().getImageUrl())
+                .imageUrl(m.getCocktail().getCocktailImgUrl())
                 .createdAt(m.getCreatedAt())
                 .build();
     }
