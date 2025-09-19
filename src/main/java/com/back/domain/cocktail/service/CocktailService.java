@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +24,7 @@ public class CocktailService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found. id=" + id));
     }
 
+    // 칵테일 무한스크롤 조회
     @Transactional(readOnly = true)
     public List<CocktailSummaryDto> getCocktails(Long lastId, Integer size) { // 무한스크롤 조회, 클라이언트 쪽에서 lastId와 size 정보를 받음.(스크롤 이벤트)
         int fetchSize = (size != null) ? size : DEFAULT_SIZE;
@@ -41,5 +41,17 @@ public class CocktailService {
         return cocktails.stream()
                 .map(c -> new CocktailSummaryDto(c.getCocktailId(), c.getCocktailName(), c.getCocktailImgUrl()))
                 .collect(Collectors.toList());
+    }
+
+    // 칵테일 검색기능
+    public List<Cocktail> cocktailSearch(String keyword) {
+        // cockTailName, ingredient이 하나만 있을 수도 있고 둘 다 있을 수도 있음
+        if (keyword == null || keyword.trim().isEmpty()) {
+            // 아무 검색어 없으면 전체 반환 처리
+            return cocktailRepository.findAll();
+        } else {
+            // 이름 또는 재료 둘 중 하나라도 매칭되면 결과 반환
+            return cocktailRepository.findByCocktailNameContainingIgnoreCaseOrIngredientContainingIgnoreCase(keyword, keyword);
+        }
     }
 }

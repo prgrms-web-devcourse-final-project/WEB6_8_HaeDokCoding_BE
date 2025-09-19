@@ -43,12 +43,14 @@ public class DevInitData {
             cocktailRepository.save(Cocktail.builder()
                     .cocktailName("Cocktail " + i)
                     .cocktailImgUrl("http://example.com/img" + i + ".jpg")
-                    .ingredient("Ingredient1")
+                    .ingredient("Ingredient "+ i)
                     .alcoholStrength(AlcoholStrength.NON_ALCOHOLIC)
                     .build());
         }
         System.out.println("DevInitData: 테스트 칵테일 20개 삽입");
-        System.out.println(cocktailService.getCocktailById(1l));
+        System.out.println(cocktailService.getCocktailById(2l));
+        System.out.println(cocktailService.cocktailSearch("cocktail 3"));
+        System.out.println(cocktailService.cocktailSearch("Ingredient 4"));
     }
 }
 
