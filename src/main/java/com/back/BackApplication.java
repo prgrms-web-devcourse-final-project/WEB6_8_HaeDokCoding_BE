@@ -10,11 +10,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class BackApplication {
 
     public static void main(String[] args) {
-        Dotenv dotenv = Dotenv.load();
-        System.out.println("KAKAO_OAUTH2_CLIENT_ID: " + dotenv.get("KAKAO_OAUTH2_CLIENT_ID"));
-        System.out.println("GOOGLE_OAUTH2_CLIENT_ID: " + dotenv.get("GOOGLE_OAUTH2_CLIENT_ID"));
-        System.out.println("NAVER_OAUTH2_CLIENT_ID: " + dotenv.get("NAVER_OAUTH2_CLIENT_ID"));
-
+        Dotenv.load();
         SpringApplication.run(BackApplication.class, args);
     }
 
