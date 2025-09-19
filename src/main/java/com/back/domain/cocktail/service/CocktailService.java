@@ -20,6 +20,8 @@ public class CocktailService {
 
     @Transactional(readOnly = true)
     public Cocktail getCocktailById(Long id) {
+
+    public Cocktail findById(Long id) {
         return cocktailRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found. id=" + id));
     }
