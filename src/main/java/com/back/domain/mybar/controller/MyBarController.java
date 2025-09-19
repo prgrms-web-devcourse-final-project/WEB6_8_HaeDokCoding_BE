@@ -8,10 +8,7 @@ import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/me/bar")
@@ -29,5 +26,15 @@ public class MyBarController {
     ) {
         MyBarListResponseDto body = myBarService.getMyBar(userId, page, pageSize);
         return RsData.successOf(body);  // code=200, message="success"
+    }
+
+    /** 킵 추가(생성/복원/재킵) */
+    @PostMapping("/{cocktailId}/keep")
+    public RsData<Void> keep(
+            @AuthenticationPrincipal(expression = "id") Long userId,
+            @PathVariable Long cocktailId
+    ) {
+        myBarService.keep(userId, cocktailId);
+        return RsData.of(201, "kept"); // Aspect가 HTTP 201로 설정
     }
 }
