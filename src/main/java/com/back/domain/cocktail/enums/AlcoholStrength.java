@@ -17,4 +17,5 @@ public enum AlcoholStrength {
     public String getDescription() {
         return description;
     }
+
 }
