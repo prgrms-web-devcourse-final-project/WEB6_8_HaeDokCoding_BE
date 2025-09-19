@@ -31,9 +31,10 @@ public class CocktailService {
 
     @Transactional(readOnly = true)
     public Cocktail getCocktailById(Long id) {
+
             return cocktailRepository.findById(id)
                     .orElseThrow(() -> new IllegalArgumentException("User not found. id=" + id));
-        }
+    }
 
         // 칵테일 무한스크롤 조회
         @Transactional(readOnly = true)
