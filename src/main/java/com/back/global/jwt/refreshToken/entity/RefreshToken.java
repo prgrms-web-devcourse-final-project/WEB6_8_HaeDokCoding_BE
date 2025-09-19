@@ -1,4 +1,4 @@
-package com.back.domain.auth.refreshToken.entity;
+package com.back.global.jwt.refreshToken.entity;
 
 import lombok.*;
 import org.springframework.data.annotation.Id;

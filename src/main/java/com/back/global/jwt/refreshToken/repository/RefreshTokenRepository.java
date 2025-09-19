@@ -1,6 +1,7 @@
-package com.back.domain.auth.refreshToken.repository;
+package com.back.global.jwt.refreshToken.repository;
 
-import com.back.domain.auth.refreshToken.entity.RefreshToken;
+
+import com.back.global.jwt.refreshToken.entity.RefreshToken;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 

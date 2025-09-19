@@ -1,7 +1,8 @@
-package com.back.domain.auth.refreshToken.service;
+package com.back.global.jwt.refreshToken.service;
 
-import com.back.domain.auth.refreshToken.entity.RefreshToken;
-import com.back.domain.auth.refreshToken.repository.RefreshTokenRepository;
+
+import com.back.global.jwt.refreshToken.entity.RefreshToken;
+import com.back.global.jwt.refreshToken.repository.RefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
