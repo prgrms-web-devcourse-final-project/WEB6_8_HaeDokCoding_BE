@@ -1,7 +1,7 @@
 package com.back.global.security;
 
 import com.back.domain.user.entity.User;
-import com.back.domain.user.service.UserService;
+import com.back.domain.user.service.UserAuthService;
 import com.back.global.rsData.RsData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -16,7 +16,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
-    private final UserService userService;
+    private final UserAuthService userAuthService;
 
     // OAuth2 로그인 성공 시 자동 호출
     @Override
@@ -55,7 +55,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         // OAuth ID를 제공자와 함께 저장 (예: kakao_123456789)
         String uniqueOauthId = providerTypeCode.toLowerCase() + "_" + oauthUserId;
-        RsData<User> rsData = userService.findOrCreateOAuthUser(uniqueOauthId, email, nickname);
+        RsData<User> rsData = userAuthService.findOrCreateOAuthUser(uniqueOauthId, email, nickname);
 
         if (rsData.code()<200 || rsData.code()>299) {
             throw new OAuth2AuthenticationException("사용자 생성/조회 실패: " + rsData.message());
@@ -66,7 +66,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String userEmail = user.getEmail() != null && !user.getEmail().trim().isEmpty()
                 ? user.getEmail() : "unknown";
 
-        // securityContext
         return new SecurityUser(
                 user.getId(),
                 userEmail,
