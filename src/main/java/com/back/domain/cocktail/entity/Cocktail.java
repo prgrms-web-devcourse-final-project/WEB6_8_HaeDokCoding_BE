@@ -1,10 +1,10 @@
 package com.back.domain.cocktail.entity;
 
-import com.back.domain.wishlist.entity.Wishlist;
+import com.back.domain.cocktail.enums.AlcoholBaseType;
+import com.back.domain.cocktail.enums.AlcoholStrength;
+import com.back.domain.cocktail.enums.CocktailType;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -14,6 +14,9 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@ToString
 @Entity
 public class Cocktail {
     @Id
