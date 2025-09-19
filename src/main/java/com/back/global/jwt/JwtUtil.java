@@ -20,6 +20,7 @@ public class JwtUtil {
     private final SecretKey secretKey;
     private final long accessTokenExpiration;
     private static final String ACCESS_TOKEN_COOKIE_NAME = "accessToken";
+    private static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
 
     public JwtUtil(@Value("${custom.jwt.secretKey}") String secretKey,
                    @Value("${custom.accessToken.expirationSeconds}") long accessTokenExpiration) {
