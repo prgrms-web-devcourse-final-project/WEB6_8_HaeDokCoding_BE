@@ -9,5 +9,6 @@ import java.util.List;
 @AllArgsConstructor
 public class MyBarListResponseDto {
     private List<MyBarItemResponseDto> items;
-    private Long nextCursor; // 다음 페이지 시작점(없으면 null)
+    private boolean hasNext;   // 다음 페이지 존재 여부
+    private Integer nextPage;  // 다음 페이지 번호(없으면 null)
 }
