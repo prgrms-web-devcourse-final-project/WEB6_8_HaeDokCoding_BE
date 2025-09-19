@@ -23,7 +23,7 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found. id=" + id));
     }
 
-  // 소셜로그인으로 회원가입 & 회원 정보 수정
+    // 소셜로그인으로 회원가입 & 회원 정보 수정
     public RsData<User> modifyOrJoin(String oauthId, String email, String nickname) {
 
         //oauthId로 기존 회원인지 확인
@@ -46,11 +46,15 @@ public class UserService {
                     throw new ServiceException(409, "이미 존재하는 계정입니다.");
                 });
 
+        // 고유한 닉네임 생성
+        String uniqueNickname = generateUniqueNickname(nickname);
+
         User user = User.builder()
                 .email(email)
+                .nickname(uniqueNickname)
                 .profileImgUrl(null)
                 .abvDegree(0.0)
-                .role("USER") //기본 권한 USER. 관리자면 "ADMIN"으로 설정하시면 됩니다
+                .role("USER")
                 .oauthId(oauthId)
                 .build();
 
@@ -66,23 +70,41 @@ public class UserService {
         Optional<User> existingUser = userRepository.findByOauthId(oauthId);
 
         if (existingUser.isPresent()) {
-            // 기존 사용자 업데이트 (이메일, 닉네임 변경 가능)
+            // 기존 사용자 업데이트 (이메일만 업데이트)
             User user = existingUser.get();
             user.setEmail(email);
-            user.setNickname(nickname);
             return RsData.of(200, "기존 사용자 정보 업데이트", userRepository.save(user));
         } else {
-            // 새 사용자 생성
+            // 새 사용자 생성 - 고유한 닉네임 생성
+            String uniqueNickname = generateUniqueNickname(nickname);
             User newUser = User.builder()
                     .oauthId(oauthId)
                     .email(email)
-                    .nickname(nickname)
+                    .nickname(uniqueNickname)
                     .provider(provider)
                     .role("USER")
                     .createdAt(LocalDateTime.now())
                     .build();
             return RsData.of(201, "새 사용자 생성", userRepository.save(newUser));
         }
+    }
+
+    private String generateUniqueNickname(String baseNickname) {
+        // null이거나 빈 문자열인 경우 기본값 설정
+        if (baseNickname == null || baseNickname.trim().isEmpty()) {
+            baseNickname = "User";
+        }
+
+        String nickname = baseNickname;
+        int counter = 1;
+
+        // 중복 체크 및 고유한 닉네임 생성
+        while (userRepository.findByNickname(nickname).isPresent()) {
+            nickname = baseNickname + counter;
+            counter++;
+        }
+
+        return nickname;
     }
 
 }

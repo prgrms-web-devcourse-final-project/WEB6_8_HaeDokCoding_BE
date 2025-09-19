@@ -55,9 +55,9 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
         if (
             //추후 로그인 필요한 api 추가 설정
                 uri.startsWith("/h2-console") ||
-                        uri.startsWith("/api/login/oauth2/") ||
-                        (method.equals("GET") && uri.equals("api/~~")) ||
-                        (method.equals("POST") && uri.equals("/api/user/login"))
+                        uri.startsWith("/login/oauth2/") ||
+                        (method.equals("GET") && uri.equals("/api/~~")) ||
+                        (method.equals("POST") && uri.equals("/api/~"))
 
         ) {
             filterChain.doFilter(request, response);

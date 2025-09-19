@@ -35,11 +35,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             case "KAKAO" -> {
                 Map<String, Object> attributes = oAuth2User.getAttributes();
                 Map<String, Object> attributesProperties = (Map<String, Object>) attributes.get("properties");
-                Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
 
                 oauthUserId = oAuth2User.getName();
                 nickname = (String) attributesProperties.get("nickname");
-                email = (String) kakaoAccount.get("email");
             }
             case "GOOGLE" -> {
                 oauthUserId = oAuth2User.getName();
@@ -59,13 +57,25 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         // OAuth ID를 제공자와 함께 저장 (예: kakao_123456789)
         String uniqueOauthId = providerTypeCode.toLowerCase() + "_" + oauthUserId;
 
+        log.debug("OAuth2 user info - oauthUserId: {}, email: {}, nickname: {}, provider: {}",
+                  oauthUserId, email, nickname, providerTypeCode);
+
         User user = userService.findOrCreateOAuthUser(uniqueOauthId, email, nickname, providerTypeCode).data();
+
+        log.debug("User from DB - id: {}, email: {}, nickname: {}",
+                  user.getId(), user.getEmail(), user.getNickname());
+
+        // null 체크 및 기본값 설정
+        String userEmail = user.getEmail() != null && !user.getEmail().trim().isEmpty()
+                          ? user.getEmail() : "unknown@example.com";
+        String userNickname = user.getNickname() != null && !user.getNickname().trim().isEmpty()
+                             ? user.getNickname() : "Unknown User";
 
         // securityContext
         return new SecurityUser(
                 user.getId(),
-                user.getEmail(),
-                user.getNickname(),
+                userEmail,
+                userNickname,
                 user.getAuthorities(),
                 oAuth2User.getAttributes()
         );
