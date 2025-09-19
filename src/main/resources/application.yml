@@ -2,6 +2,9 @@ spring:
   profiles:
     active: dev
 
+  config:
+    import: optional:file:.env[.properties]
+
   security:
     oauth2:
       client:
@@ -11,11 +14,11 @@ spring:
             scope: profile_nickname # 카카오 닉네임만 가져옴
             client-name: Kakao
             authorization-grant-type: authorization_code
-            redirect-uri: '{baseUrl}/api/{action}/oauth2/code/{registrationId}'
+            redirect-uri: '${BASE_URL}/{action}/oauth2/code/{registrationId}'
           google:
             client-id: ${GOOGLE_OAUTH2_CLIENT_ID}
             client-secret: ${GOOGLE_OAUTH2_CLIENT_SECRET}
-            redirect-uri: '{baseUrl}/api/{action}/oauth2/code/{registrationId}'
+            redirect-uri: '${BASE_URL}/{action}/oauth2/code/{registrationId}'
             client-name: Google
             scope: profile
           naver:
@@ -24,7 +27,7 @@ spring:
             scope: profile_nickname # 네이버 닉네임만 가져옴
             client-name: Naver
             authorization-grant-type: authorization_code
-            redirect-uri: '{baseUrl}/api/{action}/oauth2/code/{registrationId}'
+            redirect-uri: '${BASE_URL}/{action}/oauth2/code/{registrationId}'
         provider:
           kakao:
             authorization-uri: https://kauth.kakao.com/oauth/authorize
@@ -39,13 +42,6 @@ spring:
 
 springdoc:
   default-produces-media-type: application/json;charset=UTF-8
-
-logging:
-  level:
-    org.hibernate.orm.jdbc.bind: TRACE
-    org.hibernate.orm.jdbc.extract: TRACE
-    org.springframework.transaction.interceptor: TRACE
-    com.back: DEBUG
 
 server:
   address: 0.0.0.0

@@ -22,6 +22,10 @@ spring:
         format_sql: true
         show_sql: true
 
+# 개발 환경 URL 설정
+FRONTEND_URL: http://localhost:3000
+BASE_URL: http://localhost:8080
+
 # Swagger 설정
 springdoc:
   api-docs:
@@ -29,6 +33,19 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     operationsSorter: method
+
+# 개발용 상세 로깅
+logging:
+  level:
+    org.hibernate.orm.jdbc.bind: TRACE
+    org.hibernate.orm.jdbc.extract: TRACE
+    org.springframework.transaction.interceptor: TRACE
+    com.back: DEBUG
+
+# 쿠키 보안 설정 (HTTP 환경용)
+custom:
+  cookie:
+    secure: false
 
 #  # AI 설정
 #  ai:
