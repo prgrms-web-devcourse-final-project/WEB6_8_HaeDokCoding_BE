@@ -2,8 +2,8 @@ package com.back.global.security;
 
 import com.back.domain.user.entity.User;
 import com.back.domain.user.service.UserService;
+import com.back.global.rsData.RsData;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -15,7 +15,6 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private final UserService userService;
 
@@ -56,26 +55,22 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         // OAuth ID를 제공자와 함께 저장 (예: kakao_123456789)
         String uniqueOauthId = providerTypeCode.toLowerCase() + "_" + oauthUserId;
+        RsData<User> rsData = userService.findOrCreateOAuthUser(uniqueOauthId, email, nickname);
 
-        log.debug("OAuth2 user info - oauthUserId: {}, email: {}, nickname: {}, provider: {}",
-                  oauthUserId, email, nickname, providerTypeCode);
+        if (rsData.code()<200 || rsData.code()>299) {
+            throw new OAuth2AuthenticationException("사용자 생성/조회 실패: " + rsData.message());
+        }
 
-        User user = userService.findOrCreateOAuthUser(uniqueOauthId, email, nickname, providerTypeCode).data();
+        User user = rsData.data();
 
-        log.debug("User from DB - id: {}, email: {}, nickname: {}",
-                  user.getId(), user.getEmail(), user.getNickname());
-
-        // null 체크 및 기본값 설정
         String userEmail = user.getEmail() != null && !user.getEmail().trim().isEmpty()
-                          ? user.getEmail() : "unknown@example.com";
-        String userNickname = user.getNickname() != null && !user.getNickname().trim().isEmpty()
-                             ? user.getNickname() : "Unknown User";
+                ? user.getEmail() : "unknown";
 
         // securityContext
         return new SecurityUser(
                 user.getId(),
                 userEmail,
-                userNickname,
+                user.getNickname(),
                 user.getAuthorities(),
                 oAuth2User.getAttributes()
         );

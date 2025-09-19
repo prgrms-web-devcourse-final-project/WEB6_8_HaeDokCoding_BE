@@ -37,9 +37,6 @@ public class User {
     @Column(unique = true, length = 100)
     private String oauthId;     // OAuth 제공자별 고유 ID (예: kakao_123456789)
 
-    @Column(length = 20)
-    private String provider;    // OAuth 제공자 (KAKAO, GOOGLE, NAVER)
-
     private Double abvDegree;   // 알콜도수(회원 등급)
 
     @CreatedDate    // JPA Auditing 적용
