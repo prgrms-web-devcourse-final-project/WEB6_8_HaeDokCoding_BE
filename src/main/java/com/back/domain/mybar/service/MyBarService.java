@@ -43,7 +43,7 @@ public class MyBarService {
     @Transactional
     public void keep(Long userId, Long cocktailId) {
         Optional<MyBar> existingMyBar =
-                myBarRepository.findByUser_IdAndCocktail_Id(userId, cocktailId);
+                myBarRepository.findByUser_IdAndCocktail_CocktailId(userId, cocktailId);
 
         LocalDateTime now = LocalDateTime.now();
 
