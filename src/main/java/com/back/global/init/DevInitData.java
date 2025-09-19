@@ -48,7 +48,7 @@ public class DevInitData {
                     .build());
         }
         System.out.println("DevInitData: 테스트 칵테일 20개 삽입");
-        System.out.println(cocktailService.findById(1l));
+        System.out.println(cocktailService.getCocktailById(1l));
     }
 }
 

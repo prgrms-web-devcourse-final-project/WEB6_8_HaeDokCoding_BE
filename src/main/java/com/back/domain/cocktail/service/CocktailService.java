@@ -20,7 +20,7 @@ public class CocktailService {
     private static final int DEFAULT_SIZE = 20;
 
     @Transactional(readOnly = true)
-    public Cocktail findById(Long id) {
+    public Cocktail getCocktailById(Long id) {
         return cocktailRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found. id=" + id));
     }
