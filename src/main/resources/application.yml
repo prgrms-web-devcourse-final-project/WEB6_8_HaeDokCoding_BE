@@ -53,8 +53,22 @@ server:
       enabled: true
       force: true
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
 custom:
   jwt:
     secretKey: ${JWT_SECRET_KEY}
   accessToken:
-    expirationSeconds: "#{60*20}"
+    expirationSeconds: "#{60*15}"
+  refreshToken:
+    expirationSeconds: "#{60*60*24*30}"
