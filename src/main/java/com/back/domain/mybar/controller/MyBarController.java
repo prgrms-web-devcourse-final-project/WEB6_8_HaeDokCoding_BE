@@ -21,10 +21,10 @@ public class MyBarController {
     @GetMapping
     public RsData<MyBarListResponseDto> getMyBarList(
             @AuthenticationPrincipal(expression = "id") Long userId,
-            @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int pageSize
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit
     ) {
-        MyBarListResponseDto body = myBarService.getMyBar(userId, page, pageSize);
+        MyBarListResponseDto body = myBarService.getMyBar(userId, cursor, limit);
         return RsData.successOf(body);  // code=200, message="success"
     }
 
