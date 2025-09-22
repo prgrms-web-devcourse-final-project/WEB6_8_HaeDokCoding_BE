@@ -68,4 +68,10 @@ public class MyBarService {
 
         myBarRepository.save(myBar);
     }
+
+    /** 킵 해제(소프트 삭제) */
+    @Transactional
+    public void unkeep(Long userId, Long cocktailId) {
+        myBarRepository.softDeleteByUserAndCocktail(userId, cocktailId);
+    }
 }
