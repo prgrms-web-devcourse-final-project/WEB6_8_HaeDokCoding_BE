@@ -23,9 +23,10 @@ public class CocktailController {
     @GetMapping("/{id}")
     @Transactional
     @Operation(summary = "칵테일 단건 조회")
-    public RsData<CocktailDetailDto> getCocktailDetailById(@PathVariable long id) {
+    public RsData<CocktailDetailDto> getCocktailDetailById(@PathVariable long id){
 
             CocktailDetailDto cocktailDetailDto = cocktailService.getCocktailDetailById(id);
             return RsData.successOf(cocktailDetailDto);
+
     }
 }
