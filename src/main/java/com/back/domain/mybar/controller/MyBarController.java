@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.format.annotation.DateTimeFormat;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/me/bar")
@@ -21,10 +23,12 @@ public class MyBarController {
     @GetMapping
     public RsData<MyBarListResponseDto> getMyBarList(
             @AuthenticationPrincipal(expression = "id") Long userId,
-            @RequestParam(required = false) String cursor,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime lastKeptAt,
+            @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit
     ) {
-        MyBarListResponseDto body = myBarService.getMyBar(userId, cursor, limit);
+        MyBarListResponseDto body = myBarService.getMyBar(userId, lastKeptAt, lastId, limit);
         return RsData.successOf(body);  // code=200, message="success"
     }
 
