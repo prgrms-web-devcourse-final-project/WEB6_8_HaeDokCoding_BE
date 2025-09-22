@@ -5,6 +5,9 @@ import com.back.domain.cocktail.dto.CocktailFilterRequestDto;
 import com.back.domain.cocktail.dto.CocktailResponseDto;
 import com.back.domain.cocktail.dto.CocktailSummaryDto;
 import com.back.domain.cocktail.entity.Cocktail;
+import com.back.domain.cocktail.enums.AlcoholBaseType;
+import com.back.domain.cocktail.enums.AlcoholStrength;
+import com.back.domain.cocktail.enums.CocktailType;
 import com.back.domain.cocktail.repository.CocktailRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -12,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -68,16 +72,34 @@ public class CocktailService {
     @Transactional(readOnly = true)
     public List<CocktailResponseDto> searchAndFilter(CocktailFilterRequestDto cocktailFilterRequestDto) {
         // 기본값 페이지/사이즈 정하기(PAGE 기본값 0, 사이즈 10)
-        int page = cocktailFilterRequestDto.getPage() != null && cocktailFilterRequestDto.getPage() >= 0 ? cocktailFilterRequestDto.getPage() : 0;
-        int size = cocktailFilterRequestDto.getSize() != null && cocktailFilterRequestDto.getSize() > 0 ? cocktailFilterRequestDto.getSize() : 10;
+        int page = cocktailFilterRequestDto.getPage() != null && cocktailFilterRequestDto.getPage() >= 0
+                ? cocktailFilterRequestDto.getPage() : 0;
+
+        int size = cocktailFilterRequestDto.getSize() != null && cocktailFilterRequestDto.getSize() > 0
+                ? cocktailFilterRequestDto.getSize() : DEFAULT_SIZE;
 
         // searchWithFilters에서 조회한 결과값을 pageResult에 저장.
         Pageable pageable = PageRequest.of(page, size);
+
+        // 빈 리스트(null 또는 [])는 null로 변환
+        List<AlcoholStrength> strengths = CollectionUtils.isEmpty(cocktailFilterRequestDto.getAlcoholStrengths())
+                ? null
+                : cocktailFilterRequestDto.getAlcoholStrengths();
+
+        List<CocktailType> types = CollectionUtils.isEmpty(cocktailFilterRequestDto.getCocktailTypes())
+                ? null
+                : cocktailFilterRequestDto.getCocktailTypes();
+
+        List<AlcoholBaseType> bases = CollectionUtils.isEmpty(cocktailFilterRequestDto.getAlcoholBaseTypes())
+                ? null
+                : cocktailFilterRequestDto.getAlcoholBaseTypes();
+
+        // Repository 호출
         Page<Cocktail> pageResult = cocktailRepository.searchWithFilters(
                 cocktailFilterRequestDto.getKeyword(),
-                cocktailFilterRequestDto.getAlcoholStrengths(), // List<AlcoholStrength>
-                cocktailFilterRequestDto.getCocktailTypes(),    // List<CocktailType>
-                cocktailFilterRequestDto.getAlcoholBaseTypes(), // List<AlcoholBaseType>
+                strengths, // List<AlcoholStrength>
+                types, // List<CocktailType>
+                bases, // List<AlcoholBaseType>
                 pageable
         );
 
@@ -97,6 +119,10 @@ public class CocktailService {
 
         return resultDtos;
     }
+
+//    private <T> List<T> nullIfEmpty(List<T> list) {
+//        return CollectionUtils.isEmpty(list) ? null : list;
+//    }
 
     // 칵테일 상세조회
     @Transactional(readOnly = true)
