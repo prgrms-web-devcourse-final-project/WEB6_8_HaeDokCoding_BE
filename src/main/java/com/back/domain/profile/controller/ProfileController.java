@@ -11,7 +11,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/me/profile")
+@RequestMapping("/api/me/profile")
 @RequiredArgsConstructor
 public class ProfileController {
 
@@ -24,9 +24,14 @@ public class ProfileController {
         return RsData.successOf(body); // code=200, message="success"
     }
 
-    @PutMapping
-    public RsData<ProfileResponseDto> updateProfile(@AuthenticationPrincipal(expression = "id") Long userId, @Valid @RequestBody ProfileUpdateRequestDto profileUpdateRequestDto) {
-        ProfileResponseDto body = profileService.updateProfile(userId, profileUpdateRequestDto);
-        return RsData.successOf(body); // code=200
+    // PUT 제거: PATCH 전용으로 운영
+
+    @PatchMapping
+    public RsData<ProfileResponseDto> patchNickname(
+            @AuthenticationPrincipal(expression = "id") Long userId,
+            @Valid @RequestBody ProfileUpdateRequestDto request
+    ) {
+        ProfileResponseDto body = profileService.updateProfile(userId, request);
+        return RsData.successOf(body);
     }
 }
