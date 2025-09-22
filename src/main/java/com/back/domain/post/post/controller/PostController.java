@@ -8,6 +8,7 @@ import com.back.global.rsData.RsData;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,9 +38,7 @@ public class PostController {
    * @return 모든 게시글 리스트
    */
   @GetMapping
-  public RsData<List<Post>> getAllPosts() {
-    List<Post> posts = postService.getAllPosts();
-    return RsData.successOf(posts); // code=200, message="success"
+  public RsData<List<PostResponseDto>> getAllPosts() {
+    return RsData.successOf(postService.getAllPosts()); // code=200, message="success"
   }
-
 }
