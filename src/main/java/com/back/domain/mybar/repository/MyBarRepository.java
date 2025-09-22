@@ -5,6 +5,8 @@ import com.back.domain.mybar.enums.KeepStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -22,4 +24,14 @@ public interface MyBarRepository extends JpaRepository<MyBar, Long> {
 
     /** 복원/재킵을 위해 status 무시하고 한 건 찾기 (없으면 Optional.empty) */
     Optional<MyBar> findByUser_IdAndCocktail_CocktailId(Long userId, Long cocktailId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        update MyBar m
+           set m.status = 'DELETED', m.deletedAt = CURRENT_TIMESTAMP
+         where m.user.id = :userId
+           and m.cocktail.cocktailId = :cocktailId
+           and m.status = 'ACTIVE'
+    """)
+    int softDeleteByUserAndCocktail(Long userId, Long cocktailId);
 }
