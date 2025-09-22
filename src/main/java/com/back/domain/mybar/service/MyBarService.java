@@ -10,6 +10,7 @@ import com.back.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,18 +27,38 @@ public class MyBarService {
     private final UserRepository userRepository;
     private final CocktailRepository cocktailRepository;
 
+    // 커서: lastKeptAt + lastId를 그대로 파라미터로 사용
     @Transactional(readOnly = true)
-    public MyBarListResponseDto getMyBar(Long userId, int page, int pageSize) {
-        Page<MyBar> myBarPage = myBarRepository.findByUser_IdAndStatusOrderByKeptAtDescIdDesc(userId, KeepStatus.ACTIVE, PageRequest.of(page, pageSize));
+    public MyBarListResponseDto getMyBar(Long userId, LocalDateTime lastKeptAt, Long lastId, int limit) {
+        int safeLimit = Math.max(1, Math.min(limit, 100));
+        int fetchSize = safeLimit + 1; // 다음 페이지 여부 판단용으로 1개 더 조회
 
-        List<MyBar> myBars = myBarPage.getContent();
+        List<MyBar> rows;
+        Pageable pageable = PageRequest.of(0, fetchSize);
+
+        if (lastKeptAt == null || lastId == null) {
+            Page<MyBar> page0 = myBarRepository
+                    .findByUser_IdAndStatusOrderByKeptAtDescIdDesc(userId, KeepStatus.ACTIVE, pageable);
+            rows = page0.getContent();
+        } else {
+            rows = myBarRepository.findSliceByCursor(userId, KeepStatus.ACTIVE, lastKeptAt, lastId, pageable);
+        }
+
+        boolean hasNext = rows.size() > safeLimit;
+        if (hasNext) rows = rows.subList(0, safeLimit);
+
         List<MyBarItemResponseDto> items = new ArrayList<>();
-        for (MyBar myBar : myBars) items.add(MyBarItemResponseDto.from(myBar));
+        for (MyBar myBar : rows) items.add(MyBarItemResponseDto.from(myBar));
 
-        boolean hasNext = myBarPage.hasNext();
-        Integer nextPage = hasNext ? myBarPage.getNumber() + 1 : null;
+        LocalDateTime nextKeptAt = null;
+        Long nextId = null;
+        if (hasNext && !rows.isEmpty()) {
+            MyBar last = rows.get(rows.size() - 1);
+            nextKeptAt = last.getKeptAt();
+            nextId = last.getId();
+        }
 
-        return new MyBarListResponseDto(items, hasNext, nextPage);
+        return new MyBarListResponseDto(items, hasNext, nextKeptAt, nextId);
     }
 
     @Transactional
@@ -75,3 +96,4 @@ public class MyBarService {
         myBarRepository.softDeleteByUserAndCocktail(userId, cocktailId);
     }
 }
+

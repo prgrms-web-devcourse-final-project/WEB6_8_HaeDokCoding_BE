@@ -10,11 +10,22 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.List;
+import java.time.LocalDateTime;
 
 @Repository
 public interface MyBarRepository extends JpaRepository<MyBar, Long> {
     /** 나만의 bar(킵) 목록: ACTIVE만, id desc */
     Page<MyBar> findByUser_IdAndStatusOrderByKeptAtDescIdDesc(Long userId, KeepStatus status, Pageable pageable);
+
+    @Query("""
+        select m from MyBar m
+         where m.user.id = :userId
+           and m.status = :status
+           and (m.keptAt < :keptAt or (m.keptAt = :keptAt and m.id < :id))
+         order by m.keptAt desc, m.id desc
+    """)
+    List<MyBar> findSliceByCursor(Long userId, KeepStatus status, LocalDateTime keptAt, Long id, Pageable pageable);
 
     /** 프로필/요약용: ACTIVE 개수 */
     long countByUser_IdAndStatus(Long userId, KeepStatus status);
