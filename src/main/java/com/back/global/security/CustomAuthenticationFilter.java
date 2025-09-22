@@ -116,7 +116,7 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
 
         // accessToken이 만료됐으면 새로 발급
         if (isAccessTokenExists && !isAccessTokenValid) {
-            String newAccessToken = jwtUtil.generateAccessToken(user.getId(), user.getEmail());
+            String newAccessToken = jwtUtil.generateAccessToken(user.getId(), user.getEmail(), user.getNickname());
             rq.setCrossDomainCookie("accessToken", newAccessToken, accessTokenExpiration);
         }
 

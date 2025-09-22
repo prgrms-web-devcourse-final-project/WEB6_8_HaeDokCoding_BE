@@ -48,7 +48,7 @@ public class Rq {
                     return User.builder()
                             .id(securityUser.getId())
                             .email(securityUser.getEmail())
-                            .nickname(securityUser.getName())
+                            .nickname(securityUser.getNickname())
                             .role(role)
                             .build();
                 })

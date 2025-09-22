@@ -28,13 +28,14 @@ public class JwtUtil {
         this.accessTokenExpiration = accessTokenExpiration * 1000;
     }
 
-    public String generateAccessToken(Long userId, String email) {
+    public String generateAccessToken(Long userId, String email, String nickname) {
         Date now = new Date();
         Date expiration = new Date(now.getTime() + accessTokenExpiration);
 
         return Jwts.builder()
                 .subject(String.valueOf(userId))
                 .claim("email", email)
+                .claim("nickname", nickname)
                 .issuedAt(now)
                 .expiration(expiration)
                 .signWith(secretKey)
@@ -50,17 +51,6 @@ public class JwtUtil {
         response.addCookie(cookie);
     }
 
-    public String getAccessTokenFromCookie(HttpServletRequest request) {
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if (ACCESS_TOKEN_COOKIE_NAME.equals(cookie.getName())) {
-                    return cookie.getValue();
-                }
-            }
-        }
-        return null;
-    }
 
     public void removeAccessTokenCookie(HttpServletResponse response) {
         Cookie cookie = new Cookie(ACCESS_TOKEN_COOKIE_NAME, null);

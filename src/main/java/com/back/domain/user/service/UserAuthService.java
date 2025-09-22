@@ -87,8 +87,8 @@ public class UserAuthService {
 
     // 리프레시 토큰 관련
 
-    public void issueTokens(HttpServletResponse response, Long userId, String email) {
-        String accessToken = jwtUtil.generateAccessToken(userId, email);
+    public void issueTokens(HttpServletResponse response, Long userId, String email, String nickname) {
+        String accessToken = jwtUtil.generateAccessToken(userId, email, nickname);
         String refreshToken = refreshTokenService.generateRefreshToken(userId, email);
 
         jwtUtil.addAccessTokenToCookie(response, accessToken);
@@ -112,8 +112,15 @@ public class UserAuthService {
             Long userId = refreshTokenEntity.getUserId();
             String email = refreshTokenEntity.getEmail();
 
+            // DB에서 현재 nickname 조회
+            Optional<User> user = userRepository.findById(userId);
+            if (user.isEmpty()) {
+                return false;
+            }
+            String nickname = user.get().getNickname();
+
             String newRefreshToken = refreshTokenService.rotateToken(oldRefreshToken);
-            String newAccessToken = jwtUtil.generateAccessToken(userId, email);
+            String newAccessToken = jwtUtil.generateAccessToken(userId, email, nickname);
 
             jwtUtil.addAccessTokenToCookie(response, newAccessToken);
             jwtUtil.addRefreshTokenToCookie(response, newRefreshToken);

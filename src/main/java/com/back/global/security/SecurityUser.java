@@ -13,7 +13,7 @@ public class SecurityUser extends User implements OAuth2User {
     private Long id;
 
     @Getter
-    private String name;
+    private String nickname;
 
     @Getter
     private String email;
@@ -24,13 +24,13 @@ public class SecurityUser extends User implements OAuth2User {
     public SecurityUser(
             long id,
             String email,
-            String name,
+            String nickname,
             Collection<? extends GrantedAuthority> authorities,
             Map<String, Object> attributes
     ) {
         super(email, "", authorities); // OAuth2에서는 빈 패스워드
         this.id = id;
-        this.name = name;
+        this.nickname = nickname;
         this.email = email;
         this.attributes = attributes;
     }
@@ -42,6 +42,10 @@ public class SecurityUser extends User implements OAuth2User {
 
     @Override
     public String getName() {
-        return name; // OAuth2User 인터페이스용
+        return nickname; // OAuth2User 인터페이스용 - nickname 반환
+    }
+
+    public String getNickname() {
+        return getName();
     }
 }
