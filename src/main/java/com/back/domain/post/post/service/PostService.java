@@ -54,8 +54,17 @@ public class PostService {
 
   // 게시글 다건 조회 로직
   @Transactional(readOnly = true)
-  public List<PostResponseDto> getAllPosts() {
-    List<Post> posts = postRepository.findAll();
+  public List<PostResponseDto> getAllPosts(Long lastId) {
+//    List<Post> posts = postRepository.findAll();
+    List<Post> posts;
+
+    if (lastId == null) {
+      // 첫 페이지 요청
+      posts = postRepository.findTop10ByOrderByIdDesc();
+    } else {
+      // 이후 페이지 요청
+      posts = postRepository.findTop10ByIdLessThanOrderByIdDesc(lastId);
+    }
 
     return posts.stream()
         .map(PostResponseDto::new)
