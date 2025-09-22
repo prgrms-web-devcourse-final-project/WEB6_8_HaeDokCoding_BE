@@ -11,6 +11,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,16 +23,18 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Map;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class CustomAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final Rq rq;
 
+    @Value("${custom.accessToken.expirationSeconds}")
+    private int accessTokenExpiration;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        logger.debug("Processing request for " + request.getRequestURI());
-
         try {
             work(request, response, filterChain);
         } catch (ServiceException e) {
@@ -90,7 +94,7 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
 
         // accessToken 검증
         if (isAccessTokenExists) {
-            if (jwtUtil.validateToken(accessToken)) {
+            if (jwtUtil.validateAccessToken(accessToken)) {
                 Long userId = jwtUtil.getUserIdFromToken(accessToken);
                 String email = jwtUtil.getEmailFromToken(accessToken);
                 String nickname = jwtUtil.getNicknameFromToken(accessToken);
@@ -113,7 +117,7 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
         // accessToken이 만료됐으면 새로 발급
         if (isAccessTokenExists && !isAccessTokenValid) {
             String newAccessToken = jwtUtil.generateAccessToken(user.getId(), user.getEmail());
-            rq.setCrossDomainCookie("accessToken", newAccessToken, 60 * 20);
+            rq.setCrossDomainCookie("accessToken", newAccessToken, accessTokenExpiration);
         }
 
         // SecurityContext에 인증 정보 저장

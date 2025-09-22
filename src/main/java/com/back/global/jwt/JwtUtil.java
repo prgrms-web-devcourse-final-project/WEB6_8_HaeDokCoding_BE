@@ -71,7 +71,7 @@ public class JwtUtil {
         response.addCookie(cookie);
     }
 
-    public boolean validateToken(String token) {
+    public boolean validateAccessToken(String token) {
         try {
             Jwts.parser()
                     .verifyWith(secretKey)
@@ -109,5 +109,36 @@ public class JwtUtil {
                 .parseSignedClaims(token)
                 .getPayload();
     }
+
+    public void addRefreshTokenToCookie(HttpServletResponse response, String refreshToken) {
+        Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false);
+        cookie.setPath("/");
+        cookie.setMaxAge(60 * 60 * 24 * 30);
+        response.addCookie(cookie);
+    }
+
+    public String getRefreshTokenFromCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (REFRESH_TOKEN_COOKIE_NAME.equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
+    }
+
+    public void removeRefreshTokenCookie(HttpServletResponse response) {
+        Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, null);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+    }
+
 
 }
