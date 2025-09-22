@@ -37,4 +37,14 @@ public class MyBarController {
         myBarService.keep(userId, cocktailId);
         return RsData.of(201, "kept"); // Aspect가 HTTP 201로 설정
     }
+
+    /** 킵 해제(소프트 삭제) — 멱등 */
+    @DeleteMapping("/{cocktailId}/keep")
+    public RsData<Void> unkeep(
+            @AuthenticationPrincipal(expression = "id") Long userId,
+            @PathVariable Long cocktailId
+    ) {
+        myBarService.unkeep(userId, cocktailId);
+        return RsData.of(200, "deleted");
+    }
 }
