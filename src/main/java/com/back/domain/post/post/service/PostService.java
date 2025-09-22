@@ -11,6 +11,7 @@ import com.back.domain.post.post.repository.TagRepository;
 import com.back.domain.user.entity.User;
 import com.back.global.rq.Rq;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,7 +62,11 @@ public class PostService {
 
   // 게시글 다건 조회 로직
   @Transactional(readOnly = true)
-  public List<Post> getAllPosts() {
-    return postRepository.findAll();
+  public List<PostResponseDto> getAllPosts() {
+    List<Post> posts = postRepository.findAll();
+
+    return posts.stream()
+        .map(PostResponseDto::new)
+        .collect(Collectors.toList());
   }
 }
