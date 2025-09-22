@@ -1,12 +1,18 @@
 package com.back.domain.cocktail.service;
 
+import com.back.domain.cocktail.dto.CocktailDetailDto;
+import com.back.domain.cocktail.dto.CocktailFilterRequestDto;
+import com.back.domain.cocktail.dto.CocktailResponseDto;
 import com.back.domain.cocktail.dto.CocktailSummaryDto;
 import com.back.domain.cocktail.entity.Cocktail;
 import com.back.domain.cocktail.repository.CocktailRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,6 +52,7 @@ public class CocktailService {
     }
 
     // 칵테일 검색기능
+    @Transactional(readOnly = true)
     public List<Cocktail> cocktailSearch(String keyword) {
         // cockTailName, ingredient이 하나만 있을 수도 있고 둘 다 있을 수도 있음
         if (keyword == null || keyword.trim().isEmpty()) {
@@ -55,5 +62,48 @@ public class CocktailService {
             // 이름 또는 재료 둘 중 하나라도 매칭되면 결과 반환
             return cocktailRepository.findByCocktailNameContainingIgnoreCaseOrIngredientContainingIgnoreCase(keyword, keyword);
         }
+    }
+
+    // 칵테일 검색,필터기능
+    @Transactional(readOnly = true)
+    public List<CocktailResponseDto> searchAndFilter(CocktailFilterRequestDto cocktailFilterRequestDto) {
+        // 기본값 페이지/사이즈 정하기(PAGE 기본값 0, 사이즈 10)
+        int page = cocktailFilterRequestDto.getPage() != null && cocktailFilterRequestDto.getPage() >= 0 ? cocktailFilterRequestDto.getPage() : 0;
+        int size = cocktailFilterRequestDto.getSize() != null && cocktailFilterRequestDto.getSize() > 0 ? cocktailFilterRequestDto.getSize() : 10;
+
+        // searchWithFilters에서 조회한 결과값을 pageResult에 저장.
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Cocktail> pageResult = cocktailRepository.searchWithFilters(
+                cocktailFilterRequestDto.getKeyword(),
+                cocktailFilterRequestDto.getAlcoholStrengths(), // List<AlcoholStrength>
+                cocktailFilterRequestDto.getCocktailTypes(),    // List<CocktailType>
+                cocktailFilterRequestDto.getAlcoholBaseTypes(), // List<AlcoholBaseType>
+                pageable
+        );
+
+        //Cocktail 엔티티 → CocktailResponseDto 응답 DTO로 바꿔주는 과정
+        List<CocktailResponseDto> resultDtos = pageResult.stream()
+                .map(c -> new CocktailResponseDto(
+                        c.getCocktailId(),
+                        c.getCocktailName(),
+                        c.getAlcoholStrength(),
+                        c.getCocktailType(),
+                        c.getAlcoholBaseType(),
+                        c.getCocktailImgUrl(),
+                        c.getCocktailStory(),
+                        c.getCreatedAt()
+                ))
+                .collect(Collectors.toList());
+
+        return resultDtos;
+    }
+
+    // 칵테일 상세조회
+    @Transactional(readOnly = true)
+    public CocktailDetailDto getCocktailDetailById(Long cocktailId) {
+        Cocktail cocktail = cocktailRepository.findById(cocktailId)
+                .orElseThrow(() -> new RuntimeException("칵테일을 찾을 수 없습니다. id: " + cocktailId));
+
+        return new CocktailDetailDto(cocktail);
     }
 }
