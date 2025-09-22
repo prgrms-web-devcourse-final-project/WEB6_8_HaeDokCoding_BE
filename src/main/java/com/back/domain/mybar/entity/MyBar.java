@@ -27,6 +27,10 @@ public class MyBar {
     @CreatedDate
     private LocalDateTime createdAt;
 
+    /** 최근에 '킵'된 시각(생성/복원/재킵 시 갱신) — 목록 정렬에 사용 */
+    @Column(name = "kept_at", nullable = false)
+    private LocalDateTime keptAt;
+
     /** 킵 해제 시각 (ACTIVE일 때는 null) */
     private LocalDateTime deletedAt;
 

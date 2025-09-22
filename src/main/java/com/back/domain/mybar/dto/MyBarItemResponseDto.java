@@ -14,6 +14,7 @@ public class MyBarItemResponseDto {
     private String cocktailName;
     private String imageUrl;
     private LocalDateTime createdAt;
+    private LocalDateTime keptAt;
 
     public static MyBarItemResponseDto from(MyBar m) {
         return MyBarItemResponseDto.builder()
@@ -22,6 +23,7 @@ public class MyBarItemResponseDto {
                 .cocktailName(m.getCocktail().getCocktailName())
                 .imageUrl(m.getCocktail().getCocktailImgUrl())
                 .createdAt(m.getCreatedAt())
+                .keptAt(m.getKeptAt())
                 .build();
     }
 }
