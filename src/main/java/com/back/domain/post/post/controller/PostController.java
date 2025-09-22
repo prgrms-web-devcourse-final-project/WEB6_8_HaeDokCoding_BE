@@ -41,4 +41,16 @@ public class PostController {
   public RsData<List<PostResponseDto>> getAllPosts() {
     return RsData.successOf(postService.getAllPosts()); // code=200, message="success"
   }
+
+  /**
+   * 게시글 단건 조회 API
+   * @param postId 조회할 게시글 ID
+   * @return 해당 ID의 게시글 정보
+   */
+  @GetMapping("/{postId}")
+  public RsData<PostResponseDto> getPost(
+      @PathVariable Long postId
+  ) {
+    return RsData.successOf(postService.getPost(postId)); // code=200, message="success"
+  }
 }

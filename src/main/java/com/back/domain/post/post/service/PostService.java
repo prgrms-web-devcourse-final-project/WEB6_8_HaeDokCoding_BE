@@ -11,6 +11,7 @@ import com.back.domain.post.post.repository.TagRepository;
 import com.back.domain.user.entity.User;
 import com.back.global.rq.Rq;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -68,5 +69,14 @@ public class PostService {
     return posts.stream()
         .map(PostResponseDto::new)
         .collect(Collectors.toList());
+  }
+
+  // 게시글 단건 조회 로직
+  @Transactional(readOnly = true)
+  public PostResponseDto getPost(Long postId) {
+    return new PostResponseDto(
+        postRepository.findById(postId)
+            .orElseThrow(() -> new NoSuchElementException("해당 게시글을 찾을 수 없습니다. ID: " + postId))
+    );
   }
 }
