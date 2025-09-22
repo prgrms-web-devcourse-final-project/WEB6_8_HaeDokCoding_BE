@@ -7,6 +7,7 @@ import com.back.domain.post.post.dto.request.PostUpdateRequestDto;
 import com.back.domain.post.post.dto.response.PostResponseDto;
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.entity.Tag;
+import com.back.domain.post.post.enums.PostStatus;
 import com.back.domain.post.post.repository.PostRepository;
 import com.back.domain.post.post.repository.TagRepository;
 import com.back.domain.user.entity.User;
@@ -105,6 +106,18 @@ public class PostService {
     }
 
     return new PostResponseDto(post);
+  }
+
+  // 게시글 삭제 로직
+  @Transactional
+  public void deletePost(Long postId) {
+    Post post = postRepository.findById(postId)
+        .orElseThrow(() -> new NoSuchElementException("해당 게시글을 찾을 수 없습니다. ID: " + postId));
+
+    post.updateStatus(PostStatus.DELETED);
+
+    // soft delete를 사용하기 위해 레포지토리 삭제 작업은 진행하지 않음.
+//    postRepository.delete(post);
   }
 
   // 태그 추가 메서드

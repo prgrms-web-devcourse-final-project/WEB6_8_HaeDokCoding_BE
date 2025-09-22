@@ -8,6 +8,7 @@ import com.back.global.rsData.RsData;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -68,5 +69,18 @@ public class PostController {
       @Valid @RequestBody PostUpdateRequestDto reqBody
   ) {
     return RsData.successOf(postService.updatePost(postId, reqBody)); // code=200, message="success"
+  }
+
+  /**
+   * 게시글 삭제 API
+   * @param postId 삭제할 게시글 ID
+   * @return 삭제 성공 메시지
+   */
+  @DeleteMapping("/{postId}")
+  public RsData<Void> deletePost(
+      @PathVariable Long postId
+  ) {
+    postService.deletePost(postId);
+    return RsData.successOf(null); // code=200, message="success"
   }
 }
