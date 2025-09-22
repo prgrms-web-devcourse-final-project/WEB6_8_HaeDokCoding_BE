@@ -27,6 +27,5 @@ public class CocktailController {
 
             CocktailDetailDto cocktailDetailDto = cocktailService.getCocktailDetailById(id);
             return RsData.successOf(cocktailDetailDto);
-
     }
 }
