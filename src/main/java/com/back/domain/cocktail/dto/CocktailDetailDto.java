@@ -4,9 +4,11 @@ import com.back.domain.cocktail.entity.Cocktail;
 import com.back.domain.cocktail.enums.AlcoholBaseType;
 import com.back.domain.cocktail.enums.AlcoholStrength;
 import com.back.domain.cocktail.enums.CocktailType;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
+@Getter
+@NoArgsConstructor
 public class CocktailDetailDto {
     private Long cocktailId;
     private String cocktailName;
@@ -16,7 +18,6 @@ public class CocktailDetailDto {
     private AlcoholBaseType alcoholBaseType;
     private String cocktailImgUrl;
     private String cocktailStory;
-    private LocalDateTime createdAt;
 
     public CocktailDetailDto(Cocktail c) {
         this.cocktailId = c.getCocktailId();
@@ -27,6 +28,5 @@ public class CocktailDetailDto {
         this.alcoholBaseType = c.getAlcoholBaseType();
         this.cocktailImgUrl = c.getCocktailImgUrl();
         this.cocktailStory = c.getCocktailStory();
-        this.createdAt = c.getCreatedAt();
     }
 }

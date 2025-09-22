@@ -24,11 +24,8 @@ public class CocktailController {
     @Transactional
     @Operation(summary = "칵테일 단건 조회")
     public RsData<CocktailDetailDto> getCocktailDetailById(@PathVariable long id) {
-        try {
+
             CocktailDetailDto cocktailDetailDto = cocktailService.getCocktailDetailById(id);
             return RsData.successOf(cocktailDetailDto);
-        } catch (RuntimeException e) {
-            return RsData.failOf("칵테일이 존재하지 않습니다.");
-        }
     }
 }
