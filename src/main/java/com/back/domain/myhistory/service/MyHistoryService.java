@@ -95,4 +95,17 @@ public class MyHistoryService {
         String apiUrl = "/api/posts/" + postId;
         return new MyHistoryCommentGoResponseDto(postId, apiUrl);
     }
+
+    @Transactional(readOnly = true)
+    public MyHistoryPostGoResponseDto getPostLinkFromMyPost(Long userId, Long postId) {
+        Post p = myHistoryPostRepository.findByIdAndUserId(postId, userId);
+        if (p == null) {
+            throw new ServiceException(404, "게시글을 찾을 수 없습니다.");
+        }
+        if (p.getStatus() == PostStatus.DELETED) {
+            throw new ServiceException(410, "삭제된 게시글입니다.");
+        }
+        String apiUrl = "/api/posts/" + p.getId();
+        return new MyHistoryPostGoResponseDto(p.getId(), apiUrl);
+    }
 }

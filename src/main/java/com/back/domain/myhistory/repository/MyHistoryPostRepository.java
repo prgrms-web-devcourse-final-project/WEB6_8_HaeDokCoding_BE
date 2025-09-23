@@ -36,4 +36,10 @@ public interface MyHistoryPostRepository extends JpaRepository<Post, Long> {
                                 @Param("lastCreatedAt") LocalDateTime lastCreatedAt,
                                 @Param("lastId") Long lastId,
                                 Pageable pageable);
+
+    @Query("""
+        select p from Post p
+         where p.id = :id and p.user.id = :userId
+    """)
+    Post findByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);
 }
