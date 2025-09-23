@@ -13,7 +13,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDateTime;
 
 @RestController
-@RequestMapping("/me/bar")
+@RequestMapping("/api/me/bar")
 @RequiredArgsConstructor
 @Validated
 public class MyBarController {
