@@ -92,6 +92,12 @@ public class CommentController {
     return RsData.successOf(commentService.updateComment(postId, commentId, reqBody)); // code=200, message="success"
   }
 
+  /**
+   * 댓글 삭제 API
+   * @param postId 댓글이 작성된 게시글 ID
+   * @param commentId 삭제할 댓글 ID
+   * @return 삭제 성공 메시지
+   */
   @DeleteMapping("/{commentId}")
   @Operation(summary = "댓글 삭제")
   public RsData<Void> deleteComment(
