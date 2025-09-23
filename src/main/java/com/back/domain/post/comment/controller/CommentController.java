@@ -3,6 +3,7 @@ package com.back.domain.post.comment.controller;
 import com.back.domain.post.comment.dto.request.CommentCreateRequestDto;
 import com.back.domain.post.comment.dto.response.CommentResponseDto;
 import com.back.domain.post.comment.service.CommentService;
+import com.back.domain.post.post.dto.response.PostResponseDto;
 import com.back.global.rsData.RsData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,5 +48,14 @@ public class CommentController {
       @RequestParam(required = false) Long lastId
   ) {
     return RsData.successOf(commentService.getComments(postId, lastId)); // code=200, message="success"
+  }
+
+  @GetMapping("/{commentId}")
+  @Operation(summary = "댓글 단건 조회")
+  public RsData<CommentResponseDto> getComment(
+      @PathVariable Long postId,
+      @PathVariable Long commentId
+  ) {
+    return RsData.successOf(commentService.getComment(postId, commentId)); // code=200, message="success"
   }
 }
