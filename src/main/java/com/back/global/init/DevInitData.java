@@ -1,6 +1,6 @@
 package com.back.global.init;
 
-import com.back.domain.cocktail.dto.CocktailFilterRequestDto;
+import com.back.domain.cocktail.dto.CocktailSearchRequestDto;
 import com.back.domain.cocktail.entity.Cocktail;
 import com.back.domain.cocktail.enums.AlcoholStrength;
 import com.back.domain.cocktail.repository.CocktailRepository;
@@ -51,12 +51,11 @@ public class DevInitData {
                     .build());
         }
 
-        CocktailFilterRequestDto filterDto = new CocktailFilterRequestDto();
+        CocktailSearchRequestDto filterDto = new CocktailSearchRequestDto();
         filterDto.setKeyword("cocktail 4"); // 검색 키워드 설정
         filterDto.setAlcoholStrengths(Arrays.asList(AlcoholStrength.NON_ALCOHOLIC));
 
         System.out.println("DevInitData: 테스트 칵테일 20개 삽입");
-        System.out.println(cocktailService.getCocktailById(2l));
         System.out.println(cocktailService.cocktailSearch("cocktail 3"));
         System.out.println(cocktailService.cocktailSearch("Ingredient 4"));
         System.out.println("filterDTO 결과값"+cocktailService.searchAndFilter(filterDto));
