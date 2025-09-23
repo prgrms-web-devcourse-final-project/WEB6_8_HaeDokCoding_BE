@@ -43,7 +43,6 @@ public class CocktailController {
         return RsData.successOf(cocktails);
     }
 
-
     // 칵테일 검색 및 필터링
     // POST 방식으로 JSON body를 통해 검색 조건 전달
 
