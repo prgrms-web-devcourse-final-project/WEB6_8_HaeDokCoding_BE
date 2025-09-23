@@ -1,0 +1,178 @@
+name: deploy
+
+# =========================
+# 전역 환경변수
+# =========================
+env:
+  IMAGE_REPOSITORY: backend # GHCR 이미지 리포지토리명(소유자 포함 X)
+  CONTAINER_1_NAME: backend
+  EC2_INSTANCE_TAG_NAME: team2-ec2-1 # 배포 대상 EC2 Name 태그
+  DOCKER_NETWORK: common # 도커 네트워크
+  BACKEND_DIR: . # Dockerfile 위치
+
+
+on:
+  push:
+    paths:
+      - ".github/workflows/**"
+      - "src/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "Dockerfile"
+      - "terraform/main.tf"
+    branches:
+      - main
+
+# 권한 최소화/명시화
+permissions:
+  contents: write # 태그/릴리즈
+  packages: write # GHCR 푸시
+
+# 기본 셸
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # ---------------------------------------------------------
+  # 1) 태그/릴리즈 생성
+  # ---------------------------------------------------------
+  makeTagAndRelease:
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.create_tag.outputs.new_tag }} # 이후 잡에서 사용할 태그명
+    steps:
+      - uses: actions/checkout@v4
+
+      # 버전 태그 자동 생성 (vX.Y.Z)
+      - name: Create Tag
+        id: create_tag
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.GIT_TOKEN }}
+
+      # 릴리즈 생성
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+        with:
+          tag_name: ${{ steps.create_tag.outputs.new_tag }}
+          release_name: Release ${{ steps.create_tag.outputs.new_tag }}
+          body: ${{ steps.create_tag.outputs.changelog }}
+          draft: false
+          prerelease: false
+
+  # ---------------------------------------------------------
+  # 2) 도커 이미지 빌드/푸시 (캐시 최대 활용)
+  # ---------------------------------------------------------
+  buildImageAndPush:
+    name: 도커 이미지 빌드와 푸시
+    needs: makeTagAndRelease
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 빌드 컨텍스트에 .env 생성 (비어있어도 실패하지 않게)
+      - name: .env 파일 생성
+        env:
+          DOT_ENV: ${{ secrets.DOT_ENV }}
+        run: |
+          # .env가 없으면 빌드 캐시가 매번 깨질 수 있으므로 항상 생성
+          mkdir -p "${{ env.BACKEND_DIR }}"
+          printf "%s" "${DOT_ENV}" > "${{ env.BACKEND_DIR }}/.env"
+
+      - name: Docker Buildx 설치
+        uses: docker/setup-buildx-action@v3
+
+      # GHCR 로그인
+      - name: 레지스트리 로그인
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GIT_TOKEN }}
+
+      # 저장소 소유자명을 소문자로 (GHCR 경로 표준화)
+      - name: set lower case owner name
+        run: |
+          echo "OWNER_LC=${OWNER,,}" >> "${GITHUB_ENV}"
+        env:
+          OWNER: "${{ github.repository_owner }}"
+
+      # 캐시를 최대한 활용하여 빌드 → 버전태그 및 latest 동시 푸시
+      - name: 빌드 앤 푸시
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.BACKEND_DIR }}
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            ghcr.io/${{ env.OWNER_LC }}/${{ env.IMAGE_REPOSITORY }}:${{ needs.makeTagAndRelease.outputs.tag_name }}
+            ghcr.io/${{ env.OWNER_LC }}/${{ env.IMAGE_REPOSITORY }}:latest
+
+  # ---------------------------------------------------------
+  # 3) 배포
+  # ---------------------------------------------------------
+  deploy:
+    name: 배포
+    runs-on: ubuntu-latest
+    needs: [makeTagAndRelease, buildImageAndPush]
+    steps:
+      # AWS 자격 구성
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      # Name 태그로 EC2 인스턴스 조회 (없으면 실패)
+      - name: 인스턴스 ID 가져오기
+        id: get_instance_id
+        run: |
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=${{ env.EC2_INSTANCE_TAG_NAME }}" "Name=instance-state-name,Values=running" \
+            --query "Reservations[].Instances[].InstanceId" --output text)
+          [[ -n "${INSTANCE_ID}" && "${INSTANCE_ID}" != "None" ]] || { echo "No running instance found"; exit 1; }
+          echo "INSTANCE_ID=${INSTANCE_ID}" >> "${GITHUB_ENV}"
+
+      # 원격(SSM)으로 배포 수행
+      - name: AWS SSM Send-Command
+        uses: peterkimzz/aws-ssm-send-command@master
+        with:
+          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          instance-ids: ${{ env.INSTANCE_ID }}
+          working-directory: /
+          comment: Deploy
+          command: |
+            set -Eeuo pipefail
+
+            LOG="/tmp/ssm-$(date +%Y%m%d_%H%M%S).log"
+            exec > >(awk '{ fflush(); print strftime("[%Y-%m-%d %H:%M:%S]"), $0 }' | tee -a "$LOG")
+            exec 2> >(awk '{ fflush(); print strftime("[%Y-%m-%d %H:%M:%S]"), $0 }' | tee -a "$LOG" >&2)
+
+            source /etc/environment || true
+
+            OWNER_LC="${{ github.repository_owner }}"
+            OWNER_LC="${OWNER_LC,,}"
+            IMAGE_TAG='${{ needs.makeTagAndRelease.outputs.tag_name }}'
+            IMAGE_REPOSITORY='${{ env.IMAGE_REPOSITORY }}'
+            IMAGE="ghcr.io/${OWNER_LC}/${IMAGE_REPOSITORY}:${IMAGE_TAG}"
+            CONTAINER_1_NAME="${{ env.CONTAINER_1_NAME }}"
+            NET="${{ env.DOCKER_NETWORK }}"
+
+            docker pull $IMAGE
+            docker stop $CONTAINER_1_NAME || true
+            docker rm $CONTAINER_1_NAME || true
+            docker run -d --restart unless-stopped --name $CONTAINER_1_NAME --network $NET $IMAGE
+            {
+              docker images --format '{{.Repository}}:{{.Tag}}' \
+                | grep -F "ghcr.io/${OWNER_LC}/${IMAGE_REPOSITORY}:" \
+                | grep -v -F ":${IMAGE_TAG}" \
+                | grep -v -F ":latest" \
+                | xargs -r docker rmi
+            } || true
