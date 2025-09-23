@@ -18,7 +18,7 @@ spring:
       host: ${REDIS_HOST}
       password: ${REDIS_PASSWORD}
   datasource:
-    url: jdbc:mysql://mysql_1:3306/${DATABASE_URL}
+    url: ${DATABASE_URL}
 springdoc:
   swagger-ui:
     enabled: false
