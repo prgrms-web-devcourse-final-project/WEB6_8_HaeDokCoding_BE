@@ -33,6 +33,15 @@ public class MyHistoryController {
         MyHistoryPostListDto body = myHistoryService.getMyPosts(userId, lastCreatedAt, lastId, limit);
         return RsData.successOf(body);
     }
+    
+    @GetMapping("/posts/{id}")
+    public RsData<com.back.domain.myhistory.dto.MyHistoryPostGoResponseDto> goFromPost(
+            @AuthenticationPrincipal(expression = "id") Long userId,
+            @PathVariable("id") Long postId
+    ) {
+        var body = myHistoryService.getPostLinkFromMyPost(userId, postId);
+        return RsData.successOf(body);
+    }
 
     @GetMapping("/comments")
     public RsData<MyHistoryCommentListDto> getMyComments(
