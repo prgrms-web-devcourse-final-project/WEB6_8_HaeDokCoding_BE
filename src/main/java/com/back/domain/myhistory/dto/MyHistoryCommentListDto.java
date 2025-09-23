@@ -1,4 +1,4 @@
-package com.back.domain.history.dto;
+package com.back.domain.myhistory.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -8,8 +8,8 @@ import java.util.List;
 
 @Getter
 @AllArgsConstructor
-public class HistoryPostListDto {
-    private List<HistoryPostItemDto> items;
+public class MyHistoryCommentListDto {
+    private List<MyHistoryCommentItemDto> items;
     private boolean hasNext;
     private LocalDateTime nextCreatedAt;
     private Long nextId;
