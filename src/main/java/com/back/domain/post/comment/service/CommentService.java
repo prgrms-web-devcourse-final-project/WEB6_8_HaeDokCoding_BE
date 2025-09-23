@@ -53,4 +53,17 @@ public class CommentService {
           .toList();
     }
   }
+
+  // 댓글 단건 조회 로직
+  @Transactional(readOnly = true)
+  public CommentResponseDto getComment(Long postId, Long commentId) {
+    Comment comment = commentRepository.findById(commentId)
+        .orElseThrow(() -> new IllegalArgumentException("댓글이 존재하지 않습니다. id=" + commentId));
+
+    if (!comment.getPost().getId().equals(postId)) {
+      throw new IllegalStateException("댓글이 해당 게시글에 속하지 않습니다.");
+    }
+
+    return new CommentResponseDto(comment);
+  }
 }
