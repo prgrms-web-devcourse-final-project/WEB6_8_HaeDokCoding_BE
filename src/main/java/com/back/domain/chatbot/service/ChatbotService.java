@@ -145,7 +145,7 @@ public class ChatbotService {
 
         // 답변 길이 제한 추가
         contextBuilder.append("【중요한 응답 규칙】\n");
-        contextBuilder.append("- 답변은 반드시 200자 이내로 작성하세요.\n");
+        contextBuilder.append("- 답변은 반드시 500자 이내로 작성하세요.\n");
         contextBuilder.append("- 핵심 정보만 간결하게 전달하세요.\n");
         contextBuilder.append("- 불필요한 설명은 생략하고 요점만 말해주세요.\n");
         contextBuilder.append("- 레시피 설명 시에도 간단명료하게 작성하세요.\n");
