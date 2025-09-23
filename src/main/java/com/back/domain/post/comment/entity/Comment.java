@@ -1,10 +1,14 @@
 package com.back.domain.post.comment.entity;
 
+import com.back.domain.post.comment.enums.CommentStatus;
 import com.back.domain.post.post.entity.Post;
+import com.back.domain.post.post.enums.PostStatus;
 import com.back.domain.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -53,9 +57,19 @@ public class Comment {
   @LastModifiedDate
   private LocalDateTime updatedAt;
 
+  // 댓글 게시 상태 (기본값: 공개)
+  @Builder.Default
+  @Enumerated(EnumType.STRING)
+  @Column(name = "status", nullable = false)
+  private CommentStatus status = CommentStatus.PUBLIC;
+
   // 댓글 내용
   @Column(name = "content", nullable = false, columnDefinition = "TEXT")
   private String content;
+
+  public void updateStatus(CommentStatus status) {
+    this.status = status;
+  }
 
   public void updateContent(String content) {
     this.content = content;
