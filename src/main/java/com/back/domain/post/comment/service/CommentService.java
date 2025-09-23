@@ -8,6 +8,7 @@ import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.repository.PostRepository;
 import com.back.domain.user.entity.User;
 import com.back.global.rq.Rq;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,5 +36,21 @@ public class CommentService {
         .build();
 
     return new CommentResponseDto(commentRepository.save(comment));
+  }
+
+  // 댓글 다건 조회 로직 (무한스크롤)
+  @Transactional(readOnly = true)
+  public List<CommentResponseDto> getComments(Long postId, Long lastId) {
+    if (lastId == null) {
+      return commentRepository.findTop10ByPostIdOrderByIdDesc(postId)
+          .stream()
+          .map(CommentResponseDto::new)
+          .toList();
+    } else {
+      return commentRepository.findTop10ByPostIdAndIdLessThanOrderByIdDesc(postId, lastId)
+          .stream()
+          .map(CommentResponseDto::new)
+          .toList();
+    }
   }
 }
