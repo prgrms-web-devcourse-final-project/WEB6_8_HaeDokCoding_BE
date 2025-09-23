@@ -1,6 +1,7 @@
 package com.back.domain.post.comment.service;
 
 import com.back.domain.post.comment.dto.request.CommentCreateRequestDto;
+import com.back.domain.post.comment.dto.request.CommentUpdateRequestDto;
 import com.back.domain.post.comment.dto.response.CommentResponseDto;
 import com.back.domain.post.comment.entity.Comment;
 import com.back.domain.post.comment.repository.CommentRepository;
@@ -64,6 +65,26 @@ public class CommentService {
       throw new IllegalStateException("댓글이 해당 게시글에 속하지 않습니다.");
     }
 
+    return new CommentResponseDto(comment);
+  }
+
+  // 댓글 수정 로직
+  @Transactional
+  public CommentResponseDto updateComment(Long postId, Long commentId, CommentUpdateRequestDto requestDto) {
+    User user = rq.getActor();
+
+    Comment comment = commentRepository.findById(commentId)
+        .orElseThrow(() -> new IllegalArgumentException("댓글이 존재하지 않습니다. id=" + commentId));
+
+    if (!comment.getPost().getId().equals(postId)) {
+      throw new IllegalStateException("댓글이 해당 게시글에 속하지 않습니다.");
+    }
+
+    if (!comment.getUser().equals(user)) {
+      throw new IllegalStateException("본인의 댓글만 수정할 수 있습니다.");
+    }
+
+    comment.updateContent(requestDto.content());
     return new CommentResponseDto(comment);
   }
 }

@@ -56,4 +56,8 @@ public class Comment {
   // 댓글 내용
   @Column(name = "content", nullable = false, columnDefinition = "TEXT")
   private String content;
+
+  public void updateContent(String content) {
+    this.content = content;
+  }
 }
