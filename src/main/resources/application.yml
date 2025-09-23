@@ -5,17 +5,13 @@ spring:
   config:
     import: optional:file:.env[.properties]
 
-  data:
-    redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
-      password: ${REDIS_PASSWORD:}
-      timeout: 2000ms
-      lettuce:
-        pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 0
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.session.SessionAutoConfiguration
+      -
+  application:
+    name: back
 
   security:
     oauth2:
@@ -56,7 +52,6 @@ springdoc:
   default-produces-media-type: application/json;charset=UTF-8
 
 server:
-  address: 0.0.0.0
   port: 8080
   forward-headers-strategy: native
   servlet:
@@ -65,12 +60,36 @@ server:
       enabled: true
       force: true
 
-
-
 custom:
+  dev:
+    cookieDomain: localhost
+    frontUrl: "http://${custom.dev.cookieDomain}:3000"
+    backUrl: "http://${custom.dev.cookieDomain}:${server.port}"
+  prod:
+    cookieDomain: ${BASE_URL}
+    frontUrl: "https://www.${custom.prod.cookieDomain}"
+    backUrl: "https://${custom.prod.cookieDomain}"
+  site:
+    cookieDomain: "${custom.dev.cookieDomain}"
+    frontUrl: "${custom.dev.frontUrl}"
+    backUrl: "${custom.dev.backUrl}"
+    name: p-14044-1
   jwt:
     secretKey: ${JWT_SECRET_KEY}
   accessToken:
     expirationSeconds: "#{60*15}"
   refreshToken:
     expirationSeconds: "#{60*60*24*30}"
+
+
+management:
+  endpoints:
+    web:
+      base-path: /actuator            # 기본값이지만 명시
+      exposure:
+        include: health,info          # 필요시 metrics 등 추가
+  endpoint:
+    health:
+      probes:
+        enabled: true                 # /actuator/health/{liveness,readiness} 활성화
+      show-details: never             # 프로브 용도면 never 권장(민감정보 차단)

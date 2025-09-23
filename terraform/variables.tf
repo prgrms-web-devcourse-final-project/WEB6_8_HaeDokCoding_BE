@@ -16,5 +16,5 @@ variable "prefix" {
 
 variable "app_1_domain" {
   description = "app_1 domain"
-  default     = "api.p-14044-1.oa.gg"
+  default     = "ssou.o-r.kr"
 }
