@@ -12,24 +12,21 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-public class CocktailResponseDto {
+public class CocktailSearchResponseDto {
 
     private long cocktailId;
     private String cocktailName;
     private AlcoholStrength alcoholStrength;
-    private String cocktailStory;
     private CocktailType cocktailType;
     private AlcoholBaseType alcoholBaseType;
-    private String ingredient;
-    private String recipe;
     private String cocktailImgUrl;
+    private String cocktailStory;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 
-    public CocktailResponseDto(long cocktailId, String cocktailName,
-                               AlcoholStrength alcoholStrength, CocktailType cocktailType,
-                               AlcoholBaseType alcoholBaseType, String cocktailImgUrl,
-                               String cocktailStory, LocalDateTime createdAt) {
+    public CocktailSearchResponseDto(long cocktailId, String cocktailName,
+                                     AlcoholStrength alcoholStrength, CocktailType cocktailType,
+                                     AlcoholBaseType alcoholBaseType, String cocktailImgUrl,
+                                     String cocktailStory, LocalDateTime createdAt) {
         this.cocktailId = cocktailId;
         this.cocktailName = cocktailName;
         this.alcoholStrength = alcoholStrength;
