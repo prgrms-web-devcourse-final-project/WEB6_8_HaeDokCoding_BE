@@ -1,13 +1,14 @@
-package com.back.domain.history.dto;
+package com.back.domain.myhistory.dto;
 
 import com.back.domain.post.post.entity.Post;
-import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Builder
-public class HistoryPostItemDto {
+public class MyHistoryPostItemDto {
     private Long id;
     private String title;
     private String imageUrl;
@@ -15,8 +16,8 @@ public class HistoryPostItemDto {
     private Integer likeCount;
     private Integer commentCount;
 
-    public static HistoryPostItemDto from(Post p) {
-        return HistoryPostItemDto.builder()
+    public static MyHistoryPostItemDto from(Post p) {
+        return MyHistoryPostItemDto.builder()
                 .id(p.getId())
                 .title(p.getTitle())
                 .imageUrl(p.getImageUrl())

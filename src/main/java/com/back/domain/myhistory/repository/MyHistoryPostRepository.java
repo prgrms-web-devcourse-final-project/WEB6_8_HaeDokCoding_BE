@@ -1,12 +1,10 @@
-package com.back.domain.history.repository;
+package com.back.domain.myhistory.repository;
 
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.enums.PostStatus;
-import jakarta.persistence.QueryHint;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -14,9 +12,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface HistoryRepository extends JpaRepository<Post, Long> {
+public interface MyHistoryPostRepository extends JpaRepository<Post, Long> {
 
-    @QueryHints(@QueryHint(name = "org.hibernate.readOnly", value = "true"))
     @Query("""
         select p from Post p
          where p.user.id = :userId
@@ -27,7 +24,6 @@ public interface HistoryRepository extends JpaRepository<Post, Long> {
                                     @Param("deleted") PostStatus deleted,
                                     Pageable pageable);
 
-    @QueryHints(@QueryHint(name = "org.hibernate.readOnly", value = "true"))
     @Query("""
         select p from Post p
          where p.user.id = :userId
