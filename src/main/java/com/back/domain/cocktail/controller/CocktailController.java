@@ -29,7 +29,7 @@ public class CocktailController {
             return RsData.successOf(cocktailDetailResponseDto);
     }
 
-     // @param lastId 마지막으로 가져온 칵테일 ID (첫 요청 시 null 가능)
+     // @param lastId 마지막으로 가져온 칵테일 ID (첫 요청 null 가능)
      // @param size   가져올 데이터 개수 (기본값 DEFAULT_SIZE)
      // @return RsData 형태의 칵테일 요약 정보 리스트
     @GetMapping
