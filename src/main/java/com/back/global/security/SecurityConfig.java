@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/user/**").permitAll()
                         .requestMatchers("/api/cocktail/**").permitAll()
                         .requestMatchers("/api/chatbot/**").permitAll()
+                        .requestMatchers("/api/cocktails/**").permitAll()
 
 
                         // 회원 or 인증된 사용자만 가능

@@ -26,4 +26,17 @@ public class CocktailResponseDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    public CocktailResponseDto(long cocktailId, String cocktailName,
+                               AlcoholStrength alcoholStrength, CocktailType cocktailType,
+                               AlcoholBaseType alcoholBaseType, String cocktailImgUrl,
+                               String cocktailStory, LocalDateTime createdAt) {
+        this.cocktailId = cocktailId;
+        this.cocktailName = cocktailName;
+        this.alcoholStrength = alcoholStrength;
+        this.cocktailType = cocktailType;
+        this.alcoholBaseType = alcoholBaseType;
+        this.cocktailImgUrl = cocktailImgUrl;
+        this.cocktailStory = cocktailStory;
+        this.createdAt = createdAt;
+    }
 }
