@@ -43,3 +43,6 @@ db_dev.trace.db
 ### Environment Variables ###
 .env
 
+### Claude AI ###
+CLAUDE.md
+

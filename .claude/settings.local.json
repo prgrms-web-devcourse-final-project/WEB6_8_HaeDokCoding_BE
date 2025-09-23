@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Read(/G:\\ProjectFile\\DevCourse\\TeamPj\\Final Project\\src\\main\\java\\com\\back/**)",
+      "Read(/G:\\ProjectFile\\DevCourse\\TeamPj\\Final Project\\src\\main\\java\\com\\back/**)",
+      "Read(/G:\\ProjectFile\\DevCourse\\TeamPj\\Final Project\\src\\main\\java\\com\\back\\domain/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
