@@ -1,14 +1,12 @@
 package com.back.global.jwt.refreshToken.entity;
 
+import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.redis.core.RedisHash;
-import org.springframework.data.redis.core.TimeToLive;
-import org.springframework.data.redis.core.index.Indexed;
 
 import java.time.LocalDateTime;
 
-@RedisHash("refresh_token")
+@Entity
+@Table(name = "refresh_tokens")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,23 +17,30 @@ public class RefreshToken {
     @Id
     private String token;
 
-    @Indexed
+    @Column(nullable = false)
     private Long userId;
 
+    @Column(nullable = false)
     private String email;
 
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    @TimeToLive
-    private Long ttl; // seconds
+    @Column(nullable = false)
+    private LocalDateTime expiresAt;
 
     public static RefreshToken create(String token, Long userId, String email, long ttlSeconds) {
+        LocalDateTime now = LocalDateTime.now();
         return RefreshToken.builder()
                 .token(token)
                 .userId(userId)
                 .email(email)
-                .createdAt(LocalDateTime.now())
-                .ttl(ttlSeconds)
+                .createdAt(now)
+                .expiresAt(now.plusSeconds(ttlSeconds))
                 .build();
+    }
+
+    public boolean isExpired() {
+        return LocalDateTime.now().isAfter(this.expiresAt);
     }
 }

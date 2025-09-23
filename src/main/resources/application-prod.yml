@@ -19,6 +19,7 @@ spring:
       password: ${REDIS_PASSWORD}
   datasource:
     url: ${DATABASE_URL}
+
 springdoc:
   swagger-ui:
     enabled: false
