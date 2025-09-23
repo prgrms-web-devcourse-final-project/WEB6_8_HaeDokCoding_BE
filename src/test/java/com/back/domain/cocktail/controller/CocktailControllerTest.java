@@ -5,6 +5,7 @@ import com.back.domain.cocktail.enums.AlcoholBaseType;
 import com.back.domain.cocktail.enums.AlcoholStrength;
 import com.back.domain.cocktail.enums.CocktailType;
 import com.back.domain.cocktail.repository.CocktailRepository;
+import com.back.domain.cocktail.service.CocktailService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,15 +29,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc(addFilters = false)
 @Transactional
 public class CocktailControllerTest {
-
     @Autowired
     private MockMvc mvc;
+
     @Autowired
     private CocktailRepository cocktailRepository;
 
+    @Autowired
+    private CocktailService cocktailService;
 
-//    @Autowired
-//    private UserService userService;
 
     @Test
     @DisplayName("칵테일 단건 조회 - 로그인 없이 성공")
@@ -88,5 +89,45 @@ public class CocktailControllerTest {
                 .andExpect(jsonPath("$.code").value(404))
                 .andExpect(jsonPath("$.message").value("해당 데이터가 존재하지 않습니다"))
                 .andExpect(jsonPath("$.data").isEmpty());
+    }
+
+    @Test
+    @DisplayName("칵테일 다건 조회 - 성공 (파라미터 없음)")
+    void t3() throws Exception {
+        // when
+        ResultActions resultActions = mvc.perform(
+                get("/api/cocktails")
+                        .contentType(MediaType.APPLICATION_JSON)
+        ).andDo(print());
+
+        // then
+        resultActions
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.message").value("success"))
+                .andExpect(jsonPath("$.data").isArray());
+    }
+
+    @Test
+    @DisplayName("칵테일 다건 조회 - 성공 (파라미터 포함)")
+    void t4() throws Exception {
+        // given
+        Long lastId = 1L;
+        int size = 5;
+
+        // when
+        ResultActions resultActions = mvc.perform(
+                get("/api/cocktails")
+                        .param("lastId", lastId.toString())
+                        .param("size", String.valueOf(size))
+                        .contentType(MediaType.APPLICATION_JSON)
+        ).andDo(print());
+
+        // then
+        resultActions
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.message").value("success"))
+                .andExpect(jsonPath("$.data").isArray());
     }
 }

@@ -56,7 +56,6 @@ public class DevInitData {
         filterDto.setAlcoholStrengths(Arrays.asList(AlcoholStrength.NON_ALCOHOLIC));
 
         System.out.println("DevInitData: 테스트 칵테일 20개 삽입");
-        System.out.println(cocktailService.getCocktailById(2l));
         System.out.println(cocktailService.cocktailSearch("cocktail 3"));
         System.out.println(cocktailService.cocktailSearch("Ingredient 4"));
         System.out.println("filterDTO 결과값"+cocktailService.searchAndFilter(filterDto));
