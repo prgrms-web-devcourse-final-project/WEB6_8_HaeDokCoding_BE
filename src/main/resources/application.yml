@@ -69,7 +69,7 @@ gemini:
   api:
     key: ${GEMINI_API_KEY}
     model-name: "gemini-1.5-flash-latest"
-    url: "https://generativelanguage.googleapis.com/v1beta/models"Ye
+    url: "https://generativelanguage.googleapis.com/v1beta/models"
 
 custom:
   jwt:
