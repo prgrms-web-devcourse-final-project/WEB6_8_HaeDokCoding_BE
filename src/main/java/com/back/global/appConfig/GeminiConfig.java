@@ -8,13 +8,16 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 public class GeminiConfig {
 
-    @Value("${gemini.api.url:https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent}")
+    @Value("${gemini.api.url}")
     private String geminiApiUrl;
+
+    @Value("${gemini.api.model-name}")
+    private String modelName;
 
     @Bean
     public WebClient geminiWebClient() {
         return WebClient.builder()
-                .baseUrl(geminiApiUrl)
+                .baseUrl(geminiApiUrl + "/" + modelName + ":generateContent")
                 .defaultHeader("Content-Type", "application/json")
                 .build();
     }
