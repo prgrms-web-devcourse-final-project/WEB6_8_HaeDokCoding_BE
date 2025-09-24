@@ -185,4 +185,3 @@ public class GeminiRequestDto {
         return new GeminiRequestDto(message, config);
     }
 }
-}
