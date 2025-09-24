@@ -50,6 +50,9 @@ dependencies {
 
     annotationProcessor("org.projectlombok:lombok")
 
+    //Spring AI
+    implementation(platform("org.springframework.ai:spring-ai-bom:1.0.0-M4"))
+    implementation("org.springframework.ai:spring-ai-vertex-ai-gemini-spring-boot-starter")
 
     //test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
