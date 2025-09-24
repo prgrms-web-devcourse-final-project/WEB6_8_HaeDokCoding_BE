@@ -28,31 +28,31 @@ public class CocktailComment {
     @Column(name = "id")
     private Long id;
 
-    // 해당 댓글이 작성된 게시글의 고유 식별자
+    // 해당 칵테일댓글이 작성된 게시글의 고유 식별자
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cocktail_id")
     private Cocktail cocktail;
 
-    // 해당 댓글을 작성한 유저의 고유 식별자
+    // 해당 칵테일댓글을 작성한 유저의 고유 식별자
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    // 댓글 작성 날짜
+    // 칵테일댓글 작성 날짜
     @CreatedDate
     private LocalDateTime createdAt;
 
-    // 댓글 수정 날짜
+    // 칵테일댓글 수정 날짜
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    // 댓글 게시 상태 (기본값: 공개)
+    // 칵테일댓글 게시 상태 (기본값: 공개)
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private CommentStatus status = CommentStatus.PUBLIC;
 
-    // 댓글 내용
+    // 칵테일댓글 내용
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
 
