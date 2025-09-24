@@ -7,6 +7,7 @@ import com.back.domain.cocktail.dto.CocktailSummaryResponseDto;
 import com.back.domain.cocktail.service.CocktailService;
 import com.back.global.rsData.RsData;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("api/cocktails")
+@Tag(name = "ApiCocktailController", description = "API 칵테일 컨트롤러")
 @RequiredArgsConstructor
 public class CocktailController {
 
