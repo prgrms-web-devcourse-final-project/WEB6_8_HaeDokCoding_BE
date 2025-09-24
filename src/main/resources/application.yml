@@ -75,7 +75,7 @@ custom:
   prod:
     cookieDomain: ${BASE_URL}
     frontUrl: "https://www.${custom.prod.cookieDomain}"
-    backUrl: "https://${custom.prod.cookieDomain}"
+    backUrl: "https://api.${custom.prod.cookieDomain}"
   site:
     cookieDomain: "${custom.dev.cookieDomain}"
     frontUrl: "${custom.dev.frontUrl}"
