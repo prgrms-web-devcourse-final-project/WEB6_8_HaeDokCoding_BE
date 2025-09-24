@@ -74,5 +74,14 @@ public class MyHistoryController {
         var body = myHistoryService.getPostLinkFromMyComment(userId, commentId);
         return RsData.successOf(body);
     }
+
+    @GetMapping("/likes/{id}")
+    public RsData<com.back.domain.myhistory.dto.MyHistoryPostGoResponseDto> goFromLikedPost(
+            @AuthenticationPrincipal(expression = "id") Long userId,
+            @PathVariable("id") Long postId
+    ) {
+        var body = myHistoryService.getPostLinkFromMyLikedPost(userId, postId);
+        return RsData.successOf(body);
+    }
 }
 
