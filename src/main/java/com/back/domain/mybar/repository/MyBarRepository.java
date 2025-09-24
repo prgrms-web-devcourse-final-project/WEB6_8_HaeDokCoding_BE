@@ -31,10 +31,10 @@ public interface MyBarRepository extends JpaRepository<MyBar, Long> {
     long countByUser_IdAndStatus(Long userId, KeepStatus status);
 
     /** 현재 킵 상태 확인(아이콘 등): ACTIVE 존재 여부 */
-    boolean existsByUser_IdAndCocktail_CocktailIdAndStatus(Long userId, Long cocktailId, KeepStatus status);
+    boolean existsByUser_IdAndCocktail_IdAndStatus(Long userId, Long cocktailId, KeepStatus status);
 
     /** 복원/재킵을 위해 status 무시하고 한 건 찾기 (없으면 Optional.empty) */
-    Optional<MyBar> findByUser_IdAndCocktail_CocktailId(Long userId, Long cocktailId);
+    Optional<MyBar> findByUser_IdAndCocktail_Id(Long userId, Long cocktailId);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
