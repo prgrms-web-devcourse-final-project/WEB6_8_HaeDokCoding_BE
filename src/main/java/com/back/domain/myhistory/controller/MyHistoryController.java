@@ -3,6 +3,7 @@ package com.back.domain.myhistory.controller;
 import com.back.domain.myhistory.dto.MyHistoryCommentGoResponseDto;
 import com.back.domain.myhistory.dto.MyHistoryCommentListDto;
 import com.back.domain.myhistory.dto.MyHistoryPostListDto;
+import com.back.domain.myhistory.dto.MyHistoryLikedPostListDto;
 import com.back.domain.myhistory.service.MyHistoryService;
 import com.back.global.rsData.RsData;
 import jakarta.validation.constraints.Max;
@@ -54,12 +55,32 @@ public class MyHistoryController {
         return RsData.successOf(body);
     }
 
+    @GetMapping("/likes")
+    public RsData<MyHistoryLikedPostListDto> getMyLikedPosts(
+            @AuthenticationPrincipal(expression = "id") Long userId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime lastCreatedAt,
+            @RequestParam(required = false) Long lastId,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit
+    ) {
+        MyHistoryLikedPostListDto body = myHistoryService.getMyLikedPosts(userId, lastCreatedAt, lastId, limit);
+        return RsData.successOf(body);
+    }
+
     @GetMapping("/comments/{id}")
     public RsData<MyHistoryCommentGoResponseDto> goFromComment(
             @AuthenticationPrincipal(expression = "id") Long userId,
             @PathVariable("id") Long commentId
     ) {
         var body = myHistoryService.getPostLinkFromMyComment(userId, commentId);
+        return RsData.successOf(body);
+    }
+
+    @GetMapping("/likes/{id}")
+    public RsData<com.back.domain.myhistory.dto.MyHistoryPostGoResponseDto> goFromLikedPost(
+            @AuthenticationPrincipal(expression = "id") Long userId,
+            @PathVariable("id") Long postId
+    ) {
+        var body = myHistoryService.getPostLinkFromMyLikedPost(userId, postId);
         return RsData.successOf(body);
     }
 }
