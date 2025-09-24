@@ -1,5 +1,7 @@
 package com.back.domain.post.comment.service;
 
+import com.back.domain.notification.enums.NotificationType;
+import com.back.domain.notification.service.NotificationService;
 import com.back.domain.post.comment.dto.request.CommentCreateRequestDto;
 import com.back.domain.post.comment.dto.request.CommentUpdateRequestDto;
 import com.back.domain.post.comment.dto.response.CommentResponseDto;
@@ -21,6 +23,7 @@ public class CommentService {
 
   private final CommentRepository commentRepository;
   private final PostRepository postRepository;
+  private final NotificationService notificationService;
   private final Rq rq;
 
   // 댓글 작성 로직
@@ -36,6 +39,14 @@ public class CommentService {
         .user(user)
         .content(reqBody.content())
         .build();
+
+    // 게시글 작성자에게 알림 전송
+    notificationService.sendNotification(
+        post.getUser(),
+        post,
+        NotificationType.COMMENT,
+        user.getNickname() + " 님이 댓글을 남겼습니다."
+    );
 
     return new CommentResponseDto(commentRepository.save(comment));
   }

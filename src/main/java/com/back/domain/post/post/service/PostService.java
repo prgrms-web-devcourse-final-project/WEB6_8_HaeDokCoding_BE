@@ -1,5 +1,7 @@
 package com.back.domain.post.post.service;
 
+import com.back.domain.notification.enums.NotificationType;
+import com.back.domain.notification.service.NotificationService;
 import com.back.domain.post.category.entity.Category;
 import com.back.domain.post.category.repository.CategoryRepository;
 import com.back.domain.post.post.dto.request.PostCreateRequestDto;
@@ -31,6 +33,7 @@ public class PostService {
   private final CategoryRepository categoryRepository;
   private final TagRepository tagRepository;
   private final PostLikeRepository postLikeRepository;
+  private final NotificationService notificationService;
   private final Rq rq;
 
   // 게시글 작성 로직
@@ -134,6 +137,7 @@ public class PostService {
 //    postRepository.delete(post);
   }
 
+  // 게시글 추천(좋아요) 토글 로직
   @Transactional
   public void toggleLike(Long postId) {
     User user = rq.getActor(); // 현재 로그인한 사용자
@@ -158,6 +162,14 @@ public class PostService {
       postLikeRepository.save(postLike);
       post.increaseLikeCount();
     }
+
+    // 게시글 작성자에게 알림 전송
+    notificationService.sendNotification(
+        post.getUser(),
+        post,
+        NotificationType.LIKE,
+        user.getNickname() + " 님이 추천을 남겼습니다."
+    );
   }
 
   // 태그 추가 메서드
