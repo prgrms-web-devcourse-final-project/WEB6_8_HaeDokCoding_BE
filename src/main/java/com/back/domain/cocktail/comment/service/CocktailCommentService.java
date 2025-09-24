@@ -42,7 +42,7 @@ public class CocktailCommentService {
 
     // 칵테일 댓글 다건 조회 로직 (무한스크롤)
     @Transactional(readOnly = true)
-    public List<CocktailCommentResponseDto> getComments(Long cocktailId, Long lastId) {
+    public List<CocktailCommentResponseDto> getCocktailComments(Long cocktailId, Long lastId) {
         if (lastId == null) {
             return cocktailCommentRepository.findTop10ByCocktailIdOrderByIdDesc(cocktailId)
                     .stream()
