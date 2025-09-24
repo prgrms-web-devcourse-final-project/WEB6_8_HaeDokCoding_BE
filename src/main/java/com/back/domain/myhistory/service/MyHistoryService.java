@@ -3,6 +3,7 @@ package com.back.domain.myhistory.service;
 import com.back.domain.myhistory.dto.*;
 import com.back.domain.myhistory.repository.MyHistoryCommentRepository;
 import com.back.domain.myhistory.repository.MyHistoryPostRepository;
+import com.back.domain.myhistory.repository.MyHistoryLikedPostRepository;
 import com.back.domain.post.comment.entity.Comment;
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.enums.PostStatus;
@@ -22,6 +23,7 @@ public class MyHistoryService {
 
     private final MyHistoryPostRepository myHistoryPostRepository;
     private final MyHistoryCommentRepository myHistoryCommentRepository;
+    private final MyHistoryLikedPostRepository myHistoryLikedPostRepository;
 
     @Transactional(readOnly = true)
     public MyHistoryPostListDto getMyPosts(Long userId, LocalDateTime lastCreatedAt, Long lastId, int limit) {
@@ -107,5 +109,46 @@ public class MyHistoryService {
         }
         String apiUrl = "/api/posts/" + p.getId();
         return new MyHistoryPostGoResponseDto(p.getId(), apiUrl);
+    }
+
+    @Transactional(readOnly = true)
+    public MyHistoryLikedPostListDto getMyLikedPosts(Long userId, LocalDateTime lastCreatedAt, Long lastId, int limit) {
+        int safeLimit = Math.max(1, Math.min(limit, 100));
+        int fetchSize = safeLimit + 1;
+
+        List<com.back.domain.post.post.entity.PostLike> rows;
+        if (lastCreatedAt == null || lastId == null) {
+            rows = myHistoryLikedPostRepository.findMyLikedPostsFirstPage(
+                    userId,
+                    com.back.domain.post.post.enums.PostLikeStatus.LIKE,
+                    com.back.domain.post.post.enums.PostStatus.DELETED,
+                    PageRequest.of(0, fetchSize)
+            );
+        } else {
+            rows = myHistoryLikedPostRepository.findMyLikedPostsAfter(
+                    userId,
+                    com.back.domain.post.post.enums.PostLikeStatus.LIKE,
+                    com.back.domain.post.post.enums.PostStatus.DELETED,
+                    lastCreatedAt,
+                    lastId,
+                    PageRequest.of(0, fetchSize)
+            );
+        }
+
+        boolean hasNext = rows.size() > safeLimit;
+        if (hasNext) rows = rows.subList(0, safeLimit);
+
+        List<MyHistoryLikedPostItemDto> items = new ArrayList<>();
+        for (com.back.domain.post.post.entity.PostLike pl : rows) items.add(MyHistoryLikedPostItemDto.from(pl));
+
+        LocalDateTime nextCreatedAt = null;
+        Long nextId = null;
+        if (hasNext && !rows.isEmpty()) {
+            com.back.domain.post.post.entity.PostLike last = rows.get(rows.size() - 1);
+            nextCreatedAt = last.getCreatedAt();
+            nextId = last.getId();
+        }
+
+        return new MyHistoryLikedPostListDto(items, hasNext, nextCreatedAt, nextId);
     }
 }
