@@ -38,7 +38,7 @@ public class CocktailCommentController {
     }
 
     /**
-     * 칵테일댓글 다건 조회 API
+     * 칵테일댓글 다건조회 API
      *
      * @param cocktailId 칵테일댓글 작성된 게시글 ID
      * @param lastId     마지막으로 조회한 칵테일댓글 ID (페이징 처리용, optional)
@@ -56,7 +56,7 @@ public class CocktailCommentController {
     /**
      * 칵테일댓글 단건 조회 API
      *
-     * @param cocktailId        칵테일댓글이 작성된 게시글 ID
+     * @param cocktailId        칵테일댓글이 작성된 칵테일 ID
      * @param cocktailCommentId 조회할 칵테일댓글 ID
      * @return 해당 ID의 칵테일댓글 정보
      */
