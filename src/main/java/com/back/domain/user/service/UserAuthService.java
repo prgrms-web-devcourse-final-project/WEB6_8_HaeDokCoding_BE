@@ -143,4 +143,10 @@ public class UserAuthService {
         jwtUtil.removeAccessTokenCookie(response);
         jwtUtil.removeRefreshTokenCookie(response);
     }
+
+    @Transactional
+    public void setFirstLoginFalse(Long id) {
+        Optional<User> userOpt = userRepository.findById(id);
+        userOpt.ifPresent(user -> user.setFirstLogin(false));
+    }
 }

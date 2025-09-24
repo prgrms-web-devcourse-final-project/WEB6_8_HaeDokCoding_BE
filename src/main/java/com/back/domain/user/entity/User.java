@@ -51,6 +51,10 @@ public class User {
     @Column(nullable = false, length = 20)
     private String role = "USER";
 
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean isFirstLogin = true;
+
     public boolean isAdmin() {
         return "ADMIN".equalsIgnoreCase(role);
     }

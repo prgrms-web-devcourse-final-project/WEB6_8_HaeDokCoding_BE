@@ -125,6 +125,7 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
                 user.getId(),
                 user.getEmail(),
                 user.getNickname(),
+                user.isFirstLogin(),
                 user.getAuthorities(),
                 Map.of() // JWT 인증에서는 빈 attributes
         );
