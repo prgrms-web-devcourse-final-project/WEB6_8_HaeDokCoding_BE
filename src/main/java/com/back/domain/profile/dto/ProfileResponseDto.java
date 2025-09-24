@@ -15,4 +15,9 @@ public class ProfileResponseDto {
     // 표현용(서버에서 계산)
     private Integer abvLevel;      // 1~6
     private String abvLabel;       // "83.2%"
+
+    // 요약 카운트
+    private Long myPostCount;
+    private Long myCommentCount;
+    private Long myLikedPostCount;
 }
