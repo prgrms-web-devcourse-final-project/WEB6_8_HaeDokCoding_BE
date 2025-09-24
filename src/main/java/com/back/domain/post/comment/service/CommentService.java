@@ -1,8 +1,10 @@
 package com.back.domain.post.comment.service;
 
 import com.back.domain.post.comment.dto.request.CommentCreateRequestDto;
+import com.back.domain.post.comment.dto.request.CommentUpdateRequestDto;
 import com.back.domain.post.comment.dto.response.CommentResponseDto;
 import com.back.domain.post.comment.entity.Comment;
+import com.back.domain.post.comment.enums.CommentStatus;
 import com.back.domain.post.comment.repository.CommentRepository;
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.repository.PostRepository;
@@ -52,5 +54,57 @@ public class CommentService {
           .map(CommentResponseDto::new)
           .toList();
     }
+  }
+
+  // 댓글 단건 조회 로직
+  @Transactional(readOnly = true)
+  public CommentResponseDto getComment(Long postId, Long commentId) {
+    Comment comment = findCommentWithValidation(postId, commentId);
+
+    return new CommentResponseDto(comment);
+  }
+
+  // 댓글 수정 로직
+  @Transactional
+  public CommentResponseDto updateComment(Long postId, Long commentId, CommentUpdateRequestDto requestDto) {
+    User user = rq.getActor();
+
+    Comment comment = findCommentWithValidation(postId, commentId);
+
+    if (!comment.getUser().equals(user)) {
+      throw new IllegalStateException("본인의 댓글만 수정할 수 있습니다.");
+    }
+
+    comment.updateContent(requestDto.content());
+    return new CommentResponseDto(comment);
+  }
+
+  // 댓글 삭제 로직
+  @Transactional
+  public void deleteComment(Long postId, Long commentId) {
+    User user = rq.getActor();
+
+    Comment comment = findCommentWithValidation(postId, commentId);
+
+    if (!comment.getUser().equals(user)) {
+      throw new IllegalStateException("본인의 댓글만 삭제할 수 있습니다.");
+    }
+
+    comment.updateStatus(CommentStatus.DELETED);
+
+    // soft delete를 사용하기 위해 레포지토리 삭제 작업은 진행하지 않음.
+//    commentRepository.delete(comment);
+  }
+
+  // 댓글과 게시글의 연관관계 검증
+  private Comment findCommentWithValidation(Long postId, Long commentId) {
+    Comment comment = commentRepository.findById(commentId)
+        .orElseThrow(() -> new IllegalArgumentException("댓글이 존재하지 않습니다. id=" + commentId));
+
+    if (!comment.getPost().getId().equals(postId)) {
+      throw new IllegalStateException("댓글이 해당 게시글에 속하지 않습니다.");
+    }
+
+    return comment;
   }
 }

@@ -4,13 +4,25 @@
 #    url: ${DATABASE_URL}
 #
 #
-#  jpa:
-#    hibernate:
-#      ddl-auto: update
-#    properties:
-#      hibernate:
-#        show_sql: false
 
+spring:
+  autoconfigure:
+    exclude:
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      password: ${REDIS_PASSWORD}
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        show_sql: false
 
 springdoc:
   swagger-ui:
@@ -25,20 +37,8 @@ logging:
 custom:
   cookie:
     secure: true
-
-# OAuth2 배포 환경 설정
-spring:
-  security:
-    oauth2:
-      client:
-        registration:
-          kakao:
-            redirect-uri: '${BASE_URL}/api/{action}/oauth2/code/{registrationId}'
-          google:
-            redirect-uri: '${BASE_URL}/api/{action}/oauth2/code/{registrationId}'
-          naver:
-            redirect-uri: '${BASE_URL}/api/{action}/oauth2/code/{registrationId}'
-
-# 프로덕션 환경 URL 설정
-BASE_URL: ${BASE_URL}
-FRONTEND_URL: ${FRONTEND_URL}
+    domain: ${custom.prod.cookieDomain}
+  site:
+    frontUrl: "${custom.prod.frontUrl}"
+    backUrl: "${custom.prod.backUrl}"
+    name: ssoul

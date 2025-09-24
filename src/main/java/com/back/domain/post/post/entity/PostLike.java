@@ -1,8 +1,6 @@
-package com.back.domain.post.comment.entity;
+package com.back.domain.post.post.entity;
 
-import com.back.domain.post.comment.enums.CommentStatus;
-import com.back.domain.post.post.entity.Post;
-import com.back.domain.post.post.enums.PostStatus;
+import com.back.domain.post.post.enums.PostLikeStatus;
 import com.back.domain.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,62 +14,52 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Getter
-@Table(name = "comment")
+// 같은 사용자(user_id)가 같은 게시글(post_id)을 중복 추천하지 못하도록 DB 레벨에서 보장.
+@Table(name = "post_like", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"post_id", "user_id"})
+})
 @EntityListeners(AuditingEntityListener.class)
-@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class Comment {
-  // 각 댓글을 구분하는 유일한 번호
+public class PostLike {
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id")
   private Long id;
 
-  // 해당 댓글이 작성된 게시글의 고유 식별자
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "post_id")
   private Post post;
 
-  // 해당 댓글을 작성한 유저의 고유 식별자
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id")
   private User user;
 
-  // 댓글 작성 날짜
+  // 추천 생성 날짜
   @CreatedDate
   private LocalDateTime createdAt;
 
-  // 댓글 수정 날짜
-  @LastModifiedDate
-  private LocalDateTime updatedAt;
-
-  // 댓글 게시 상태 (기본값: 공개)
+  // 추천 상태 (기본값: 비추천)
   @Builder.Default
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false)
-  private CommentStatus status = CommentStatus.PUBLIC;
+  private PostLikeStatus status = PostLikeStatus.NONE;
 
-  // 댓글 내용
-  @Column(name = "content", nullable = false, columnDefinition = "TEXT")
-  private String content;
-
-  public void updateStatus(CommentStatus status) {
+  public void updateStatus(PostLikeStatus status) {
     this.status = status;
-  }
-
-  public void updateContent(String content) {
-    this.content = content;
   }
 }

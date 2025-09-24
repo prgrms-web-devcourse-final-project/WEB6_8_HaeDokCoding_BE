@@ -8,8 +8,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Optional;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +26,9 @@ public class RefreshTokenService {
 
     // 기존 리프레시 토큰 삭제하고 생성
     public String generateRefreshToken(Long userId, String email) {
+        // 기존 토큰 삭제
+        refreshTokenRepository.deleteByUserId(userId);
+
         String token = generateSecureToken();
         RefreshToken refreshToken = RefreshToken.create(token, userId, email, refreshTokenExpiration);
         refreshTokenRepository.save(refreshToken);
@@ -30,9 +36,20 @@ public class RefreshTokenService {
         return token;
     }
 
-    //검증
+    //검증 (만료 체크 포함)
     public boolean validateToken(String token) {
-        return refreshTokenRepository.findByToken(token).isPresent();
+        Optional<RefreshToken> tokenOpt = refreshTokenRepository.findByToken(token);
+        if (tokenOpt.isEmpty()) {
+            return false;
+        }
+
+        RefreshToken refreshToken = tokenOpt.get();
+        if (refreshToken.isExpired()) {
+            revokeToken(token); // 만료된 토큰 삭제
+            return false;
+        }
+
+        return true;
     }
 
     //기존 토큰 지우고 발급(회전)
@@ -59,5 +76,12 @@ public class RefreshTokenService {
         byte[] randomBytes = new byte[32];
         secureRandom.nextBytes(randomBytes);
         return Base64.getEncoder().withoutPadding().encodeToString(randomBytes);
+    }
+
+    // 만료된 토큰 정리 (1시간마다 실행)
+    @Scheduled(fixedRate = 3600000)
+    @Transactional
+    public void cleanupExpiredTokens() {
+        refreshTokenRepository.deleteByExpiresAtBefore(LocalDateTime.now());
     }
 }
