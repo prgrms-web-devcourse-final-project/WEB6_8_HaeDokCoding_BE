@@ -3,6 +3,7 @@ package com.back.domain.myhistory.controller;
 import com.back.domain.myhistory.dto.MyHistoryCommentGoResponseDto;
 import com.back.domain.myhistory.dto.MyHistoryCommentListDto;
 import com.back.domain.myhistory.dto.MyHistoryPostListDto;
+import com.back.domain.myhistory.dto.MyHistoryLikedPostListDto;
 import com.back.domain.myhistory.service.MyHistoryService;
 import com.back.global.rsData.RsData;
 import jakarta.validation.constraints.Max;
@@ -51,6 +52,17 @@ public class MyHistoryController {
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit
     ) {
         MyHistoryCommentListDto body = myHistoryService.getMyComments(userId, lastCreatedAt, lastId, limit);
+        return RsData.successOf(body);
+    }
+
+    @GetMapping("/likes")
+    public RsData<MyHistoryLikedPostListDto> getMyLikedPosts(
+            @AuthenticationPrincipal(expression = "id") Long userId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime lastCreatedAt,
+            @RequestParam(required = false) Long lastId,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit
+    ) {
+        MyHistoryLikedPostListDto body = myHistoryService.getMyLikedPosts(userId, lastCreatedAt, lastId, limit);
         return RsData.successOf(body);
     }
 
