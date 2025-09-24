@@ -63,9 +63,9 @@ server:
 gemini:
   api:
     key: ${GEMINI_API_KEY}
-    model-name: "gemini-1.5-flash-latest"
+    model-name: "gemini-2.5-flash"
     url: "https://generativelanguage.googleapis.com/v1beta/models"
-    
+
 
 custom:
   dev:
@@ -100,3 +100,8 @@ management:
       probes:
         enabled: true                 # /actuator/health/{liveness,readiness} 활성화
       show-details: never             # 프로브 용도면 never 권장(민감정보 차단)
+
+
+chatbot:
+  history:
+    max-conversation-count: 5
