@@ -5,7 +5,7 @@ name: deploy
 # =========================
 env:
   IMAGE_REPOSITORY: backend # GHCR 이미지 리포지토리명(소유자 포함 X)
-  CONTAINER_1_NAME: backend_1
+  CONTAINER_1_NAME: backend
   EC2_INSTANCE_TAG_NAME: team2-ec2-1 # 배포 대상 EC2 Name 태그
   DOCKER_NETWORK: common # 도커 네트워크
   BACKEND_DIR: . # Dockerfile 위치

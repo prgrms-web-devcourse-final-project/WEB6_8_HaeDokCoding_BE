@@ -50,11 +50,6 @@ public class ProfileService {
             user.setNickname(nickname);
         }
 
-        if (profileUpdateRequestDto.getEmail() != null) {
-            String email = profileUpdateRequestDto.getEmail().trim();
-            user.setEmail(email.isEmpty() ? null : email);
-        }
-
         userRepository.save(user);
 
         return getProfile(id);

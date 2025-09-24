@@ -38,7 +38,11 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                        .maximumSessions(1)
+                ) // OAuth 인증시 필요할때만 세션 사용
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
@@ -47,6 +51,8 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
                         .requestMatchers("/api/user/**").permitAll()
                         .requestMatchers("/api/cocktail/**").permitAll()
+                        .requestMatchers("/api/chatbot/**").permitAll()
+                        .requestMatchers("/api/cocktails/**").permitAll()
 
 
                         // 회원 or 인증된 사용자만 가능

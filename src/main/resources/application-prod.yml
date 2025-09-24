@@ -23,6 +23,7 @@ spring:
     properties:
       hibernate:
         show_sql: false
+
 springdoc:
   swagger-ui:
     enabled: false

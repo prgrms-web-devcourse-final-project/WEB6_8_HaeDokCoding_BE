@@ -31,7 +31,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Getter
-@Setter
 @Table(name = "post")
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
@@ -97,8 +96,32 @@ public class Post {
   @Column(name = "view_count")
   private Integer viewCount;
 
+  public void updateCategory(Category category) {
+    this.category = category;
+  }
+
+  public void updateStatus(PostStatus status) {
+    this.status = status;
+  }
+
+  public void updateTitle(String title) {
+    this.title = title;
+  }
+
+  public void updateContent(String content) {
+    this.content = content;
+  }
+
+  public void updateImage(String imageUrl) {
+    this.imageUrl = imageUrl;
+  }
+
   public void addTag(Tag tag) {
     PostTag postTag = PostTag.create(this, tag);
     this.postTags.add(postTag);
+  }
+
+  public void clearTags() {
+    this.postTags.clear();
   }
 }

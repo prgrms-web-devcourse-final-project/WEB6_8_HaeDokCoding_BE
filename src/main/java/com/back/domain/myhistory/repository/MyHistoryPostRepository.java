@@ -1,0 +1,45 @@
+package com.back.domain.myhistory.repository;
+
+import com.back.domain.post.post.entity.Post;
+import com.back.domain.post.post.enums.PostStatus;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Repository
+public interface MyHistoryPostRepository extends JpaRepository<Post, Long> {
+
+    @Query("""
+        select p from Post p
+         where p.user.id = :userId
+           and p.status <> :deleted
+         order by p.createdAt desc, p.id desc
+    """)
+    List<Post> findMyPostsFirstPage(@Param("userId") Long userId,
+                                    @Param("deleted") PostStatus deleted,
+                                    Pageable pageable);
+
+    @Query("""
+        select p from Post p
+         where p.user.id = :userId
+           and p.status <> :deleted
+           and (p.createdAt < :lastCreatedAt or (p.createdAt = :lastCreatedAt and p.id < :lastId))
+         order by p.createdAt desc, p.id desc
+    """)
+    List<Post> findMyPostsAfter(@Param("userId") Long userId,
+                                @Param("deleted") PostStatus deleted,
+                                @Param("lastCreatedAt") LocalDateTime lastCreatedAt,
+                                @Param("lastId") Long lastId,
+                                Pageable pageable);
+
+    @Query("""
+        select p from Post p
+         where p.id = :id and p.user.id = :userId
+    """)
+    Post findByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);
+}

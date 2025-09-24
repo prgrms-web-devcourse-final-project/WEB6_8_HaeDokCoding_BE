@@ -5,9 +5,7 @@ import com.back.domain.cocktail.enums.AlcoholStrength;
 import com.back.domain.cocktail.enums.CocktailType;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
-
 import static jakarta.persistence.GenerationType.IDENTITY;
 
 
