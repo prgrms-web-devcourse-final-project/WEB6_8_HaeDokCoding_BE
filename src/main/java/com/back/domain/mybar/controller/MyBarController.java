@@ -3,6 +3,7 @@ package com.back.domain.mybar.controller;
 import com.back.domain.mybar.dto.MyBarListResponseDto;
 import com.back.domain.mybar.service.MyBarService;
 import com.back.global.rsData.RsData;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class MyBarController {
     private final MyBarService myBarService;
 
     @GetMapping
+    @Operation(summary = "내 바 목록", description = "내가 킵한 칵테일 목록 조회. 무한스크롤 파라미터 지원")
     public RsData<MyBarListResponseDto> getMyBarList(
             @AuthenticationPrincipal(expression = "id") Long userId,
             @RequestParam(required = false)
@@ -34,6 +36,7 @@ public class MyBarController {
 
     /** 킵 추가(생성/복원/재킵) */
     @PostMapping("/{cocktailId}/keep")
+    @Operation(summary = "킵 추가/복원", description = "해당 칵테일을 내 바에 킵합니다. 이미 삭제된 경우 복원")
     public RsData<Void> keep(
             @AuthenticationPrincipal(expression = "id") Long userId,
             @PathVariable Long cocktailId
@@ -44,6 +47,7 @@ public class MyBarController {
 
     /** 킵 해제(소프트 삭제) — 멱등 */
     @DeleteMapping("/{cocktailId}/keep")
+    @Operation(summary = "킵 해제", description = "내 바에서 해당 칵테일 킵을 해제합니다(소프트 삭제, 멱등)")
     public RsData<Void> unkeep(
             @AuthenticationPrincipal(expression = "id") Long userId,
             @PathVariable Long cocktailId
