@@ -59,13 +59,13 @@ public class CocktailCommentService {
     // 칵테일 댓글 단건 조회 로직
     @Transactional(readOnly = true)
     public CocktailCommentResponseDto getCocktailComment(Long cocktailId, Long cocktailCommentId) {
-        CocktailComment cocktailComment = findCocktailCommentWithValidation(cocktailId, cocktailCommentId);
+        CocktailComment cocktailComment = findByIdAndValidateCocktail(cocktailId, cocktailCommentId);
 
         return new CocktailCommentResponseDto(cocktailComment);
     }
 
-    // 칵테일 댓글과 칵테일의 연관관계 검증
-    private CocktailComment findCocktailCommentWithValidation(Long cocktailId, Long cocktailCommentId) {
+    // 칵테일댓글 ID로 찾고, 칵테일과의 관계를 검증
+    private CocktailComment findByIdAndValidateCocktail(Long cocktailId, Long cocktailCommentId) {
         CocktailComment cocktailComment = cocktailCommentRepository.findById(cocktailCommentId)
                 .orElseThrow(() -> new IllegalArgumentException("댓글이 존재하지 않습니다. id=" + cocktailCommentId));
 
@@ -75,14 +75,14 @@ public class CocktailCommentService {
         return cocktailComment;
     }
 
-    // 댓글 수정 로직
+    // 칵테일댓글 수정 로직
     @Transactional
     public CocktailCommentResponseDto updateCocktailComment(Long cocktailId, Long cocktailCommentId, CocktailCommentUpdateRequestDto requestDto) {
         User user = rq.getActor();
 
-        CocktailComment cocktailComment = findCocktailCommentWithValidation(cocktailId, cocktailCommentId);
+        CocktailComment cocktailComment = findByIdAndValidateCocktail(cocktailId, cocktailCommentId);
 
-        if (!cocktailComment.getUser().equals(user)) {
+        if (!cocktailComment.getUser().getId().equals(user.getId())) {
             throw new IllegalStateException("본인의 댓글만 수정할 수 있습니다.");
         }
 
@@ -90,14 +90,14 @@ public class CocktailCommentService {
         return new CocktailCommentResponseDto(cocktailComment);
     }
 
-    // 댓글 삭제 로직
+    // 칵테일댓글 삭제 로직
     @Transactional
     public void deleteCocktailComment(Long cocktailId, Long cocktailCommentId) {
         User user = rq.getActor();
 
-        CocktailComment cocktailComment = findCocktailCommentWithValidation(cocktailId, cocktailCommentId);
+        CocktailComment cocktailComment = findByIdAndValidateCocktail(cocktailId, cocktailCommentId);
 
-        if (!cocktailComment.getUser().equals(user)) {
+        if (!cocktailComment.getUser().getId().equals(user.getId())) {
             throw new IllegalStateException("본인의 댓글만 삭제할 수 있습니다.");
         }
 
