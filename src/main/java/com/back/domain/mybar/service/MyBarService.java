@@ -27,7 +27,9 @@ public class MyBarService {
     private final UserRepository userRepository;
     private final CocktailRepository cocktailRepository;
 
-    // 커서: lastKeptAt + lastId를 그대로 파라미터로 사용
+    // 내 바 목록 조회 (무한스크롤)
+    // - 커서: lastKeptAt + lastId 조합으로 안정적인 정렬/페이지네이션
+    // - 첫 페이지: 가장 최근 keptAt 기준으로 최신순
     @Transactional(readOnly = true)
     public MyBarListResponseDto getMyBar(Long userId, LocalDateTime lastKeptAt, Long lastId, int limit) {
         int safeLimit = Math.max(1, Math.min(limit, 100));
@@ -44,6 +46,7 @@ public class MyBarService {
             rows = myBarRepository.findSliceByCursor(userId, KeepStatus.ACTIVE, lastKeptAt, lastId, pageable);
         }
 
+        // +1 로우가 있으면 다음 페이지가 존재
         boolean hasNext = rows.size() > safeLimit;
         if (hasNext) rows = rows.subList(0, safeLimit);
 
@@ -61,6 +64,10 @@ public class MyBarService {
         return new MyBarListResponseDto(items, hasNext, nextKeptAt, nextId);
     }
 
+    // 킵 추가/복원
+    // - 이미 존재하면 keptAt 갱신 (정렬 최신화)
+    // - DELETED 상태였다면 ACTIVE로 복원
+    // - 없으면 새로 생성
     @Transactional
     public void keep(Long userId, Long cocktailId) {
         Optional<MyBar> existingMyBar =
@@ -90,7 +97,7 @@ public class MyBarService {
         myBarRepository.save(myBar);
     }
 
-    /** 킵 해제(소프트 삭제) */
+    /** 킵 해제(소프트 삭제) — 멱등 처리 */
     @Transactional
     public void unkeep(Long userId, Long cocktailId) {
         myBarRepository.softDeleteByUserAndCocktail(userId, cocktailId);

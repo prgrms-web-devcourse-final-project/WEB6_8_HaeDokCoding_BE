@@ -48,7 +48,7 @@ public class NotificationService {
     @Transactional(readOnly = true)
     public NotificationListResponseDto getNotifications(Long userId, LocalDateTime lastCreatedAt, Long lastId, int limit) {
         int safeLimit = Math.max(1, Math.min(limit, 100));
-        int fetchSize = safeLimit + 1;
+        int fetchSize = safeLimit + 1; // 다음 페이지가 있는지 판단하기 위해 1건 더 조회
 
         List<Notification> rows;
         if (lastCreatedAt == null || lastId == null) {
@@ -57,7 +57,7 @@ public class NotificationService {
             rows = notificationRepository.findMyNotificationsAfter(userId, lastCreatedAt, lastId, PageRequest.of(0, fetchSize));
         }
 
-        boolean hasNext = rows.size() > safeLimit;
+        boolean hasNext = rows.size() > safeLimit; // +1 개가 있으면 다음 페이지 존재
         if (hasNext) rows = rows.subList(0, safeLimit);
 
         List<NotificationItemDto> items = new ArrayList<>();
@@ -74,6 +74,7 @@ public class NotificationService {
         return new NotificationListResponseDto(items, hasNext, nextCreatedAt, nextId);
     }
 
+    // 읽음 처리 + 게시글 링크 반환
     @Transactional
     public NotificationGoResponseDto markAsReadAndGetPostLink(Long userId, Long notificationId) {
         Notification notification = notificationRepository.findByIdAndUserId(notificationId, userId);
