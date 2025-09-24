@@ -4,12 +4,7 @@
 #    url: ${DATABASE_URL}
 #
 #
-#  jpa:
-#    hibernate:
-#      ddl-auto: update
-#    properties:
-#      hibernate:
-#        show_sql: false
+
 spring:
   autoconfigure:
     exclude:
@@ -18,7 +13,16 @@ spring:
       host: ${REDIS_HOST}
       password: ${REDIS_PASSWORD}
   datasource:
-    url: jdbc:mysql://mysql_1:3306/${DATABASE_URL}
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        show_sql: false
 springdoc:
   swagger-ui:
     enabled: false
