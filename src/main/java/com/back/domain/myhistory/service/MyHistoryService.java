@@ -139,7 +139,7 @@ public class MyHistoryService {
         if (hasNext) rows = rows.subList(0, safeLimit);
 
         List<MyHistoryLikedPostItemDto> items = new ArrayList<>();
-        for (com.back.domain.post.post.entity.PostLike pl : rows) items.add(MyHistoryLikedPostItemDto.from(pl));
+        for (com.back.domain.post.post.entity.PostLike postLike : rows) items.add(MyHistoryLikedPostItemDto.from(postLike));
 
         LocalDateTime nextCreatedAt = null;
         Long nextId = null;
@@ -150,5 +150,23 @@ public class MyHistoryService {
         }
 
         return new MyHistoryLikedPostListDto(items, hasNext, nextCreatedAt, nextId);
+    }
+
+    @Transactional(readOnly = true)
+    public MyHistoryPostGoResponseDto getPostLinkFromMyLikedPost(Long userId, Long postId) {
+        com.back.domain.post.post.entity.PostLike postLike = myHistoryLikedPostRepository.findByPostIdAndUserIdLike(
+                postId,
+                userId,
+                com.back.domain.post.post.enums.PostLikeStatus.LIKE
+        );
+        if (postLike == null) {
+            throw new ServiceException(404, "좋아요한 게시글을 찾을 수 없습니다.");
+        }
+        Post post = postLike.getPost();
+        if (post.getStatus() == PostStatus.DELETED) {
+            throw new ServiceException(410, "삭제된 게시글입니다.");
+        }
+        String apiUrl = "/api/posts/" + post.getId();
+        return new MyHistoryPostGoResponseDto(post.getId(), apiUrl);
     }
 }
