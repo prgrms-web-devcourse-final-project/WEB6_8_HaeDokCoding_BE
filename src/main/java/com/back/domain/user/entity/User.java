@@ -1,11 +1,12 @@
 package com.back.domain.user.entity;
 
+import com.back.domain.post.post.entity.PostLike;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ public class User {
     @Column(length = 100)
     private String email;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, length = 50)
     private String nickname;   // 고유 닉네임
 
     // OAuth2 관련 필드
@@ -50,6 +51,15 @@ public class User {
     @Builder.Default
     @Column(nullable = false, length = 20)
     private String role = "USER";
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean isFirstLogin = true;
+
+    // 양방향 매핑을 위한 필드
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostLike> postLikes = new ArrayList<>();
+
 
     public boolean isAdmin() {
         return "ADMIN".equalsIgnoreCase(role);

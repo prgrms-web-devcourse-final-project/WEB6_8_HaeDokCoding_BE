@@ -1,19 +1,25 @@
 package com.back.domain.post.post.service;
 
+import com.back.domain.notification.enums.NotificationType;
+import com.back.domain.notification.service.NotificationService;
 import com.back.domain.post.category.entity.Category;
 import com.back.domain.post.category.repository.CategoryRepository;
 import com.back.domain.post.post.dto.request.PostCreateRequestDto;
 import com.back.domain.post.post.dto.request.PostUpdateRequestDto;
 import com.back.domain.post.post.dto.response.PostResponseDto;
 import com.back.domain.post.post.entity.Post;
+import com.back.domain.post.post.entity.PostLike;
 import com.back.domain.post.post.entity.Tag;
+import com.back.domain.post.post.enums.PostLikeStatus;
 import com.back.domain.post.post.enums.PostStatus;
+import com.back.domain.post.post.repository.PostLikeRepository;
 import com.back.domain.post.post.repository.PostRepository;
 import com.back.domain.post.post.repository.TagRepository;
 import com.back.domain.user.entity.User;
 import com.back.global.rq.Rq;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,6 +32,8 @@ public class PostService {
   private final PostRepository postRepository;
   private final CategoryRepository categoryRepository;
   private final TagRepository tagRepository;
+  private final PostLikeRepository postLikeRepository;
+  private final NotificationService notificationService;
   private final Rq rq;
 
   // 게시글 작성 로직
@@ -127,6 +135,41 @@ public class PostService {
 
     // soft delete를 사용하기 위해 레포지토리 삭제 작업은 진행하지 않음.
 //    postRepository.delete(post);
+  }
+
+  // 게시글 추천(좋아요) 토글 로직
+  @Transactional
+  public void toggleLike(Long postId) {
+    User user = rq.getActor(); // 현재 로그인한 사용자
+
+    Post post = postRepository.findById(postId)
+        .orElseThrow(() -> new NoSuchElementException("해당 게시글을 찾을 수 없습니다. ID: " + postId));
+
+    Optional<PostLike> existingLike = postLikeRepository.findByPostAndUser(post, user);
+
+    if (existingLike.isPresent()) {
+      // 이미 추천했으면 취소
+      existingLike.get().updateStatus(PostLikeStatus.NONE);
+      postLikeRepository.delete(existingLike.get());
+      post.decreaseLikeCount();
+    } else {
+      // 추천 추가
+      PostLike postLike = PostLike.builder()
+          .post(post)
+          .user(user)
+          .status(PostLikeStatus.LIKE)
+          .build();
+      postLikeRepository.save(postLike);
+      post.increaseLikeCount();
+    }
+
+    // 게시글 작성자에게 알림 전송
+    notificationService.sendNotification(
+        post.getUser(),
+        post,
+        NotificationType.LIKE,
+        user.getNickname() + " 님이 추천을 남겼습니다."
+    );
   }
 
   // 태그 추가 메서드

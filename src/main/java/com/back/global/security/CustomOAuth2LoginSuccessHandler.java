@@ -18,7 +18,7 @@ public class CustomOAuth2LoginSuccessHandler implements AuthenticationSuccessHan
 
     private final UserAuthService userAuthService;
 
-    @Value("${FRONTEND_URL}")
+    @Value("${custom.site.frontUrl}")
     private String frontendUrl;
 
     @Override
@@ -27,8 +27,15 @@ public class CustomOAuth2LoginSuccessHandler implements AuthenticationSuccessHan
         // Access Token과 Refresh Token 발급
         userAuthService.issueTokens(response, securityUser.getId(), securityUser.getEmail(), securityUser.getNickname());
 
-        // 프론트엔드로 리다이렉트
-        String redirectUrl = frontendUrl + "/oauth/success";
+        // 첫 로그인 여부에 따라 리다이렉트 분기
+        String redirectUrl;
+
+        if (securityUser.isFirstLogin()) {
+            redirectUrl = frontendUrl + "/oauth/success/welcome";
+            userAuthService.setFirstLoginFalse(securityUser.getId());
+        } else {
+            redirectUrl = frontendUrl + "/oauth/success";
+        }
 
         response.sendRedirect(redirectUrl);
     }

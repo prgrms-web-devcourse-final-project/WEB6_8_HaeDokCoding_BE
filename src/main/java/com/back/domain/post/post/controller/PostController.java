@@ -95,4 +95,18 @@ public class PostController {
     postService.deletePost(postId);
     return RsData.successOf(null); // code=200, message="success"
   }
+
+  /**
+   * 게시글 추천(좋아요) 토글 API
+   * @param postId 추천할 게시글 ID
+   * @return 추천 상태 변경 성공 메시지
+   */
+  @PostMapping("/{postId}/like")
+  @Operation(summary = "게시글 추천")
+  public RsData<Void> toggleLike(
+      @PathVariable Long postId
+  ) {
+    postService.toggleLike(postId);
+    return RsData.successOf(null); // code=200, message="success"
+  }
 }

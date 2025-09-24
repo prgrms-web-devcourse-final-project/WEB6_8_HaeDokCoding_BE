@@ -3,20 +3,27 @@ package com.back.domain.notification.controller;
 import com.back.domain.notification.dto.NotificationGoResponseDto;
 import com.back.domain.notification.dto.NotificationListResponseDto;
 import com.back.domain.notification.dto.NotificationSettingDto;
-import com.back.domain.notification.service.NotificationSettingService;
 import com.back.domain.notification.dto.NotificationSettingUpdateRequestDto;
-import jakarta.validation.Valid;
 import com.back.domain.notification.service.NotificationService;
+import com.back.domain.notification.service.NotificationSettingService;
 import com.back.global.rsData.RsData;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/api/me")
@@ -26,6 +33,13 @@ public class NotificationController {
 
     private final NotificationService notificationService;
     private final NotificationSettingService notificationSettingService;
+
+    // SSE 연결
+    // produces = "text/event-stream": 응답 형식이 SSE임을 명시
+    @GetMapping(value = "/subscribe", produces = "text/event-stream")
+    public SseEmitter subscribe() {
+        return notificationService.subscribe();
+    }
 
     @GetMapping("/notifications")
     public RsData<NotificationListResponseDto> getNotifications(

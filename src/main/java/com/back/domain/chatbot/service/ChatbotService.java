@@ -6,9 +6,15 @@ import com.back.domain.chatbot.entity.ChatConversation;
 import com.back.domain.chatbot.repository.ChatConversationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StreamUtils;
 
+import jakarta.annotation.PostConstruct;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,6 +25,25 @@ public class ChatbotService {
 
     private final GeminiApiService geminiApiService;
     private final ChatConversationRepository chatConversationRepository;
+
+    @Value("classpath:prompts/chatbot-system-prompt.txt")
+    private Resource systemPromptResource;
+
+    @Value("classpath:prompts/chatbot-response-rules.txt")
+    private Resource responseRulesResource;
+
+    @Value("${chatbot.history.max-conversation-count:5}")
+    private int maxConversationCount;
+
+    private String systemPrompt;
+    private String responseRules;
+
+    @PostConstruct
+    public void init() throws IOException {
+        this.systemPrompt = StreamUtils.copyToString(systemPromptResource.getInputStream(), StandardCharsets.UTF_8);
+        this.responseRules = StreamUtils.copyToString(responseRulesResource.getInputStream(), StandardCharsets.UTF_8);
+        log.info("챗봇 시스템 프롬프트가 로드되었습니다. (길이: {} 문자)", systemPrompt.length());
+    }
 
     @Transactional
     public ChatResponseDto sendMessage(ChatRequestDto requestDto) {
@@ -50,27 +75,44 @@ public class ChatbotService {
     }
 
     private String buildContextualMessage(String userMessage, String sessionId) {
-        List<ChatConversation> recentConversations = chatConversationRepository
-                .findBySessionIdOrderByCreatedAtAsc(sessionId);
-
-        if (recentConversations.isEmpty()) {
-            return "당신은 칵테일 전문 챗봇입니다. 칵테일에 관련된 질문에 친근하고 도움이 되는 답변을 해주세요. 질문: " + userMessage;
-        }
+        List<ChatConversation> recentConversations = getRecentConversations(sessionId);
 
         StringBuilder contextBuilder = new StringBuilder();
-        contextBuilder.append("당신은 칵테일 전문 챗봇입니다. 다음은 이전 대화 내용입니다:\n\n");
+        contextBuilder.append(systemPrompt).append("\n\n");
 
-        int maxHistory = Math.min(recentConversations.size(), 5);
-        for (int i = Math.max(0, recentConversations.size() - maxHistory); i < recentConversations.size(); i++) {
-            ChatConversation conv = recentConversations.get(i);
-            contextBuilder.append("사용자: ").append(conv.getUserMessage()).append("\n");
-            contextBuilder.append("챗봇: ").append(conv.getBotResponse()).append("\n\n");
-        }
-
-        contextBuilder.append("새로운 질문: ").append(userMessage);
-        contextBuilder.append("\n\n이전 대화 맥락을 고려하여 친근하고 도움이 되는 답변을 해주세요.");
+        appendConversationHistory(contextBuilder, recentConversations);
+        appendCurrentQuestion(contextBuilder, userMessage);
+        appendResponseInstructions(contextBuilder);
 
         return contextBuilder.toString();
+    }
+
+    private List<ChatConversation> getRecentConversations(String sessionId) {
+        return chatConversationRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
+    }
+
+    private void appendConversationHistory(StringBuilder contextBuilder, List<ChatConversation> conversations) {
+        if (!conversations.isEmpty()) {
+            contextBuilder.append("=== 이전 대화 기록 ===\n");
+
+            int maxHistory = Math.min(conversations.size(), maxConversationCount);
+            int startIdx = Math.max(0, conversations.size() - maxHistory);
+
+            for (int i = startIdx; i < conversations.size(); i++) {
+                ChatConversation conv = conversations.get(i);
+                contextBuilder.append("사용자: ").append(conv.getUserMessage()).append("\n");
+                contextBuilder.append("AI 바텐더: ").append(conv.getBotResponse()).append("\n\n");
+            }
+            contextBuilder.append("=================\n\n");
+        }
+    }
+
+    private void appendCurrentQuestion(StringBuilder contextBuilder, String userMessage) {
+        contextBuilder.append("현재 사용자 질문: ").append(userMessage).append("\n\n");
+    }
+
+    private void appendResponseInstructions(StringBuilder contextBuilder) {
+        contextBuilder.append(responseRules);
     }
 
     @Transactional(readOnly = true)

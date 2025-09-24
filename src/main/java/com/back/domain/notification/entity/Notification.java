@@ -42,6 +42,10 @@ public class Notification {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    // 알림 메시지
+    @Column(name = "message", nullable = false, columnDefinition = "TEXT")
+    private String message;
+
     public void markRead() {
         this.read = true;
     }
