@@ -2,6 +2,10 @@ package com.back.domain.notification.controller;
 
 import com.back.domain.notification.dto.NotificationGoResponseDto;
 import com.back.domain.notification.dto.NotificationListResponseDto;
+import com.back.domain.notification.dto.NotificationSettingDto;
+import com.back.domain.notification.service.NotificationSettingService;
+import com.back.domain.notification.dto.NotificationSettingUpdateRequestDto;
+import jakarta.validation.Valid;
 import com.back.domain.notification.service.NotificationService;
 import com.back.global.rsData.RsData;
 import jakarta.validation.constraints.Max;
@@ -21,6 +25,7 @@ import java.time.LocalDateTime;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final NotificationSettingService notificationSettingService;
 
     @GetMapping("/notifications")
     public RsData<NotificationListResponseDto> getNotifications(
@@ -30,6 +35,23 @@ public class NotificationController {
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit
     ) {
         NotificationListResponseDto body = notificationService.getNotifications(userId, lastCreatedAt, lastId, limit);
+        return RsData.successOf(body);
+    }
+
+    @GetMapping("/notification-setting")
+    public RsData<NotificationSettingDto> getMyNotificationSetting(
+            @AuthenticationPrincipal(expression = "id") Long userId
+    ) {
+        NotificationSettingDto body = notificationSettingService.getMySetting(userId);
+        return RsData.successOf(body);
+    }
+
+    @PatchMapping("/notification-setting")
+    public RsData<NotificationSettingDto> setMyNotificationSetting(
+            @AuthenticationPrincipal(expression = "id") Long userId,
+            @Valid @RequestBody NotificationSettingUpdateRequestDto req
+    ) {
+        NotificationSettingDto body = notificationSettingService.setMySetting(userId, req.enabled());
         return RsData.successOf(body);
     }
 
