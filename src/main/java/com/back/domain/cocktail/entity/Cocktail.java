@@ -28,7 +28,7 @@ public class Cocktail {
     private String cocktailName;
 
     @Enumerated(EnumType.STRING)
-    private AlcoholStrength alcoholStrength; // 칵테일 알콜 도수
+    private AlcoholStrength alcoholStrength; // 칵테일 알콜도수
 
     private String cocktailStory; // 칵테일 유래 등 이야기
 

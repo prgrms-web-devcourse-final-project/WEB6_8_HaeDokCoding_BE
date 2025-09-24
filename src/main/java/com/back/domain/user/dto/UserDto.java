@@ -21,6 +21,7 @@ public class UserDto {
     private Double abvDegree;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private boolean isFirstLogin;
 
     public static UserDto from(User user) {
         if (user == null) return null;
@@ -32,6 +33,7 @@ public class UserDto {
                 .abvDegree(user.getAbvDegree())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
+                .isFirstLogin(user.isFirstLogin())
                 .build();
     }
 }

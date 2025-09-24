@@ -25,6 +25,7 @@ public class RefreshTokenService {
     private long refreshTokenExpiration;
 
     // 기존 리프레시 토큰 삭제하고 생성
+    @Transactional
     public String generateRefreshToken(Long userId, String email) {
         // 기존 토큰 삭제
         refreshTokenRepository.deleteByUserId(userId);
@@ -53,6 +54,7 @@ public class RefreshTokenService {
     }
 
     //기존 토큰 지우고 발급(회전)
+    @Transactional
     public String rotateToken(String oldToken) {
         Optional<RefreshToken> oldRefreshToken = refreshTokenRepository.findByToken(oldToken);
 
@@ -67,6 +69,7 @@ public class RefreshTokenService {
     }
 
     //삭제
+    @Transactional
     public void revokeToken(String token) {
         refreshTokenRepository.deleteByToken(token);
     }

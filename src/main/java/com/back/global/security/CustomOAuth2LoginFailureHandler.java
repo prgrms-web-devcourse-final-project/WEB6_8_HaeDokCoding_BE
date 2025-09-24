@@ -15,7 +15,7 @@ import java.io.IOException;
 @Slf4j
 public class CustomOAuth2LoginFailureHandler implements AuthenticationFailureHandler {
 
-    @Value("${FRONTEND_URL}")
+    @Value("${custom.site.frontUrl}")
     private String frontendUrl;
 
     @Override

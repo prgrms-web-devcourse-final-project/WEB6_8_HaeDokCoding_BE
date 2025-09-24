@@ -22,11 +22,11 @@ spring:
             scope: profile_nickname # 카카오 닉네임만 가져옴
             client-name: Kakao
             authorization-grant-type: authorization_code
-            redirect-uri: '${BASE_URL}/{action}/oauth2/code/{registrationId}'
+            redirect-uri: '${custom.site.backUrl}/{action}/oauth2/code/{registrationId}'
           google:
             client-id: ${GOOGLE_OAUTH2_CLIENT_ID}
             client-secret: ${GOOGLE_OAUTH2_CLIENT_SECRET}
-            redirect-uri: '${BASE_URL}/{action}/oauth2/code/{registrationId}'
+            redirect-uri: '${custom.site.backUrl}/{action}/oauth2/code/{registrationId}'
             client-name: Google
             scope: profile
           naver:
@@ -35,7 +35,7 @@ spring:
             scope: profile_nickname # 네이버 닉네임만 가져옴
             client-name: Naver
             authorization-grant-type: authorization_code
-            redirect-uri: '${BASE_URL}/{action}/oauth2/code/{registrationId}'
+            redirect-uri: '${custom.site.backUrl}/{action}/oauth2/code/{registrationId}'
         provider:
           kakao:
             authorization-uri: https://kauth.kakao.com/oauth/authorize
@@ -77,10 +77,10 @@ custom:
     frontUrl: "https://www.${custom.prod.cookieDomain}"
     backUrl: "https://api.${custom.prod.cookieDomain}"
   site:
-    cookieDomain: "${custom.dev.cookieDomain}"
-    frontUrl: "${custom.dev.frontUrl}"
-    backUrl: "${custom.dev.backUrl}"
-    name: p-14044-1
+    cookieDomain: ${custom.dev.cookieDomain}
+    frontUrl: ${custom.dev.frontUrl}
+    backUrl: ${custom.dev.backUrl}
+    name: ssoul
   jwt:
     secretKey: ${JWT_SECRET_KEY}
   accessToken:

@@ -41,7 +41,7 @@ public class User {
     @Column(length = 100)
     private String email;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, length = 50)
     private String nickname;   // 고유 닉네임
 
     // OAuth2 관련 필드
@@ -62,9 +62,14 @@ public class User {
     @Column(nullable = false, length = 20)
     private String role = "USER";
 
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean isFirstLogin = true;
+
     // 양방향 매핑을 위한 필드
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostLike> postLikes = new ArrayList<>();
+
 
     public boolean isAdmin() {
         return "ADMIN".equalsIgnoreCase(role);

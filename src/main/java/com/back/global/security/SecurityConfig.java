@@ -1,5 +1,6 @@
 package com.back.global.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -17,6 +18,12 @@ import java.util.Arrays;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    @Value("${custom.site.frontUrl}")
+    private String frontUrl;
+
+    @Value("${custom.site.backUrl}")
+    private String backUrl;
 
     private final CustomOAuth2UserService customOAuth2UserService;
     private final CustomOAuth2LoginSuccessHandler oauth2SuccessHandler;
@@ -46,18 +53,16 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/oauth2/**").permitAll()
                         .requestMatchers("/login/oauth2/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
-                        .requestMatchers("/api/user/**").permitAll()
-                        .requestMatchers("/api/cocktail/**").permitAll()
-                        .requestMatchers("/api/chatbot/**").permitAll()
-                        .requestMatchers("/api/cocktails/**").permitAll()
-
+                        .requestMatchers("/user/**").permitAll()
+                        .requestMatchers("/cocktails/**").permitAll()
+                        .requestMatchers("/chatbot/**").permitAll()
 
                         // 회원 or 인증된 사용자만 가능
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-//                        .requestMatchers("/api/cocktail/detail~~").authenticated()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
 
                         //그 외에는 인증해야함
                         .anyRequest().authenticated()
@@ -95,9 +100,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000",
-                "http://localhost:8080"
-                //나중에 운영환경 추가
+                frontUrl,
+                backUrl
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
