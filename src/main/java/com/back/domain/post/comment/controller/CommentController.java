@@ -4,8 +4,6 @@ import com.back.domain.post.comment.dto.request.CommentCreateRequestDto;
 import com.back.domain.post.comment.dto.request.CommentUpdateRequestDto;
 import com.back.domain.post.comment.dto.response.CommentResponseDto;
 import com.back.domain.post.comment.service.CommentService;
-import com.back.domain.post.post.dto.request.PostUpdateRequestDto;
-import com.back.domain.post.post.dto.response.PostResponseDto;
 import com.back.global.rsData.RsData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
