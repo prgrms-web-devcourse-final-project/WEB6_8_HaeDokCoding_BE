@@ -59,7 +59,7 @@ public class CocktailControllerTest {
 
         // when: GET 요청
         ResultActions resultActions = mvc.perform(
-                get("/api/cocktails/{id}", savedCocktail.getCocktailId())
+                get("/api/cocktails/{id}", savedCocktail.getId())
                         .contentType(MediaType.APPLICATION_JSON)
         ).andDo(print());
 

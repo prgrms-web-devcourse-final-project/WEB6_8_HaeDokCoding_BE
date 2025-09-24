@@ -5,7 +5,11 @@ import com.back.domain.cocktail.enums.AlcoholStrength;
 import com.back.domain.cocktail.enums.CocktailType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+
 import java.time.LocalDateTime;
+
 import static jakarta.persistence.GenerationType.IDENTITY;
 
 
@@ -19,7 +23,7 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 public class Cocktail {
     @Id
     @GeneratedValue(strategy = IDENTITY)
-    private long cocktailId;
+    private long id;
 
     private String cocktailName;
 
@@ -40,7 +44,9 @@ public class Cocktail {
 
     private String cocktailImgUrl;
 
+    @CreatedDate
     private LocalDateTime createdAt;
 
+    @LastModifiedDate
     private LocalDateTime updatedAt;
 }
