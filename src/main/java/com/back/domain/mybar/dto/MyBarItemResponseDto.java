@@ -19,7 +19,7 @@ public class MyBarItemResponseDto {
     public static MyBarItemResponseDto from(MyBar m) {
         return MyBarItemResponseDto.builder()
                 .id(m.getId())
-                .cocktailId(m.getCocktail().getCocktailId())
+                .cocktailId(m.getCocktail().getId())
                 .cocktailName(m.getCocktail().getCocktailName())
                 .imageUrl(m.getCocktail().getCocktailImgUrl())
                 .createdAt(m.getCreatedAt())

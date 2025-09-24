@@ -39,7 +39,7 @@ public class CocktailDetailResponseDto {
     }
 
     public CocktailDetailResponseDto(Cocktail cocktail) {
-        this.cocktailId = cocktail.getCocktailId();
+        this.cocktailId = cocktail.getId();
         this.cocktailName = cocktail.getCocktailName();
         this.alcoholStrength = cocktail.getAlcoholStrength();
         this.cocktailType = cocktail.getCocktailType();
