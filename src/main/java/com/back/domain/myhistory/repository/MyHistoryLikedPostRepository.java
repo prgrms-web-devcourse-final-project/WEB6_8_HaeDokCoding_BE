@@ -42,5 +42,15 @@ public interface MyHistoryLikedPostRepository extends JpaRepository<PostLike, Lo
                                          @Param("lastCreatedAt") LocalDateTime lastCreatedAt,
                                          @Param("lastId") Long lastId,
                                          Pageable pageable);
-}
 
+    @Query("""
+        select pl from PostLike pl
+         join fetch pl.post p
+         where p.id = :postId
+           and pl.user.id = :userId
+           and pl.status = :like
+    """)
+    PostLike findByPostIdAndUserIdLike(@Param("postId") Long postId,
+                                       @Param("userId") Long userId,
+                                       @Param("like") PostLikeStatus like);
+}
