@@ -17,7 +17,7 @@ public record CocktailCommentResponseDto(
     public CocktailCommentResponseDto(CocktailComment cocktailcomment) {
         this(
                 cocktailcomment.getId(),
-                cocktailcomment.getCocktail().getCocktailId(),
+                cocktailcomment.getCocktail().getId(),
                 cocktailcomment.getUser().getNickname(),
                 cocktailcomment.getCreatedAt(),
                 cocktailcomment.getUpdatedAt(),

@@ -23,7 +23,7 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 public class Cocktail {
     @Id
     @GeneratedValue(strategy = IDENTITY)
-    private long cocktailId;
+    private long id;
 
     private String cocktailName;
 

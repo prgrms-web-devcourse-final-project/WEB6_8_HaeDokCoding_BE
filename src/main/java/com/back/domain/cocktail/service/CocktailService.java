@@ -45,13 +45,13 @@ public class CocktailService {
             List<Cocktail> cocktails;
             if (lastId == null) {
                 // 첫 요청 → 최신 데이터부터
-                cocktails = cocktailRepository.findAllByOrderByCocktailIdDesc(PageRequest.of(0, fetchSize));
+                cocktails = cocktailRepository.findAllByOrderByIdDesc(PageRequest.of(0, fetchSize));
             } else {
                 // 무한스크롤 → 마지막 ID보다 작은 데이터 조회
-                cocktails = cocktailRepository.findByCocktailIdLessThanOrderByCocktailIdDesc(lastId, PageRequest.of(0, fetchSize));
+                cocktails = cocktailRepository.findByIdLessThanOrderByIdDesc(lastId, PageRequest.of(0, fetchSize));
             }
             return cocktails.stream()
-                    .map(c -> new CocktailSummaryResponseDto(c.getCocktailId(), c.getCocktailName(), c.getCocktailImgUrl()))
+                    .map(c -> new CocktailSummaryResponseDto(c.getId(), c.getCocktailName(), c.getCocktailImgUrl()))
                     .collect(Collectors.toList());
         }
 
@@ -106,7 +106,7 @@ public class CocktailService {
             //Cocktail 엔티티 → CocktailResponseDto 응답 DTO로 바꿔주는 과정
             List<CocktailSearchResponseDto> resultDtos = pageResult.stream()
                     .map(c -> new CocktailSearchResponseDto(
-                            c.getCocktailId(),
+                            c.getId(),
                             c.getCocktailName(),
                             c.getAlcoholStrength(),
                             c.getCocktailType(),

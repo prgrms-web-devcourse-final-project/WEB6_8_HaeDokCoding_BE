@@ -41,7 +41,7 @@ public interface MyBarRepository extends JpaRepository<MyBar, Long> {
         update MyBar m
            set m.status = 'DELETED', m.deletedAt = CURRENT_TIMESTAMP
          where m.user.id = :userId
-           and m.cocktail.cocktailId = :cocktailId
+           and m.cocktail.id = :cocktailId
            and m.status = 'ACTIVE'
     """)
     int softDeleteByUserAndCocktail(Long userId, Long cocktailId);
