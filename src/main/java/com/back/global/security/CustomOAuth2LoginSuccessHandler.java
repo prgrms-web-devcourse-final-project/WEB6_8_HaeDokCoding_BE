@@ -28,7 +28,7 @@ public class CustomOAuth2LoginSuccessHandler implements AuthenticationSuccessHan
         userAuthService.issueTokens(response, securityUser.getId(), securityUser.getEmail(), securityUser.getNickname());
 
         // 프론트엔드로 리다이렉트
-        String redirectUrl = frontendUrl;
+        String redirectUrl = frontendUrl + "/oauth/success";
 
         response.sendRedirect(redirectUrl);
     }
