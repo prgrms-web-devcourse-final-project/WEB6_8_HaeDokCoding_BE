@@ -10,6 +10,7 @@ import com.back.global.rsData.RsData;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import io.swagger.v3.oas.annotations.Operation;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -37,11 +38,13 @@ public class NotificationController {
     // SSE 연결
     // produces = "text/event-stream": 응답 형식이 SSE임을 명시
     @GetMapping(value = "/subscribe", produces = "text/event-stream")
+    @Operation(summary = "알림 SSE 구독", description = "Server-Sent Events로 실시간 알림 스트림 구독")
     public SseEmitter subscribe() {
         return notificationService.subscribe();
     }
 
     @GetMapping("/notifications")
+    @Operation(summary = "알림 목록 조회", description = "무한스크롤(nextCreatedAt, nextId) 기반 최신순 조회. limit 1~100")
     public RsData<NotificationListResponseDto> getNotifications(
             @AuthenticationPrincipal(expression = "id") Long userId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime lastCreatedAt,
@@ -53,6 +56,7 @@ public class NotificationController {
     }
 
     @GetMapping("/notification-setting")
+    @Operation(summary = "알림 설정 조회", description = "사용자 알림 on/off 상태 조회. 미생성 시 기본 true 반환")
     public RsData<NotificationSettingDto> getMyNotificationSetting(
             @AuthenticationPrincipal(expression = "id") Long userId
     ) {
@@ -61,6 +65,7 @@ public class NotificationController {
     }
 
     @PatchMapping("/notification-setting")
+    @Operation(summary = "알림 설정 변경", description = "enabled 값을 true/false로 설정(멱등)")
     public RsData<NotificationSettingDto> setMyNotificationSetting(
             @AuthenticationPrincipal(expression = "id") Long userId,
             @Valid @RequestBody NotificationSettingUpdateRequestDto req
@@ -70,6 +75,7 @@ public class NotificationController {
     }
 
     @PostMapping("/notifications/{id}")
+    @Operation(summary = "읽음 처리 후 이동 정보", description = "알림을 읽음 처리하고 해당 게시글 ID와 API URL 반환")
     public RsData<NotificationGoResponseDto> goPostLink(
             @AuthenticationPrincipal(expression = "id") Long userId,
             @PathVariable("id") Long notificationId

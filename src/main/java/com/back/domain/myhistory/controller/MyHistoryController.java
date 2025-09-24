@@ -6,6 +6,7 @@ import com.back.domain.myhistory.dto.MyHistoryPostListDto;
 import com.back.domain.myhistory.dto.MyHistoryLikedPostListDto;
 import com.back.domain.myhistory.service.MyHistoryService;
 import com.back.global.rsData.RsData;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class MyHistoryController {
     private final MyHistoryService myHistoryService;
 
     @GetMapping("/posts")
+    @Operation(summary = "내 게시글 목록", description = "내가 작성한 게시글 최신순 목록. 무한스크롤 파라미터 지원")
     public RsData<MyHistoryPostListDto> getMyPosts(
             @AuthenticationPrincipal(expression = "id") Long userId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime lastCreatedAt,
@@ -36,6 +38,7 @@ public class MyHistoryController {
     }
     
     @GetMapping("/posts/{id}")
+    @Operation(summary = "내 게시글로 이동", description = "내가 작성한 게시글 상세 링크 정보 반환")
     public RsData<com.back.domain.myhistory.dto.MyHistoryPostGoResponseDto> goFromPost(
             @AuthenticationPrincipal(expression = "id") Long userId,
             @PathVariable("id") Long postId
@@ -45,6 +48,7 @@ public class MyHistoryController {
     }
 
     @GetMapping("/comments")
+    @Operation(summary = "내 댓글 목록", description = "내가 작성한 댓글 최신순 목록. 무한스크롤 파라미터 지원")
     public RsData<MyHistoryCommentListDto> getMyComments(
             @AuthenticationPrincipal(expression = "id") Long userId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime lastCreatedAt,
@@ -56,6 +60,7 @@ public class MyHistoryController {
     }
 
     @GetMapping("/likes")
+    @Operation(summary = "좋아요한 게시글 목록", description = "좋아요한 게시글 최신순 목록. 무한스크롤 파라미터 지원")
     public RsData<MyHistoryLikedPostListDto> getMyLikedPosts(
             @AuthenticationPrincipal(expression = "id") Long userId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime lastCreatedAt,
@@ -67,6 +72,7 @@ public class MyHistoryController {
     }
 
     @GetMapping("/comments/{id}")
+    @Operation(summary = "댓글에서 게시글 이동", description = "내 댓글이 달린 게시글 상세 링크 정보 반환")
     public RsData<MyHistoryCommentGoResponseDto> goFromComment(
             @AuthenticationPrincipal(expression = "id") Long userId,
             @PathVariable("id") Long commentId
@@ -76,6 +82,7 @@ public class MyHistoryController {
     }
 
     @GetMapping("/likes/{id}")
+    @Operation(summary = "좋아요 목록에서 이동", description = "좋아요한 게시글 상세 링크 정보 반환")
     public RsData<com.back.domain.myhistory.dto.MyHistoryPostGoResponseDto> goFromLikedPost(
             @AuthenticationPrincipal(expression = "id") Long userId,
             @PathVariable("id") Long postId
