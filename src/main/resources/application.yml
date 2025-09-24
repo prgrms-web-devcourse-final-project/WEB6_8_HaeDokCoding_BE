@@ -78,3 +78,7 @@ custom:
     expirationSeconds: "#{60*15}"
   refreshToken:
     expirationSeconds: "#{60*60*24*30}"
+
+chatbot:
+  history:
+    max-conversation-count: 5
