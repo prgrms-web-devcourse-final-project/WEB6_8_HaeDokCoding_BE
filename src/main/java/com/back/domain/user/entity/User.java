@@ -30,7 +30,7 @@ public class User {
     @Column(length = 100)
     private String email;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, length = 50)
     private String nickname;   // 고유 닉네임
 
     // OAuth2 관련 필드
