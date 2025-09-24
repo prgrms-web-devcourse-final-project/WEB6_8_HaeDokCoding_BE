@@ -1,0 +1,44 @@
+# 프로덕션 환경 설정
+#spring:
+#  datasource:
+#    url: ${DATABASE_URL}
+#
+#
+
+spring:
+  autoconfigure:
+    exclude:
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      password: ${REDIS_PASSWORD}
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        show_sql: false
+
+springdoc:
+  swagger-ui:
+    enabled: false
+
+logging:
+  level:
+    com.back: INFO
+    root: WARN
+
+# 쿠키 보안 설정
+custom:
+  cookie:
+    secure: true
+    domain: ${custom.prod.cookieDomain}
+  site:
+    frontUrl: "${custom.prod.frontUrl}"
+    backUrl: "${custom.prod.backUrl}"
+    name: ssoul

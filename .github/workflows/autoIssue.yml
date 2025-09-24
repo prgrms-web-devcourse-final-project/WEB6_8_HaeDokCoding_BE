@@ -1,0 +1,57 @@
+# 워크플로우 이름
+name: 이슈 자동화
+
+# 실행 조건: 이슈가 열렸을 때
+on:
+  issues:
+    types: [ opened ]
+
+# 실행할 작업
+jobs:
+  automate-issue:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      # 이슈 제목에 따라 Label 자동 할당 (예시)
+      - name: design 라벨 할당
+        if: contains(github.event.issue.title, 'design')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: design
+
+      - name: feat 라벨 할당
+        if: contains(github.event.issue.title, 'feat')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: feat
+          
+      - name: fix 라벨 할당
+        if: contains(github.event.issue.title, 'fix')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: fix
+          
+      - name: refactor 라벨 할당
+        if: contains(github.event.issue.title, 'refactor')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: refactor
+          
+      - name: chore 라벨 할당
+        if: contains(github.event.issue.title, 'chore')
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: chore
+          
+
+      # GitHub 프로젝트의 'Backlog' 컬럼에 자동 추가
+      - name : Github 프로젝트에 추가
+        uses: jinhokim98/project-flow-add-issue-to-project@v1
+        with:
+          github_token: ${{ secrets.PROJECT_ACCESS_TOKEN }}
+          project_owner: prgrms-web-devcourse-final-project
+          project_number: 145
+          target_column: 'Backlog'

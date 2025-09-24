@@ -39,3 +39,19 @@ out/
 ### Custom ###
 db_dev.mv.db
 db_dev.trace.db
+
+### Environment Variables ###
+.env
+
+### Terraform ###
+.terraform
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+.terraform.tfstate.lock.info
+terraform/secrets.tf
+
+
+### Claude AI ###
+CLAUDE.md
+.claude/
