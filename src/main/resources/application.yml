@@ -56,7 +56,7 @@ spring:
         options:
           model: "gemini-2.0-flash-lite"
           temperature: 0.0
-        completions-path: "/chat/completions"
+        completions-path: "/chat/completions" # gemini 사용시 v1/chat/completions 로 들어가지 않음
 
 springdoc:
   default-produces-media-type: application/json;charset=UTF-8

@@ -6,6 +6,18 @@ import com.back.domain.chatbot.entity.ChatConversation;
 import com.back.domain.chatbot.repository.ChatConversationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.chat.prompt.SystemPromptTemplate;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.SystemMessage;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -15,16 +27,20 @@ import org.springframework.util.StreamUtils;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.UUID;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class ChatbotService {
 
-    private final GeminiApiService geminiApiService;
+    private final ChatModel chatModel;
     private final ChatConversationRepository chatConversationRepository;
+
+    // 세션별 메모리 관리를 위한 Map
+    private final Map<String, InMemoryChatMemory> sessionMemories = new HashMap<>();
 
     @Value("classpath:prompts/chatbot-system-prompt.txt")
     private Resource systemPromptResource;
@@ -37,12 +53,25 @@ public class ChatbotService {
 
     private String systemPrompt;
     private String responseRules;
+    private ChatClient chatClient;
 
     @PostConstruct
     public void init() throws IOException {
-        this.systemPrompt = StreamUtils.copyToString(systemPromptResource.getInputStream(), StandardCharsets.UTF_8);
-        this.responseRules = StreamUtils.copyToString(responseRulesResource.getInputStream(), StandardCharsets.UTF_8);
-        log.info("챗봇 시스템 프롬프트가 로드되었습니다. (길이: {} 문자)", systemPrompt.length());
+        this.systemPrompt = StreamUtils.copyToString(
+                systemPromptResource.getInputStream(),
+                StandardCharsets.UTF_8
+        );
+        this.responseRules = StreamUtils.copyToString(
+                responseRulesResource.getInputStream(),
+                StandardCharsets.UTF_8
+        );
+
+        // ChatClient 초기화
+        this.chatClient = ChatClient.builder(chatModel)
+                .defaultSystem(systemPrompt)
+                .build();
+
+        log.info("Spring AI 챗봇 초기화 완료. 시스템 프롬프트 길이: {} 문자", systemPrompt.length());
     }
 
     @Transactional
@@ -53,66 +82,68 @@ public class ChatbotService {
         }
 
         try {
-            String contextualMessage = buildContextualMessage(requestDto.getMessage(), sessionId);
+            // 세션별 메모리 가져오기 또는 생성
+            InMemoryChatMemory chatMemory = getOrCreateSessionMemory(sessionId);
 
-            String botResponse = geminiApiService.generateResponse(contextualMessage).block();
+            // 이전 대화 기록 로드
+            loadConversationHistory(sessionId, chatMemory);
 
-            ChatConversation conversation = ChatConversation.builder()
-                    .userId(requestDto.getUserId())
-                    .userMessage(requestDto.getMessage())
-                    .botResponse(botResponse)
-                    .sessionId(sessionId)
-                    .build();
+            // ChatClient를 사용한 응답 생성
+            String response = chatClient.prompt()
+                    .system(systemPrompt)
+                    .user(buildUserMessage(requestDto.getMessage()))
+                    .advisors(new MessageChatMemoryAdvisor(chatMemory))
+                    .call()
+                    .content();
 
-            chatConversationRepository.save(conversation);
+            // 대화 저장
+            saveConversation(requestDto, response, sessionId);
 
-            return new ChatResponseDto(botResponse, sessionId);
+            return new ChatResponseDto(response, sessionId);
 
         } catch (Exception e) {
             log.error("채팅 응답 생성 중 오류 발생: ", e);
-            return new ChatResponseDto("죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.", sessionId);
+            return new ChatResponseDto(
+                    "죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.",
+                    sessionId
+            );
         }
     }
 
-    private String buildContextualMessage(String userMessage, String sessionId) {
-        List<ChatConversation> recentConversations = getRecentConversations(sessionId);
-
-        StringBuilder contextBuilder = new StringBuilder();
-        contextBuilder.append(systemPrompt).append("\n\n");
-
-        appendConversationHistory(contextBuilder, recentConversations);
-        appendCurrentQuestion(contextBuilder, userMessage);
-        appendResponseInstructions(contextBuilder);
-
-        return contextBuilder.toString();
+    private InMemoryChatMemory getOrCreateSessionMemory(String sessionId) {
+        return sessionMemories.computeIfAbsent(
+                sessionId,
+                k -> new InMemoryChatMemory()
+        );
     }
 
-    private List<ChatConversation> getRecentConversations(String sessionId) {
-        return chatConversationRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
-    }
+    private void loadConversationHistory(String sessionId, InMemoryChatMemory chatMemory) {
+        List<ChatConversation> recentConversations =
+                chatConversationRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
 
-    private void appendConversationHistory(StringBuilder contextBuilder, List<ChatConversation> conversations) {
-        if (!conversations.isEmpty()) {
-            contextBuilder.append("=== 이전 대화 기록 ===\n");
+        int maxHistory = Math.min(recentConversations.size(), maxConversationCount);
+        int startIdx = Math.max(0, recentConversations.size() - maxHistory);
 
-            int maxHistory = Math.min(conversations.size(), maxConversationCount);
-            int startIdx = Math.max(0, conversations.size() - maxHistory);
-
-            for (int i = startIdx; i < conversations.size(); i++) {
-                ChatConversation conv = conversations.get(i);
-                contextBuilder.append("사용자: ").append(conv.getUserMessage()).append("\n");
-                contextBuilder.append("AI 바텐더: ").append(conv.getBotResponse()).append("\n\n");
-            }
-            contextBuilder.append("=================\n\n");
+        for (int i = startIdx; i < recentConversations.size(); i++) {
+            ChatConversation conv = recentConversations.get(i);
+            chatMemory.add(new UserMessage(conv.getUserMessage()));
+            chatMemory.add(new AssistantMessage(conv.getBotResponse()));
         }
     }
 
-    private void appendCurrentQuestion(StringBuilder contextBuilder, String userMessage) {
-        contextBuilder.append("현재 사용자 질문: ").append(userMessage).append("\n\n");
+    private String buildUserMessage(String userMessage) {
+        return userMessage + "\n\n" + responseRules;
     }
 
-    private void appendResponseInstructions(StringBuilder contextBuilder) {
-        contextBuilder.append(responseRules);
+    private void saveConversation(ChatRequestDto requestDto, String response, String sessionId) {
+        ChatConversation conversation = ChatConversation.builder()
+                .userId(requestDto.getUserId())
+                .userMessage(requestDto.getMessage())
+                .botResponse(response)
+                .sessionId(sessionId)
+                .build();
+
+        chatConversationRepository.save(conversation);
     }
 
     @Transactional(readOnly = true)
@@ -123,5 +154,14 @@ public class ChatbotService {
     @Transactional(readOnly = true)
     public List<ChatConversation> getUserChatHistory(Long userId, String sessionId) {
         return chatConversationRepository.findByUserIdAndSessionIdOrderByCreatedAtAsc(userId, sessionId);
+    }
+
+    // 메모리 정리를 위한 메서드 (오래된 세션 제거)
+    public void cleanupInactiveSessions() {
+        // 필요시 구현: 일정 시간 이상 사용하지 않은 세션 메모리 제거
+        sessionMemories.entrySet().removeIf(entry -> {
+            // 구현 예: 30분 이상 비활성 세션 제거
+            return false; // 실제 로직 구현 필요
+        });
     }
 }

@@ -22,6 +22,9 @@ configurations {
 
 repositories {
     mavenCentral()
+    // Spring AI 마일스톤 리포지토리 추가
+    maven { url = uri("https://repo.spring.io/milestone") }
+    maven { url = uri("https://repo.spring.io/snapshot") }
 }
 
 dependencies {
