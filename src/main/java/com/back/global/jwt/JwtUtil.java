@@ -19,13 +19,16 @@ public class JwtUtil {
 
     private final SecretKey secretKey;
     private final long accessTokenExpiration;
+    private final String cookieDomain;
     private static final String ACCESS_TOKEN_COOKIE_NAME = "accessToken";
     private static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
 
     public JwtUtil(@Value("${custom.jwt.secretKey}") String secretKey,
-                   @Value("${custom.accessToken.expirationSeconds}") long accessTokenExpiration) {
+                   @Value("${custom.accessToken.expirationSeconds}") long accessTokenExpiration,
+                   @Value("${custom.site.cookieDomain}") String cookieDomain) {
         this.secretKey = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
         this.accessTokenExpiration = accessTokenExpiration * 1000;
+        this.cookieDomain = cookieDomain;
     }
 
     public String generateAccessToken(Long userId, String email, String nickname) {
@@ -33,12 +36,12 @@ public class JwtUtil {
         Date expiration = new Date(now.getTime() + accessTokenExpiration);
 
         return Jwts.builder()
-                .subject(String.valueOf(userId))
+                .setSubject(String.valueOf(userId))
                 .claim("email", email)
                 .claim("nickname", nickname)
-                .issuedAt(now)
-                .expiration(expiration)
-                .signWith(secretKey)
+                .setIssuedAt(now)
+                .setExpiration(expiration)
+                .signWith(secretKey) // javax.crypto.SecretKey 타입
                 .compact();
     }
 
@@ -48,6 +51,7 @@ public class JwtUtil {
         cookie.setHttpOnly(true);
         cookie.setSecure(false); // 개발환경에서는 false, 프로덕션에서는 true
         cookie.setPath("/");
+        cookie.setDomain(cookieDomain);
         cookie.setMaxAge((int) (accessTokenExpiration / 1000));
         response.addCookie(cookie);
     }
@@ -58,16 +62,17 @@ public class JwtUtil {
         cookie.setHttpOnly(true);
         cookie.setSecure(false);
         cookie.setPath("/");
+        cookie.setDomain(cookieDomain);
         cookie.setMaxAge(0);
         response.addCookie(cookie);
     }
 
     public boolean validateAccessToken(String token) {
         try {
-            Jwts.parser()
-                    .verifyWith(secretKey)
+            Jwts.parserBuilder()
+                    .setSigningKey(secretKey)
                     .build()
-                    .parseSignedClaims(token);
+                    .parseClaimsJws(token);
             return true;
         } catch (SecurityException | MalformedJwtException e) {
             log.error("Invalid JWT signature: {}", e.getMessage());
@@ -90,15 +95,15 @@ public class JwtUtil {
     }
 
     public String getNicknameFromToken(String token) {
-        return parseToken(token).get("nickname", String.class);
+        return parseToken(token).get("nickname").toString();
     }
 
     private Claims parseToken(String token) {
-        return Jwts.parser()
-                .verifyWith(secretKey)
+        return Jwts.parserBuilder()
+                .setSigningKey(secretKey)
                 .build()
-                .parseSignedClaims(token)
-                .getPayload();
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     public void addRefreshTokenToCookie(HttpServletResponse response, String refreshToken) {
@@ -106,19 +111,25 @@ public class JwtUtil {
         cookie.setHttpOnly(true);
         cookie.setSecure(false);
         cookie.setPath("/");
+        cookie.setDomain(cookieDomain);
         cookie.setMaxAge(60 * 60 * 24 * 30);
         response.addCookie(cookie);
     }
 
     public String getRefreshTokenFromCookie(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
+        log.debug("받은 쿠키 개수: {}", cookies != null ? cookies.length : 0);
+
         if (cookies != null) {
             for (Cookie cookie : cookies) {
+                log.debug("쿠키 확인 - 이름: {}, 값: {}", cookie.getName(), cookie.getValue());
                 if (REFRESH_TOKEN_COOKIE_NAME.equals(cookie.getName())) {
+                    log.debug("RefreshToken 쿠키 발견: {}", cookie.getValue());
                     return cookie.getValue();
                 }
             }
         }
+        log.debug("RefreshToken 쿠키를 찾을 수 없음");
         return null;
     }
 
@@ -127,6 +138,7 @@ public class JwtUtil {
         cookie.setHttpOnly(true);
         cookie.setSecure(false);
         cookie.setPath("/");
+        cookie.setDomain(cookieDomain);
         cookie.setMaxAge(0);
         response.addCookie(cookie);
     }

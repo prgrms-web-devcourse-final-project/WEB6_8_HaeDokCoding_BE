@@ -137,6 +137,8 @@ public class UserAuthService {
         String accessToken = jwtUtil.generateAccessToken(userId, email, nickname);
         String refreshToken = refreshTokenService.generateRefreshToken(userId);
 
+        log.debug("토큰 발급 완료 - userId: {}, accessToken: {}, refreshToken: {}", userId, accessToken, refreshToken);
+
         jwtUtil.addAccessTokenToCookie(response, accessToken);
         jwtUtil.addRefreshTokenToCookie(response, refreshToken);
     }
@@ -144,8 +146,15 @@ public class UserAuthService {
     public RefreshTokenResDto refreshTokens(HttpServletRequest request, HttpServletResponse response) {
         try {
             String oldRefreshToken = jwtUtil.getRefreshTokenFromCookie(request);
+            log.debug("토큰 갱신 시도 - 받은 RefreshToken: {}", oldRefreshToken);
 
-            if (oldRefreshToken == null || !refreshTokenService.validateToken(oldRefreshToken)) {
+            if (oldRefreshToken == null) {
+                log.error("RefreshToken이 쿠키에서 발견되지 않음");
+                return null;
+            }
+
+            if (!refreshTokenService.validateToken(oldRefreshToken)) {
+                log.error("RefreshToken 검증 실패: {}", oldRefreshToken);
                 return null;
             }
 

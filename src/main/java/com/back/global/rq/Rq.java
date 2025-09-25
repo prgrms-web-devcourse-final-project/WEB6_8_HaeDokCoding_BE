@@ -25,8 +25,12 @@ public class Rq {
     private final HttpServletResponse resp;
     private final UserService userService;
 
-    @Value("${custom.cookie.secure:false}")
+    @Value("${custom.cookie.secure}")
     private boolean cookieSecure;
+
+    @Value("${custom.cookie.same}")
+    private String cookieSameSite;
+
 
     public User getActor() {
         return Optional.ofNullable(
@@ -90,7 +94,7 @@ public class Rq {
                 .path("/")
                 .maxAge(maxAge)
                 .secure(cookieSecure)
-                .sameSite("None")
+                .sameSite(cookieSameSite)
                 .httpOnly(true)
                 .build();
         resp.addHeader("Set-Cookie", cookie.toString());

@@ -41,7 +41,8 @@ logging:
 # 쿠키 보안 설정 (HTTP 환경용)
 custom:
   cookie:
-    secure: false
+    secure: true
+    same: "Lax"
 
 #  # AI 설정
 #  ai:

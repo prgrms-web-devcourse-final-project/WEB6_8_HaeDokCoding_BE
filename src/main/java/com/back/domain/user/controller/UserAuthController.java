@@ -34,10 +34,10 @@ public class UserAuthController {
     })
     @PostMapping("/refresh")
     public RsData<RefreshTokenResDto> refreshToken(HttpServletRequest request, HttpServletResponse response) {
-        RefreshTokenResDto refreshToken = userAuthService.refreshTokens(request, response);
+        RefreshTokenResDto refreshTokenData = userAuthService.refreshTokens(request, response);
 
-        if (refreshToken != null) {
-            return RsData.of(200, "토큰이 갱신 성공.", refreshToken);
+        if (refreshTokenData != null) {
+            return RsData.of(200, "토큰이 갱신 성공.", refreshTokenData);
         } else {
             return RsData.of(401, "토큰 갱신에 실패했습니다. 다시 로그인해주세요.");
         }

@@ -37,6 +37,7 @@ logging:
 custom:
   cookie:
     secure: true
+    same: "None"
     domain: ${custom.prod.cookieDomain}
   site:
     frontUrl: "${custom.prod.frontUrl}"
