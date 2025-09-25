@@ -95,7 +95,7 @@ public class UserAuthService {
         User user = User.builder()
                 .email(email)
                 .nickname(uniqueNickname)
-                .abvDegree(0.0)
+                .abvDegree(5.0)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .role("USER")
