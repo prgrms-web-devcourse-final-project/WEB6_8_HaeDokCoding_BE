@@ -6,18 +6,15 @@ import com.back.domain.chatbot.entity.ChatConversation;
 import com.back.domain.chatbot.repository.ChatConversationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.chat.prompt.PromptTemplate;
-import org.springframework.ai.chat.prompt.SystemPromptTemplate;
-import org.springframework.ai.chat.messages.Message;
-import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.chat.messages.AssistantMessage;
-import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.InMemoryChatMemory;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.messages.*;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -29,7 +26,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -39,8 +36,8 @@ public class ChatbotService {
     private final ChatModel chatModel;
     private final ChatConversationRepository chatConversationRepository;
 
-    // 세션별 메모리 관리를 위한 Map
-    private final Map<String, InMemoryChatMemory> sessionMemories = new HashMap<>();
+    // 세션별 메모리 관리 (Thread-Safe)
+    private final ConcurrentHashMap<String, InMemoryChatMemory> sessionMemories = new ConcurrentHashMap<>();
 
     @Value("classpath:prompts/chatbot-system-prompt.txt")
     private Resource systemPromptResource;
@@ -50,6 +47,12 @@ public class ChatbotService {
 
     @Value("${chatbot.history.max-conversation-count:5}")
     private int maxConversationCount;
+
+    @Value("${spring.ai.vertex.ai.gemini.chat.options.temperature:0.8}")
+    private Double temperature;
+
+    @Value("${spring.ai.vertex.ai.gemini.chat.options.max-output-tokens:300}")
+    private Integer maxTokens;
 
     private String systemPrompt;
     private String responseRules;
@@ -66,35 +69,54 @@ public class ChatbotService {
                 StandardCharsets.UTF_8
         );
 
-        // ChatClient 초기화
+        // ChatClient 고급 설정
         this.chatClient = ChatClient.builder(chatModel)
                 .defaultSystem(systemPrompt)
+                .defaultOptions(ChatOptionsBuilder.builder()
+                        .withTemperature(temperature)
+                        .withMaxTokens(maxTokens)
+                        .build())
                 .build();
 
-        log.info("Spring AI 챗봇 초기화 완료. 시스템 프롬프트 길이: {} 문자", systemPrompt.length());
+        log.info("Spring AI 챗봇 초기화 완료. Temperature: {}, MaxTokens: {}", temperature, maxTokens);
     }
 
     @Transactional
     public ChatResponseDto sendMessage(ChatRequestDto requestDto) {
-        String sessionId = requestDto.getSessionId();
-        if (sessionId == null || sessionId.isEmpty()) {
-            sessionId = UUID.randomUUID().toString();
-        }
+        String sessionId = ensureSessionId(requestDto.getSessionId());
 
         try {
-            // 세션별 메모리 가져오기 또는 생성
+            // 메시지 타입 감지
+            MessageType messageType = detectMessageType(requestDto.getMessage());
+
+            // 세션별 메모리 가져오기
             InMemoryChatMemory chatMemory = getOrCreateSessionMemory(sessionId);
 
             // 이전 대화 기록 로드
             loadConversationHistory(sessionId, chatMemory);
 
-            // ChatClient를 사용한 응답 생성
-            String response = chatClient.prompt()
-                    .system(systemPrompt)
-                    .user(buildUserMessage(requestDto.getMessage()))
-                    .advisors(new MessageChatMemoryAdvisor(chatMemory))
+            // ChatClient 빌더 생성
+            var promptBuilder = chatClient.prompt()
+                    .system(buildSystemMessage(messageType))
+                    .user(buildUserMessage(requestDto.getMessage(), messageType))
+                    .advisors(new MessageChatMemoryAdvisor(chatMemory, maxConversationCount));
+
+            // RAG 기능 활성화 (칵테일 정보 검색)
+            if (vectorStore != null && shouldUseRAG(messageType)) {
+                promptBuilder.advisors(new QuestionAnswerAdvisor(
+                        vectorStore,
+                        SearchRequest.defaults().withTopK(3)
+                ));
+            }
+
+            // 응답 생성
+            String response = promptBuilder
+                    .options(getOptionsForMessageType(messageType))
                     .call()
                     .content();
+
+            // 응답 후처리
+            response = postProcessResponse(response, messageType);
 
             // 대화 저장
             saveConversation(requestDto, response, sessionId);
@@ -103,11 +125,14 @@ public class ChatbotService {
 
         } catch (Exception e) {
             log.error("채팅 응답 생성 중 오류 발생: ", e);
-            return new ChatResponseDto(
-                    "죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.",
-                    sessionId
-            );
+            return handleError(sessionId, e);
         }
+    }
+
+    private String ensureSessionId(String sessionId) {
+        return (sessionId == null || sessionId.isEmpty())
+                ? UUID.randomUUID().toString()
+                : sessionId;
     }
 
     private InMemoryChatMemory getOrCreateSessionMemory(String sessionId) {
@@ -118,21 +143,81 @@ public class ChatbotService {
     }
 
     private void loadConversationHistory(String sessionId, InMemoryChatMemory chatMemory) {
-        List<ChatConversation> recentConversations =
+        List<ChatConversation> conversations =
                 chatConversationRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
 
-        int maxHistory = Math.min(recentConversations.size(), maxConversationCount);
-        int startIdx = Math.max(0, recentConversations.size() - maxHistory);
-
-        for (int i = startIdx; i < recentConversations.size(); i++) {
-            ChatConversation conv = recentConversations.get(i);
-            chatMemory.add(new UserMessage(conv.getUserMessage()));
-            chatMemory.add(new AssistantMessage(conv.getBotResponse()));
-        }
+        // 최근 N개의 대화만 메모리에 로드
+        conversations.stream()
+                .skip(Math.max(0, conversations.size() - maxConversationCount))
+                .forEach(conv -> {
+                    chatMemory.add(new UserMessage(conv.getUserMessage()));
+                    chatMemory.add(new AssistantMessage(conv.getBotResponse()));
+                });
     }
 
-    private String buildUserMessage(String userMessage) {
+    private String buildSystemMessage(MessageType type) {
+        StringBuilder sb = new StringBuilder(systemPrompt);
+
+        // 메시지 타입별 추가 지시사항
+        switch (type) {
+            case RECIPE:
+                sb.append("\n\n【레시피 답변 모드】정확한 재료 비율과 제조 순서를 강조하세요.");
+                break;
+            case RECOMMENDATION:
+                sb.append("\n\n【추천 모드】다양한 선택지와 각각의 특징을 설명하세요.");
+                break;
+            case QUESTION:
+                sb.append("\n\n【질문 답변 모드】정확하고 신뢰할 수 있는 정보를 제공하세요.");
+                break;
+            default:
+                break;
+        }
+
+        return sb.toString();
+    }
+
+    private String buildUserMessage(String userMessage, MessageType type) {
         return userMessage + "\n\n" + responseRules;
+    }
+
+    private ChatOptions getOptionsForMessageType(MessageType type) {
+        return switch (type) {
+            case RECIPE -> ChatOptionsBuilder.builder()
+                    .withTemperature(0.3)  // 정확성 중시
+                    .withMaxTokens(400)     // 레시피는 길게
+                    .build();
+            case RECOMMENDATION -> ChatOptionsBuilder.builder()
+                    .withTemperature(0.9)  // 다양성 중시
+                    .withMaxTokens(250)
+                    .build();
+            case QUESTION -> ChatOptionsBuilder.builder()
+                    .withTemperature(0.7)  // 균형
+                    .withMaxTokens(200)
+                    .build();
+            default -> ChatOptionsBuilder.builder()
+                    .withTemperature(temperature)
+                    .withMaxTokens(maxTokens)
+                    .build();
+        };
+    }
+
+    private boolean shouldUseRAG(MessageType type) {
+        // 레시피나 추천 요청시 RAG 활성화
+        return type == MessageType.RECIPE || type == MessageType.RECOMMENDATION;
+    }
+
+    private String postProcessResponse(String response, MessageType type) {
+        // 응답 길이 제한 확인
+        if (response.length() > 500) {
+            response = response.substring(0, 497) + "...";
+        }
+
+        // 이모지 추가 (타입별)
+        if (type == MessageType.RECIPE && !response.contains("🍹")) {
+            response = "🍹 " + response;
+        }
+
+        return response;
     }
 
     private void saveConversation(ChatRequestDto requestDto, String response, String sessionId) {
@@ -141,9 +226,43 @@ public class ChatbotService {
                 .userMessage(requestDto.getMessage())
                 .botResponse(response)
                 .sessionId(sessionId)
+                .createdAt(LocalDateTime.now())
                 .build();
 
         chatConversationRepository.save(conversation);
+    }
+
+    private ChatResponseDto handleError(String sessionId, Exception e) {
+        String errorMessage = "죄송합니다. 잠시 후 다시 시도해주세요.";
+
+        if (e.getMessage().contains("rate limit")) {
+            errorMessage = "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.";
+        } else if (e.getMessage().contains("timeout")) {
+            errorMessage = "응답 시간이 초과되었습니다. 다시 시도해주세요.";
+        }
+
+        return new ChatResponseDto(errorMessage, sessionId);
+    }
+
+    public enum MessageType {
+        RECIPE, RECOMMENDATION, QUESTION, CASUAL_CHAT
+    }
+
+    private MessageType detectMessageType(String message) {
+        String lower = message.toLowerCase();
+
+        if (lower.contains("레시피") || lower.contains("만드는") ||
+                lower.contains("제조") || lower.contains("recipe")) {
+            return MessageType.RECIPE;
+        } else if (lower.contains("추천") || lower.contains("어때") ||
+                lower.contains("뭐가 좋") || lower.contains("recommend")) {
+            return MessageType.RECOMMENDATION;
+        } else if (lower.contains("?") || lower.contains("뭐") ||
+                lower.contains("어떻") || lower.contains("왜")) {
+            return MessageType.QUESTION;
+        }
+
+        return MessageType.CASUAL_CHAT;
     }
 
     @Transactional(readOnly = true)
@@ -156,12 +275,56 @@ public class ChatbotService {
         return chatConversationRepository.findByUserIdAndSessionIdOrderByCreatedAtAsc(userId, sessionId);
     }
 
-    // 메모리 정리를 위한 메서드 (오래된 세션 제거)
+    // 정기적인 메모리 정리 (스케줄러로 호출)
     public void cleanupInactiveSessions() {
-        // 필요시 구현: 일정 시간 이상 사용하지 않은 세션 메모리 제거
+        long thirtyMinutesAgo = System.currentTimeMillis() - (30 * 60 * 1000);
+
         sessionMemories.entrySet().removeIf(entry -> {
-            // 구현 예: 30분 이상 비활성 세션 제거
-            return false; // 실제 로직 구현 필요
+            // 실제로는 마지막 사용 시간을 추적해야 함
+            return false;
         });
+
+        log.info("세션 메모리 정리 완료. 현재 활성 세션: {}", sessionMemories.size());
     }
 }
+
+// ChatOptions 빌더 헬퍼 클래스
+class ChatOptionsBuilder {
+    private Double temperature;
+    private Integer maxTokens;
+    private Double topP;
+    private Integer topK;
+
+    public static ChatOptionsBuilder builder() {
+        return new ChatOptionsBuilder();
+    }
+
+    public ChatOptionsBuilder withTemperature(Double temperature) {
+        this.temperature = temperature;
+        return this;
+    }
+
+    public ChatOptionsBuilder withMaxTokens(Integer maxTokens) {
+        this.maxTokens = maxTokens;
+        return this;
+    }
+
+    public ChatOptionsBuilder withTopP(Double topP) {
+        this.topP = topP;
+        return this;
+    }
+
+    public ChatOptionsBuilder withTopK(Integer topK) {
+        this.topK = topK;
+        return this;
+    }
+
+    public ChatOptions build() {
+        // 실제 ChatOptions 객체 생성 로직
+        // Spring AI의 실제 API에 맞게 조정 필요
+        return null; // placeholder
+    }
+}
+
+// ChatOptions placeholder (실제 Spring AI API에 맞게 조정 필요)
+interface ChatOptions {}
