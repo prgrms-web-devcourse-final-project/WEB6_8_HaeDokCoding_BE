@@ -46,7 +46,7 @@ public class ChatbotService {
     private int maxConversationCount;
 
     @Value("${spring.ai.openai.chat.options.temperature:0.8}")
-    private Float temperature;
+    private Double temperature;
 
     @Value("${spring.ai.openai.chat.options.max-tokens:300}")
     private Integer maxTokens;
@@ -96,7 +96,7 @@ public class ChatbotService {
             var promptBuilder = chatClient.prompt()
                     .system(buildSystemMessage(messageType))
                     .user(buildUserMessage(requestDto.getMessage(), messageType))
-                    .advisors(new MessageChatMemoryAdvisor(chatMemory, maxConversationCount));
+                    .advisors(new MessageChatMemoryAdvisor(chatMemory));
 
             // RAG 기능은 향후 구현 예정 (Vector DB 설정 필요)
 
@@ -138,11 +138,12 @@ public class ChatbotService {
                 chatConversationRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
 
         // 최근 N개의 대화만 메모리에 로드
+        String sessionIdForMemory = sessionId;
         conversations.stream()
                 .skip(Math.max(0, conversations.size() - maxConversationCount))
                 .forEach(conv -> {
-                    chatMemory.add(new UserMessage(conv.getUserMessage()));
-                    chatMemory.add(new AssistantMessage(conv.getBotResponse()));
+                    chatMemory.add(sessionIdForMemory, new UserMessage(conv.getUserMessage()));
+                    chatMemory.add(sessionIdForMemory, new AssistantMessage(conv.getBotResponse()));
                 });
     }
 
@@ -174,15 +175,15 @@ public class ChatbotService {
     private OpenAiChatOptions getOptionsForMessageType(MessageType type) {
         return switch (type) {
             case RECIPE -> OpenAiChatOptions.builder()
-                    .withTemperature(0.3f)  // 정확성 중시
+                    .withTemperature(0.3)  // 정확성 중시
                     .withMaxTokens(400)     // 레시피는 길게
                     .build();
             case RECOMMENDATION -> OpenAiChatOptions.builder()
-                    .withTemperature(0.9f)  // 다양성 중시
+                    .withTemperature(0.9)  // 다양성 중시
                     .withMaxTokens(250)
                     .build();
             case QUESTION -> OpenAiChatOptions.builder()
-                    .withTemperature(0.7f)  // 균형
+                    .withTemperature(0.7)  // 균형
                     .withMaxTokens(200)
                     .build();
             default -> OpenAiChatOptions.builder()
