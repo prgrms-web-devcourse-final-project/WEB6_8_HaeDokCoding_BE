@@ -13,7 +13,6 @@ public class ChatRequestDto {
     @NotBlank(message = "메시지는 필수입니다.")
     private String message;
 
-    private String sessionId;
 
     private Long userId;
 }

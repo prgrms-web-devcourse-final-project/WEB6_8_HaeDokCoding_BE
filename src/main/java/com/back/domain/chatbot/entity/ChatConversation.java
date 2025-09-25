@@ -27,8 +27,6 @@ public class ChatConversation {
     @Column(columnDefinition = "TEXT")
     private String botResponse;
 
-    private String sessionId;
-
     private LocalDateTime createdAt;
 
     @PrePersist

@@ -33,24 +33,10 @@ public class ChatbotController {
         }
     }
 
-    @GetMapping("/history/{sessionId}")
-    public ResponseEntity<RsData<List<ChatConversation>>> getChatHistory(@PathVariable String sessionId) {
+    @GetMapping("/history/user/{userId}")
+    public ResponseEntity<RsData<List<ChatConversation>>> getUserChatHistory(@PathVariable Long userId) {
         try {
-            List<ChatConversation> history = chatbotService.getChatHistory(sessionId);
-            return ResponseEntity.ok(RsData.successOf(history));
-        } catch (Exception e) {
-            log.error("채팅 기록 조회 중 오류 발생: ", e);
-            return ResponseEntity.internalServerError()
-                    .body(RsData.failOf("서버 오류가 발생했습니다."));
-        }
-    }
-
-    @GetMapping("/history/user/{userId}/session/{sessionId}")
-    public ResponseEntity<RsData<List<ChatConversation>>> getUserChatHistory(
-            @PathVariable Long userId,
-            @PathVariable String sessionId) {
-        try {
-            List<ChatConversation> history = chatbotService.getUserChatHistory(userId, sessionId);
+            List<ChatConversation> history = chatbotService.getUserChatHistory(userId);
             return ResponseEntity.ok(RsData.successOf(history));
         } catch (Exception e) {
             log.error("사용자 채팅 기록 조회 중 오류 발생: ", e);
