@@ -22,6 +22,9 @@ configurations {
 
 repositories {
     mavenCentral()
+    // Spring AI 마일스톤 리포지토리 추가
+    maven { url = uri("https://repo.spring.io/milestone") }
+    maven { url = uri("https://repo.spring.io/snapshot") }
 }
 
 dependencies {
@@ -50,6 +53,14 @@ dependencies {
 
     annotationProcessor("org.projectlombok:lombok")
 
+    //Spring AI
+    implementation(platform("org.springframework.ai:spring-ai-bom:1.0.0-M4"))
+
+    //Vertex
+    //implementation("org.springframework.ai:spring-ai-vertex-ai-gemini-spring-boot-starter")
+
+    //OpenAI
+    implementation("org.springframework.ai:spring-ai-openai-spring-boot-starter")
 
     //test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
