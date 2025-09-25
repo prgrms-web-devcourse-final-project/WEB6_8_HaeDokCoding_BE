@@ -12,6 +12,7 @@ public record PostCreateRequestDto(
     @NotBlank (message = "내용은 필수입니다.")
     String content,
     String imageUrl,
+    String videoUrl,
     List<String> tags
 ) {
 }

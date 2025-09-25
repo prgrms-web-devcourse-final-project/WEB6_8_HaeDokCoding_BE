@@ -50,6 +50,7 @@ public class PostService {
         .title(reqBody.title())
         .content(reqBody.content())
         .imageUrl(reqBody.imageUrl())
+        .videoUrl(reqBody.videoUrl())
         .build();
 
     List<String> tagNames = reqBody.tags();
@@ -113,6 +114,9 @@ public class PostService {
     }
     if (reqBody.imageUrl() != null && !reqBody.imageUrl().isBlank()) {
       post.updateImage(reqBody.imageUrl());
+    }
+    if (reqBody.videoUrl() != null && !reqBody.videoUrl().isBlank()) {
+      post.updateVideo(reqBody.videoUrl());
     }
     if (reqBody.tags() != null) {
       // 기존 태그들 삭제
