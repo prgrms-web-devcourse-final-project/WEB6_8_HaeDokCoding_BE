@@ -102,7 +102,7 @@ public class MyHistoryService {
             throw new ServiceException(410, "삭제된 게시글입니다.");
         }
         Long postId = post.getId();
-        String apiUrl = "/api/posts/" + postId;
+        String apiUrl = "/posts/" + postId;
         return new MyHistoryCommentGoResponseDto(postId, apiUrl);
     }
 
@@ -116,7 +116,7 @@ public class MyHistoryService {
         if (p.getStatus() == PostStatus.DELETED) {
             throw new ServiceException(410, "삭제된 게시글입니다.");
         }
-        String apiUrl = "/api/posts/" + p.getId();
+        String apiUrl = "/posts/" + p.getId();
         return new MyHistoryPostGoResponseDto(p.getId(), apiUrl);
     }
 
@@ -177,7 +177,7 @@ public class MyHistoryService {
         if (post.getStatus() == PostStatus.DELETED) {
             throw new ServiceException(410, "삭제된 게시글입니다.");
         }
-        String apiUrl = "/api/posts/" + post.getId();
+        String apiUrl = "/posts/" + post.getId();
         return new MyHistoryPostGoResponseDto(post.getId(), apiUrl);
     }
 }

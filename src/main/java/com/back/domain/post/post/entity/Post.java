@@ -79,6 +79,10 @@ public class Post {
   @Column(name = "image_url")
   private String imageUrl;
 
+  // 게시글 동영상 URL
+  @Column(name = "video_url")
+  private String videoUrl;
+
   @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<PostTag> postTags = new ArrayList<>();
 
@@ -116,6 +120,10 @@ public class Post {
 
   public void updateImage(String imageUrl) {
     this.imageUrl = imageUrl;
+  }
+
+  public void updateVideo(String videoUrl) {
+    this.videoUrl = videoUrl;
   }
 
   public void addTag(Tag tag) {

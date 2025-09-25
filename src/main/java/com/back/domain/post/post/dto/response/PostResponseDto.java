@@ -15,6 +15,7 @@ public record PostResponseDto(
     String title,
     String content,
     String imageUrl,
+    String videoUrl,
     List<String> tags,
     Integer likeCount,
     Integer commentCount,
@@ -32,6 +33,7 @@ public record PostResponseDto(
         post.getTitle(),
         post.getContent(),
         post.getImageUrl(),
+        post.getVideoUrl(),
         post.getPostTags().stream()
             .map(postTag -> postTag.getTag().getName())
             .toList(),

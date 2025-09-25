@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/cocktails/{cocktailId}/comments")
+@RequestMapping("/cocktails/{cocktailId}/comments")
 @Tag(name = "ApiCocktailCommentController", description = "API 칵테일댓글 컨트롤러")
 @RequiredArgsConstructor
 public class CocktailCommentController {
