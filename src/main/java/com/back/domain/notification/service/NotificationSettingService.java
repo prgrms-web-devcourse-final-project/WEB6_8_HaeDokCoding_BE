@@ -17,6 +17,8 @@ public class NotificationSettingService {
     private final NotificationSettingRepository notificationSettingRepository;
     private final UserRepository userRepository;
 
+    // 알림 설정 조회
+    // - 아직 생성 전이면 기본값(true)로 동작
     @Transactional(readOnly = true)
     public NotificationSettingDto getMySetting(Long userId) {
         NotificationSetting s = notificationSettingRepository.findByUserId(userId);
@@ -27,6 +29,8 @@ public class NotificationSettingService {
         return NotificationSettingDto.from(s);
     }
 
+    // 알림 설정 저장(멱등)
+    // - 없으면 생성, 있으면 enabled 값만 갱신
     @Transactional
     public NotificationSettingDto setMySetting(Long userId, boolean enabled) {
         NotificationSetting s = notificationSettingRepository.findByUserId(userId);

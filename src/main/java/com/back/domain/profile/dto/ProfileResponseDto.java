@@ -1,5 +1,8 @@
 package com.back.domain.profile.dto;
 
+import com.back.domain.user.entity.User;
+import com.back.domain.user.enums.AbvLevel;
+import com.back.domain.user.support.AbvView;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -15,4 +18,33 @@ public class ProfileResponseDto {
     // 표현용(서버에서 계산)
     private Integer abvLevel;      // 1~6
     private String abvLabel;       // "83.2%"
+
+    // 요약 카운트
+    private Long myPostCount;
+    private Long myCommentCount;
+    private Long myLikedPostCount;
+
+    public static ProfileResponseDto of(User user,
+                                        long myPostCount,
+                                        long myCommentCount,
+                                        long myLikedPostCount) {
+        // 신규 사용자는 기본 5%로 시작하도록 뷰 레벨에서 기본값 적용
+        Double percent = user.getAbvDegree();
+        if (percent == null) percent = 5.0;
+        int percentInt = Math.max(0, Math.min(100, percent.intValue()));
+        int level = AbvLevel.of(percentInt).code;
+        String label = AbvView.percentLabel(percent);
+
+        return ProfileResponseDto.builder()
+                .id(user.getId())
+                .nickname(user.getNickname())
+                .email(user.getEmail())
+                .abvDegree(percent)
+                .abvLevel(level)
+                .abvLabel(label)
+                .myPostCount(myPostCount)
+                .myCommentCount(myCommentCount)
+                .myLikedPostCount(myLikedPostCount)
+                .build();
+    }
 }

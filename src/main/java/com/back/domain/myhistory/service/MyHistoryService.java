@@ -25,6 +25,8 @@ public class MyHistoryService {
     private final MyHistoryCommentRepository myHistoryCommentRepository;
     private final MyHistoryLikedPostRepository myHistoryLikedPostRepository;
 
+    // 내가 작성한 게시글 목록 (무한스크롤)
+    // - 삭제(DELETED)된 글은 제외, 최신순(createdAt desc, id desc)
     @Transactional(readOnly = true)
     public MyHistoryPostListDto getMyPosts(Long userId, LocalDateTime lastCreatedAt, Long lastId, int limit) {
         int safeLimit = Math.max(1, Math.min(limit, 100));
@@ -37,6 +39,7 @@ public class MyHistoryService {
             rows = myHistoryPostRepository.findMyPostsAfter(userId, PostStatus.DELETED, lastCreatedAt, lastId, PageRequest.of(0, fetchSize));
         }
 
+        // +1개 초과 여부로 다음 페이지 유무 판단
         boolean hasNext = rows.size() > safeLimit;
         if (hasNext) rows = rows.subList(0, safeLimit);
 
@@ -54,6 +57,8 @@ public class MyHistoryService {
         return new MyHistoryPostListDto(items, hasNext, nextCreatedAt, nextId);
     }
 
+    // 내가 작성한 댓글 목록 (무한스크롤)
+    // - 댓글과 게시글을 함께 조회(join fetch)하여 N+1 방지
     @Transactional(readOnly = true)
     public MyHistoryCommentListDto getMyComments(Long userId, LocalDateTime lastCreatedAt, Long lastId, int limit) {
         int safeLimit = Math.max(1, Math.min(limit, 100));
@@ -83,6 +88,9 @@ public class MyHistoryService {
         return new MyHistoryCommentListDto(items, hasNext, nextCreatedAt, nextId);
     }
 
+    // 내 댓글에서 게시글로 이동 링크 생성
+    // - 권한 확인: 해당 댓글이 내 댓글인지 검사
+    // - 게시글 상태가 삭제면 이동 불가(410)
     @Transactional(readOnly = true)
     public MyHistoryCommentGoResponseDto getPostLinkFromMyComment(Long userId, Long commentId) {
         Comment c = myHistoryCommentRepository.findByIdAndUserId(commentId, userId);
@@ -98,6 +106,7 @@ public class MyHistoryService {
         return new MyHistoryCommentGoResponseDto(postId, apiUrl);
     }
 
+    // 내가 작성한 게시글에서 이동 링크 생성 (권한/상태 검증 포함)
     @Transactional(readOnly = true)
     public MyHistoryPostGoResponseDto getPostLinkFromMyPost(Long userId, Long postId) {
         Post p = myHistoryPostRepository.findByIdAndUserId(postId, userId);
@@ -111,6 +120,8 @@ public class MyHistoryService {
         return new MyHistoryPostGoResponseDto(p.getId(), apiUrl);
     }
 
+    // 내가 좋아요(추천)한 게시글 목록 (무한스크롤)
+    // - PostLike.createdAt 기준 최신순, 삭제된 게시글 제외
     @Transactional(readOnly = true)
     public MyHistoryLikedPostListDto getMyLikedPosts(Long userId, LocalDateTime lastCreatedAt, Long lastId, int limit) {
         int safeLimit = Math.max(1, Math.min(limit, 100));
