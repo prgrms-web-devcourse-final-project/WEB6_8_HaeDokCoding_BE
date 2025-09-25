@@ -8,13 +8,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.messages.*;
-import org.springframework.ai.document.Document;
-import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -48,10 +45,10 @@ public class ChatbotService {
     @Value("${chatbot.history.max-conversation-count:5}")
     private int maxConversationCount;
 
-    @Value("${spring.ai.vertex.ai.gemini.chat.options.temperature:0.8}")
-    private Double temperature;
+    @Value("${spring.ai.openai.chat.options.temperature:0.8}")
+    private Float temperature;
 
-    @Value("${spring.ai.vertex.ai.gemini.chat.options.max-output-tokens:300}")
+    @Value("${spring.ai.openai.chat.options.max-tokens:300}")
     private Integer maxTokens;
 
     private String systemPrompt;
@@ -72,7 +69,7 @@ public class ChatbotService {
         // ChatClient 고급 설정
         this.chatClient = ChatClient.builder(chatModel)
                 .defaultSystem(systemPrompt)
-                .defaultOptions(ChatOptionsBuilder.builder()
+                .defaultOptions(OpenAiChatOptions.builder()
                         .withTemperature(temperature)
                         .withMaxTokens(maxTokens)
                         .build())
@@ -101,13 +98,7 @@ public class ChatbotService {
                     .user(buildUserMessage(requestDto.getMessage(), messageType))
                     .advisors(new MessageChatMemoryAdvisor(chatMemory, maxConversationCount));
 
-            // RAG 기능 활성화 (칵테일 정보 검색)
-            if (vectorStore != null && shouldUseRAG(messageType)) {
-                promptBuilder.advisors(new QuestionAnswerAdvisor(
-                        vectorStore,
-                        SearchRequest.defaults().withTopK(3)
-                ));
-            }
+            // RAG 기능은 향후 구현 예정 (Vector DB 설정 필요)
 
             // 응답 생성
             String response = promptBuilder
@@ -180,31 +171,27 @@ public class ChatbotService {
         return userMessage + "\n\n" + responseRules;
     }
 
-    private ChatOptions getOptionsForMessageType(MessageType type) {
+    private OpenAiChatOptions getOptionsForMessageType(MessageType type) {
         return switch (type) {
-            case RECIPE -> ChatOptionsBuilder.builder()
-                    .withTemperature(0.3)  // 정확성 중시
+            case RECIPE -> OpenAiChatOptions.builder()
+                    .withTemperature(0.3f)  // 정확성 중시
                     .withMaxTokens(400)     // 레시피는 길게
                     .build();
-            case RECOMMENDATION -> ChatOptionsBuilder.builder()
-                    .withTemperature(0.9)  // 다양성 중시
+            case RECOMMENDATION -> OpenAiChatOptions.builder()
+                    .withTemperature(0.9f)  // 다양성 중시
                     .withMaxTokens(250)
                     .build();
-            case QUESTION -> ChatOptionsBuilder.builder()
-                    .withTemperature(0.7)  // 균형
+            case QUESTION -> OpenAiChatOptions.builder()
+                    .withTemperature(0.7f)  // 균형
                     .withMaxTokens(200)
                     .build();
-            default -> ChatOptionsBuilder.builder()
+            default -> OpenAiChatOptions.builder()
                     .withTemperature(temperature)
                     .withMaxTokens(maxTokens)
                     .build();
         };
     }
 
-    private boolean shouldUseRAG(MessageType type) {
-        // 레시피나 추천 요청시 RAG 활성화
-        return type == MessageType.RECIPE || type == MessageType.RECOMMENDATION;
-    }
 
     private String postProcessResponse(String response, MessageType type) {
         // 응답 길이 제한 확인
@@ -288,43 +275,3 @@ public class ChatbotService {
     }
 }
 
-// ChatOptions 빌더 헬퍼 클래스
-class ChatOptionsBuilder {
-    private Double temperature;
-    private Integer maxTokens;
-    private Double topP;
-    private Integer topK;
-
-    public static ChatOptionsBuilder builder() {
-        return new ChatOptionsBuilder();
-    }
-
-    public ChatOptionsBuilder withTemperature(Double temperature) {
-        this.temperature = temperature;
-        return this;
-    }
-
-    public ChatOptionsBuilder withMaxTokens(Integer maxTokens) {
-        this.maxTokens = maxTokens;
-        return this;
-    }
-
-    public ChatOptionsBuilder withTopP(Double topP) {
-        this.topP = topP;
-        return this;
-    }
-
-    public ChatOptionsBuilder withTopK(Integer topK) {
-        this.topK = topK;
-        return this;
-    }
-
-    public ChatOptions build() {
-        // 실제 ChatOptions 객체 생성 로직
-        // Spring AI의 실제 API에 맞게 조정 필요
-        return null; // placeholder
-    }
-}
-
-// ChatOptions placeholder (실제 Spring AI API에 맞게 조정 필요)
-interface ChatOptions {}

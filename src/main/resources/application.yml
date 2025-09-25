@@ -54,9 +54,10 @@ spring:
       chat:
         base-url: "https://generativelanguage.googleapis.com/v1beta/openai/"
         options:
-          model: "gemini-2.0-flash-lite"
-          temperature: 0.0
-        completions-path: "/chat/completions" # gemini 사용시 v1/chat/completions 로 들어가지 않음
+          model: "gemini-2.0-flash-exp"
+          temperature: 0.8
+          max-tokens: 300
+        completions-path: "/chat/completions"
 
 springdoc:
   default-produces-media-type: application/json;charset=UTF-8
