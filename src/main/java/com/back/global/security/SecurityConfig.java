@@ -59,7 +59,7 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
                         .requestMatchers("/user/**").permitAll()
                         .requestMatchers("/cocktails/**").permitAll()
-                        .requestMatchers("/api/chatbot/**").permitAll() // test를 위해 /api 추가
+                        .requestMatchers("/chatbot/**").permitAll()
 
                         // 회원 or 인증된 사용자만 가능
                         .requestMatchers("/admin/**").hasRole("ADMIN")
