@@ -56,7 +56,7 @@ spring:
         options:
           model: "gemini-2.0-flash-exp"
           temperature: 0.8
-          max-tokens: 300
+          max-tokens: 800
         completions-path: "/chat/completions"
 
 springdoc:
