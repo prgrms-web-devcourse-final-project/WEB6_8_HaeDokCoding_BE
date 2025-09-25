@@ -12,6 +12,7 @@ import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.repository.PostRepository;
 import com.back.domain.user.entity.User;
 import com.back.global.rq.Rq;
+import com.back.domain.user.service.AbvScoreService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class CommentService {
   private final PostRepository postRepository;
   private final NotificationService notificationService;
   private final Rq rq;
+  private final AbvScoreService abvScoreService;
 
   // 댓글 작성 로직
   @Transactional
@@ -48,7 +50,10 @@ public class CommentService {
         user.getNickname() + " 님이 댓글을 남겼습니다."
     );
 
-    return new CommentResponseDto(commentRepository.save(comment));
+    Comment saved = commentRepository.save(comment);
+    // 활동 점수: 댓글 작성 +0.2
+    abvScoreService.awardForComment(user.getId());
+    return new CommentResponseDto(saved);
   }
 
   // 댓글 다건 조회 로직 (무한스크롤)
@@ -102,6 +107,8 @@ public class CommentService {
     }
 
     comment.updateStatus(CommentStatus.DELETED);
+    // 활동 점수: 댓글 삭제 시 -0.2 (작성자 기준)
+    abvScoreService.revokeForComment(user.getId());
 
     // soft delete를 사용하기 위해 레포지토리 삭제 작업은 진행하지 않음.
 //    commentRepository.delete(comment);
