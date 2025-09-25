@@ -28,8 +28,10 @@ public class ProfileResponseDto {
                                         long myPostCount,
                                         long myCommentCount,
                                         long myLikedPostCount) {
+        // 신규 사용자는 기본 5%로 시작하도록 뷰 레벨에서 기본값 적용
         Double percent = user.getAbvDegree();
-        int percentInt = percent == null ? 0 : Math.max(0, Math.min(100, percent.intValue()));
+        if (percent == null) percent = 5.0;
+        int percentInt = Math.max(0, Math.min(100, percent.intValue()));
         int level = AbvLevel.of(percentInt).code;
         String label = AbvView.percentLabel(percent);
 
