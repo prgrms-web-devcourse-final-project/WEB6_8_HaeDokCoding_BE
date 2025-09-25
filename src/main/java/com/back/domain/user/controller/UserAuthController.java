@@ -1,5 +1,6 @@
 package com.back.domain.user.controller;
 
+import com.back.domain.user.dto.RefreshTokenResDto;
 import com.back.domain.user.service.UserAuthService;
 import com.back.global.rsData.RsData;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "UserAuth", description = "사용자 인증 API")
 @Slf4j
 @RestController
-@RequestMapping("/api/user/auth")
+@RequestMapping("/user/auth")
 @RequiredArgsConstructor
 public class UserAuthController {
 
@@ -32,11 +33,11 @@ public class UserAuthController {
             @ApiResponse(responseCode = "401", description = "토큰이 유효하지 않거나 만료됨")
     })
     @PostMapping("/refresh")
-    public RsData<Void> refreshToken(HttpServletRequest request, HttpServletResponse response) {
-        boolean success = userAuthService.refreshTokens(request, response);
+    public RsData<RefreshTokenResDto> refreshToken(HttpServletRequest request, HttpServletResponse response) {
+        RefreshTokenResDto refreshToken = userAuthService.refreshTokens(request, response);
 
-        if (success) {
-            return RsData.of(200, "토큰이 성공적으로 갱신되었습니다.");
+        if (refreshToken != null) {
+            return RsData.of(200, "토큰이 갱신 성공.", refreshToken);
         } else {
             return RsData.of(401, "토큰 갱신에 실패했습니다. 다시 로그인해주세요.");
         }
