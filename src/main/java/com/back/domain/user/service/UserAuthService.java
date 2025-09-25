@@ -1,5 +1,6 @@
 package com.back.domain.user.service;
 
+import com.back.domain.user.dto.RefreshTokenResDto;
 import com.back.domain.user.entity.User;
 import com.back.domain.user.repository.UserRepository;
 import com.back.global.exception.ServiceException;
@@ -134,35 +135,37 @@ public class UserAuthService {
 
     public void issueTokens(HttpServletResponse response, Long userId, String email, String nickname) {
         String accessToken = jwtUtil.generateAccessToken(userId, email, nickname);
-        String refreshToken = refreshTokenService.generateRefreshToken(userId, email);
+        String refreshToken = refreshTokenService.generateRefreshToken(userId);
 
         jwtUtil.addAccessTokenToCookie(response, accessToken);
         jwtUtil.addRefreshTokenToCookie(response, refreshToken);
     }
 
-    public boolean refreshTokens(HttpServletRequest request, HttpServletResponse response) {
+    public RefreshTokenResDto refreshTokens(HttpServletRequest request, HttpServletResponse response) {
         try {
             String oldRefreshToken = jwtUtil.getRefreshTokenFromCookie(request);
 
             if (oldRefreshToken == null || !refreshTokenService.validateToken(oldRefreshToken)) {
-                return false;
+                return null;
             }
 
             Optional<RefreshToken> tokenData = refreshTokenRepository.findByToken(oldRefreshToken);
             if (tokenData.isEmpty()) {
-                return false;
+                return null;
             }
 
             RefreshToken refreshTokenEntity = tokenData.get();
             Long userId = refreshTokenEntity.getUserId();
-            String email = refreshTokenEntity.getEmail();
 
-            // DB에서 현재 nickname 조회
-            Optional<User> user = userRepository.findById(userId);
-            if (user.isEmpty()) {
-                return false;
+            // DB에서 사용자 정보 조회
+            Optional<User> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return null;
             }
-            String nickname = user.get().getNickname();
+
+            User user = userOpt.get();
+            String nickname = user.getNickname();
+            String email = user.getEmail();
 
             String newRefreshToken = refreshTokenService.rotateToken(oldRefreshToken);
             String newAccessToken = jwtUtil.generateAccessToken(userId, email, nickname);
@@ -170,10 +173,20 @@ public class UserAuthService {
             jwtUtil.addAccessTokenToCookie(response, newAccessToken);
             jwtUtil.addRefreshTokenToCookie(response, newRefreshToken);
 
-            return true;
+            return RefreshTokenResDto.builder()
+                    .accessToken(newAccessToken)
+                    .user(
+                            RefreshTokenResDto.UserInfoDto.builder()
+                                    .id(user.getId().toString())
+                                    .nickname(nickname)
+                                    .isFirstLogin(user.isFirstLogin())
+                                    .abvDgree(user.getAbvDegree())
+                                    .build()
+                    )
+                    .build();
         } catch (Exception e) {
             log.error("토큰 갱신 중 오류 발생: {}", e.getMessage());
-            return false;
+            return null;
         }
     }
 

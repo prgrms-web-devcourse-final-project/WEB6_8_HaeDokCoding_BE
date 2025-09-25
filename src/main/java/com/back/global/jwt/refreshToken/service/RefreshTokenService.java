@@ -5,14 +5,14 @@ import com.back.global.jwt.refreshToken.entity.RefreshToken;
 import com.back.global.jwt.refreshToken.repository.RefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Optional;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -26,12 +26,12 @@ public class RefreshTokenService {
 
     // 기존 리프레시 토큰 삭제하고 생성
     @Transactional
-    public String generateRefreshToken(Long userId, String email) {
+    public String generateRefreshToken(Long userId) {
         // 기존 토큰 삭제
         refreshTokenRepository.deleteByUserId(userId);
 
         String token = generateSecureToken();
-        RefreshToken refreshToken = RefreshToken.create(token, userId, email, refreshTokenExpiration);
+        RefreshToken refreshToken = RefreshToken.create(token, userId, refreshTokenExpiration);
         refreshTokenRepository.save(refreshToken);
 
         return token;
@@ -65,7 +65,7 @@ public class RefreshTokenService {
         RefreshToken tokenData = oldRefreshToken.get();
         revokeToken(oldToken);
 
-        return generateRefreshToken(tokenData.getUserId(), tokenData.getEmail());
+        return generateRefreshToken(tokenData.getUserId());
     }
 
     //삭제
