@@ -16,4 +16,6 @@ public interface ChatConversationRepository extends JpaRepository<ChatConversati
     Page<ChatConversation> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
     List<ChatConversation> findByUserIdAndSessionIdOrderByCreatedAtAsc(Long userId, String sessionId);
+
+    List<ChatConversation> findTop5ByUserIdOrderByCreatedAtDesc(Long userId);
 }
