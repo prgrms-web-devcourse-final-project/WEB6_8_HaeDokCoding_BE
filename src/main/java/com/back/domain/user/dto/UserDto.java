@@ -17,10 +17,10 @@ public class UserDto {
     private Long id;
     private String email;
     private String nickname;
-    private String profileImgUrl;
     private Double abvDegree;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private boolean isFirstLogin;
 
     public static UserDto from(User user) {
         if (user == null) return null;
@@ -28,10 +28,10 @@ public class UserDto {
                 .id(user.getId())
                 .email(user.getEmail())
                 .nickname(user.getNickname())
-//                .profileImgUrl(user.getProfileImgUrl())
                 .abvDegree(user.getAbvDegree())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
+                .isFirstLogin(user.isFirstLogin())
                 .build();
     }
 }

@@ -4,7 +4,11 @@ import com.back.domain.profile.dto.ProfileResponseDto;
 import com.back.domain.profile.dto.ProfileUpdateRequestDto;
 import com.back.domain.user.entity.User;
 import com.back.domain.user.repository.UserRepository;
-import com.back.domain.user.support.AbvView;
+// moved level/label computation into DTO factory
+import com.back.domain.post.post.enums.PostStatus;
+import com.back.domain.post.comment.enums.CommentStatus;
+import com.back.domain.post.post.enums.PostLikeStatus;
+import com.back.domain.profile.repository.ProfileQueryRepository;
 import com.back.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,24 +19,29 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProfileService {
 
     private final UserRepository userRepository;
+    private final ProfileQueryRepository profileQueryRepository;
 
+    // 내 프로필 요약 조회
+    // - 카운트 3종(내 글/내 댓글/내가 좋아요한 글) 조회 후
+    // - DTO 정적 팩토리(of)로 레벨/라벨 계산과 함께 응답 조립
     @Transactional(readOnly = true)
     public ProfileResponseDto getProfile(Long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new ServiceException(404, "사용자를 찾을 수 없습니다."));
 
-        Double percent = user.getAbvDegree();
-        int level = AbvView.levelOf(percent);
-        String label = AbvView.percentLabel(percent);
+        long postCount = profileQueryRepository.countMyPosts(user.getId(), PostStatus.DELETED);
+        long commentCount = profileQueryRepository.countMyComments(user.getId(), CommentStatus.DELETED);
+        long likedPostCount = profileQueryRepository.countMyLikedPosts(user.getId(), PostLikeStatus.LIKE);
 
-        return ProfileResponseDto.builder()
-                .id(user.getId())
-                .nickname(user.getNickname())
-                .abvDegree(percent)
-                .abvLevel(level)
-                .abvLabel(label)
-                .build();
+        return ProfileResponseDto.of(
+                user,
+                postCount,
+                commentCount,
+                likedPostCount
+        );
     }
 
+    // 프로필 수정 (닉네임)
+    // - 길이/중복 검사 후 반영, 이후 최신 프로필 다시 조회
     @Transactional
     public ProfileResponseDto updateProfile(Long id, ProfileUpdateRequestDto profileUpdateRequestDto) {
         User user = userRepository.findById(id).orElseThrow(() -> new ServiceException(404, "사용자를 찾을 수 없습니다."));
