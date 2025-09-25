@@ -11,11 +11,7 @@ import java.util.List;
 @Repository
 public interface ChatConversationRepository extends JpaRepository<ChatConversation, Long> {
 
-    List<ChatConversation> findBySessionIdOrderByCreatedAtAsc(String sessionId);
-
     Page<ChatConversation> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
-
-    List<ChatConversation> findByUserIdAndSessionIdOrderByCreatedAtAsc(Long userId, String sessionId);
 
     List<ChatConversation> findTop5ByUserIdOrderByCreatedAtDesc(Long userId);
 }
