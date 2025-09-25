@@ -53,8 +53,10 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
 
     private void work(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String uri = request.getRequestURI();
+        String method = request.getMethod();
 
-        // SecurityConfig에서 permitAll()로 설정된 경로들은 필터를 통과시키기
+        // 개발 편의성을 위해 모든 요청 통과 (SecurityConfig에서 모든 요청 permitAll)
+        /*
         if (
                 uri.startsWith("/h2-console") ||
                 uri.startsWith("/login/oauth2/") ||
@@ -62,14 +64,17 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
                 uri.startsWith("/actuator/") ||
                 uri.startsWith("/swagger-ui/") ||
                 uri.startsWith("/api-docs/") ||
-                uri.startsWith("/user/") ||
-                uri.startsWith("/cocktails/") ||
-                uri.startsWith("/chatbot/") ||
-                uri.equals("/")
+                uri.equals("/") ||
+                // 조회 API들 - 권한 불필요
+                (method.equals("GET") && uri.startsWith("/cocktails")) ||
+                (method.equals("POST") && uri.equals("/cocktails/search")) ||
+                (method.equals("GET") && uri.startsWith("/posts")) ||
+                (method.equals("GET") && uri.contains("/comments"))
         ) {
             filterChain.doFilter(request, response);
             return;
         }
+        */
 
         // 쿠키에서 accessToken 가져오기
         String accessToken = rq.getCookieValue("accessToken", "");
