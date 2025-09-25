@@ -24,19 +24,15 @@ public class CustomOAuth2LoginSuccessHandler implements AuthenticationSuccessHan
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         SecurityUser securityUser = (SecurityUser) authentication.getPrincipal();
+
         // Access Token과 Refresh Token 발급
         userAuthService.issueTokens(response, securityUser.getId(), securityUser.getEmail(), securityUser.getNickname());
 
-        // 첫 로그인 여부에 따라 리다이렉트 분기
-        String redirectUrl;
-
         if (securityUser.isFirstLogin()) {
-            redirectUrl = frontendUrl + "/oauth/success/welcome";
             userAuthService.setFirstLoginFalse(securityUser.getId());
+            response.sendRedirect(frontendUrl + "/login/first-user");
         } else {
-            redirectUrl = frontendUrl + "/oauth/success";
+            response.sendRedirect(frontendUrl + "/login/success");
         }
-
-        response.sendRedirect(redirectUrl);
     }
 }

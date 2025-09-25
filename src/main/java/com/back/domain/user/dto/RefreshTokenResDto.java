@@ -15,7 +15,7 @@ public class RefreshTokenResDto {
         private final String id;
         private final String nickname;
         private final Boolean isFirstLogin;
-        private final Double abvDgree;
+        private final Double abvDegree;
 
     }
 }

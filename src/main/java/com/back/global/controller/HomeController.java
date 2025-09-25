@@ -1,7 +1,6 @@
 package com.back.global.controller;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
@@ -11,15 +10,14 @@ public class HomeController {
     @Value("${custom.site.frontUrl}")
     private String frontUrl;
 
-    @GetMapping("/")
-    @Profile("dev")
-    public String redirectToSwagger() {
-        return "redirect:/swagger-ui/index.html";
-    }
+    @Value("${spring.profiles.active}")
+    private String activeProfile;
 
     @GetMapping("/")
-    @Profile("prod")
-    public String redirectToFrontend() {
-        return "redirect:" + frontUrl;
+    public String redirect() {
+        if("prod".equals(activeProfile)){
+            return "redirect:" + frontUrl;
+        }
+        return "redirect:/swagger-ui/index.html";
     }
 }
