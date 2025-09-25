@@ -109,7 +109,7 @@ public class ChatbotService {
             // 대화 저장 (sessionId 없이)
             saveConversation(requestDto, response);
 
-            return new ChatResponseDto(response, null);
+            return new ChatResponseDto(response);
 
         } catch (Exception e) {
             log.error("채팅 응답 생성 중 오류 발생: ", e);
@@ -215,7 +215,7 @@ public class ChatbotService {
             errorMessage = "응답 시간이 초과되었습니다. 다시 시도해주세요.";
         }
 
-        return new ChatResponseDto(errorMessage, null);
+        return new ChatResponseDto(errorMessage);
     }
 
     public enum MessageType {
