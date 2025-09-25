@@ -1,4 +1,8 @@
 spring:
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:data-h2.sql
   # H2 Database 설정
   datasource:
     driver-class-name: org.h2.Driver
@@ -16,7 +20,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: create-drop  # 개발용: 시작할 때 테이블 생성, 종료할 때 삭제
+      ddl-auto: update  # 개발용: 시작할 때 테이블 생성, 종료할 때 삭제
     properties:
       hibernate:
         format_sql: true
