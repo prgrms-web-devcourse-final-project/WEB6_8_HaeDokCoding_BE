@@ -9,6 +9,7 @@ public record PostUpdateRequestDto(
     String title,
     String content,
     String imageUrl,
+    String videoUrl,
     List<String> tags
 ) {
 }
