@@ -10,16 +10,17 @@ import com.back.domain.post.post.entity.Post;
 import com.back.domain.user.entity.User;
 import com.back.global.exception.ServiceException;
 import com.back.global.rq.Rq;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -85,7 +86,7 @@ public class NotificationService {
             notification.markRead();
         }
         Long postId = notification.getPost().getId();
-        String apiUrl = "/api/posts/" + postId;
+        String apiUrl = "/posts/" + postId;
         return new NotificationGoResponseDto(postId, apiUrl);
     }
 

@@ -55,27 +55,26 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
         String uri = request.getRequestURI();
         String method = request.getMethod();
 
-        // SecurityConfig에서 permitAll()로 설정된 경로들은 필터를 통과시키기
+        // 개발 편의성을 위해 모든 요청 통과 (SecurityConfig에서 모든 요청 permitAll)
+        /*
         if (
-            //추후 로그인 필요한 api 추가 설정
                 uri.startsWith("/h2-console") ||
-                        uri.startsWith("/login/oauth2/") ||
-                        (method.equals("GET") && uri.equals("/api/~~")) ||
-                        (method.equals("POST") && uri.equals("/api/~"))
-
+                uri.startsWith("/login/oauth2/") ||
+                uri.startsWith("/oauth2/") ||
+                uri.startsWith("/actuator/") ||
+                uri.startsWith("/swagger-ui/") ||
+                uri.startsWith("/api-docs/") ||
+                uri.equals("/") ||
+                // 조회 API들 - 권한 불필요
+                (method.equals("GET") && uri.startsWith("/cocktails")) ||
+                (method.equals("POST") && uri.equals("/cocktails/search")) ||
+                (method.equals("GET") && uri.startsWith("/posts")) ||
+                (method.equals("GET") && uri.contains("/comments"))
         ) {
             filterChain.doFilter(request, response);
             return;
         }
-
-        // 인증 필수 URL 확인
-        boolean requiresAuth = uri.startsWith("/api/");
-
-        // 인증이 필요하지 않은 URL이면 그냥 통과
-        if (!requiresAuth) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+        */
 
         // 쿠키에서 accessToken 가져오기
         String accessToken = rq.getCookieValue("accessToken", "");

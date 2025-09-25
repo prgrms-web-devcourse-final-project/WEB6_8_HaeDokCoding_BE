@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/chatbot")
+@RequestMapping("/chatbot")
 @RequiredArgsConstructor
 @Slf4j
 public class ChatbotController {

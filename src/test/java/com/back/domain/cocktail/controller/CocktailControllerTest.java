@@ -59,7 +59,7 @@ public class CocktailControllerTest {
 
         // when: GET 요청
         ResultActions resultActions = mvc.perform(
-                get("/api/cocktails/{id}", savedCocktail.getId())
+                get("/cocktails/{id}", savedCocktail.getId())
                         .contentType(MediaType.APPLICATION_JSON)
         ).andDo(print());
 
@@ -80,7 +80,7 @@ public class CocktailControllerTest {
         long nonExistentId = 9999L;
 
         ResultActions resultActions = mvc.perform(
-                get("/api/cocktails/{id}", nonExistentId)
+                get("/cocktails/{id}", nonExistentId)
                         .contentType(MediaType.APPLICATION_JSON)
         ).andDo(print());
 
@@ -96,7 +96,7 @@ public class CocktailControllerTest {
     void t3() throws Exception {
         // when
         ResultActions resultActions = mvc.perform(
-                get("/api/cocktails")
+                get("/cocktails")
                         .contentType(MediaType.APPLICATION_JSON)
         ).andDo(print());
 
@@ -117,7 +117,7 @@ public class CocktailControllerTest {
 
         // when
         ResultActions resultActions = mvc.perform(
-                get("/api/cocktails")
+                get("/cocktails")
                         .param("lastId", lastId.toString())
                         .param("size", String.valueOf(size))
                         .contentType(MediaType.APPLICATION_JSON)

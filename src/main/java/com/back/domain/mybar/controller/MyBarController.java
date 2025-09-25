@@ -14,7 +14,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDateTime;
 
 @RestController
-@RequestMapping("/api/me/bar")
+@RequestMapping("/me/bar")
 @RequiredArgsConstructor
 @Validated
 public class MyBarController {
