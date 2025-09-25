@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/cocktails")
+@RequestMapping("/cocktails")
 @RequiredArgsConstructor
 public class CocktailShareController {
     private final CocktailRepository cocktailRepository;

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 
 @RestController
-@RequestMapping("/api/me")
+@RequestMapping("/me")
 @RequiredArgsConstructor
 @Validated
 public class MyHistoryController {
