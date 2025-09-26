@@ -1,7 +1,7 @@
 -- 테이블 생성
 CREATE TABLE IF NOT EXISTS cocktail (
-                                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                        cocktail_name VARCHAR(255),
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    cocktail_name VARCHAR(255),
     cocktail_name_ko VARCHAR(255),
     alcohol_strength VARCHAR(50),
     cocktail_story CLOB,
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS cocktail (
 
 -- CSV 파일에서 데이터 읽어오기
 INSERT INTO cocktail (
-    cocktail_name, cocktail_name_ko, alcohol_strength,
+    cocktail_name,cocktail_name_ko, alcohol_strength,
     cocktail_story, cocktail_type, alcohol_base_type,
     ingredient, recipe, cocktail_img_url
 )
