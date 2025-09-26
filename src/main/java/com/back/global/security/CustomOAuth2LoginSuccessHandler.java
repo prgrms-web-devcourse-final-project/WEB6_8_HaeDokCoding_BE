@@ -34,10 +34,10 @@ public class CustomOAuth2LoginSuccessHandler implements AuthenticationSuccessHan
             // DB에서 isFirstLogin을 false로 업데이트
             userAuthService.setFirstLoginFalse(securityUser.getId());
             // 첫 로그인이므로 first-user 페이지로 리다이렉트
-            response.sendRedirect(frontendUrl + "/login/first-user");
+            response.sendRedirect(frontendUrl + "/login/user/first-user");
         } else {
             // 기존 사용자는 success 페이지로 리다이렉트
-            response.sendRedirect(frontendUrl + "/login/success");
+            response.sendRedirect(frontendUrl + "/login/user/success");
         }
     }
 }

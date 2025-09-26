@@ -93,7 +93,7 @@ public class UserAuthService {
         String uniqueNickname = generateNickname(nickname);
 
         User user = User.builder()
-                .email(email)
+                .email(email != null ? email : "")
                 .nickname(uniqueNickname)
                 .abvDegree(0.0)
                 .createdAt(LocalDateTime.now())
@@ -112,7 +112,8 @@ public class UserAuthService {
         if (existingUser.isPresent()) {
             // 기존 사용자 업데이트 (이메일만 업데이트)
             User user = existingUser.get();
-            user.setEmail(email);
+            // null 체크 후 빈 문자열로 대체
+            user.setEmail(email != null ? email : "");
             return RsData.of(200, "회원 정보가 업데이트 되었습니다", user); //더티체킹
         } else {
             User newUser = joinSocial(oauthId, email, nickname);
