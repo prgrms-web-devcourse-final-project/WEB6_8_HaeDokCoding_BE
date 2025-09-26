@@ -156,4 +156,9 @@ public class GlobalExceptionHandler {
                 .body(RsData.of(500, "서버 내부 오류가 발생했습니다.", null));
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<RsData<Void>> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(RsData.of(404, ex.getMessage()));
+    }
 }

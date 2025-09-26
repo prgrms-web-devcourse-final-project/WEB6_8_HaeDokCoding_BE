@@ -36,4 +36,12 @@ public interface CocktailRepository extends JpaRepository<Cocktail, Long> {
                                      @Param("types") List<CocktailType> types,
                                      @Param("bases") List<AlcoholBaseType> bases,
                                      Pageable pageable);
+    //유사칵테일 추천관련
+    List<Cocktail> findByAlcoholStrengthAndIdNot(AlcoholStrength strength, Long excludeId);
+
+    //유사칵테일 추천관련
+    List<Cocktail> findByCocktailTypeAndIdNot(CocktailType type, Long excludeId);
+
+    //유사칵테일 추천관련
+    List<Cocktail> findByAlcoholBaseTypeAndIdNot(AlcoholBaseType baseType, Long excludeId);
 }
