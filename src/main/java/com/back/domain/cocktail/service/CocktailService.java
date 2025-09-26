@@ -51,7 +51,7 @@ public class CocktailService {
                 cocktails = cocktailRepository.findByIdLessThanOrderByIdDesc(lastId, PageRequest.of(0, fetchSize));
             }
             return cocktails.stream()
-                    .map(c -> new CocktailSummaryResponseDto(c.getId(), c.getCocktailName(), c.getCocktailImgUrl()))
+                    .map(c -> new CocktailSummaryResponseDto(c.getId(), c.getCocktailName(), c.getCocktailImgUrl(), c.getAlcoholStrength()))
                     .collect(Collectors.toList());
         }
 
