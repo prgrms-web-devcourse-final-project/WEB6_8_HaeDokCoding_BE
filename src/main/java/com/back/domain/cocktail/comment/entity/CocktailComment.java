@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Table(name = "cocktailcomment")
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 @AllArgsConstructor

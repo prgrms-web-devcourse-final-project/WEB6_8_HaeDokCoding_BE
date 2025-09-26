@@ -32,7 +32,13 @@ public class SecurityUser extends User implements OAuth2User {
             Collection<? extends GrantedAuthority> authorities,
             Map<String, Object> attributes
     ) {
-        super(email, "", authorities); // OAuth2에서는 빈 패스워드
+        super(
+                (email != null && !email.isBlank()) ? email : String.valueOf(id), // ★★★ 핵심 수정
+                "",
+                authorities
+        );
+
+
         this.id = id;
         this.nickname = nickname;
         this.email = email;

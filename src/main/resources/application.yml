@@ -8,8 +8,7 @@ spring:
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
-      - org.springframework.boot.autoconfigure.session.SessionAutoConfiguration
-      -
+
   application:
     name: back
 
