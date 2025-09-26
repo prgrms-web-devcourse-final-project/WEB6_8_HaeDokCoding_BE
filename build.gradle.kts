@@ -48,6 +48,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.session:spring-session-data-redis")
 
+    // AWS S3
+    implementation("io.awspring.cloud:spring-cloud-aws-starter-s3:3.4.0")
+
     runtimeOnly("com.h2database:h2")
     runtimeOnly("com.mysql:mysql-connector-j")
 
