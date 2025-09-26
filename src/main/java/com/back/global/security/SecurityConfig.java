@@ -14,6 +14,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import static org.springframework.http.HttpMethod.DELETE;
 
 @Configuration
 @EnableWebSecurity
@@ -51,6 +52,7 @@ public class SecurityConfig {
                 ) // OAuth 인증시 필요할때만 세션 사용
 
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(DELETE, "/me/account").authenticated()
                         // 개발 편의성을 위해 모든 요청 허용
                         .anyRequest().permitAll()
 
