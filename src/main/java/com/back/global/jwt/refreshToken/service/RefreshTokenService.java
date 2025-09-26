@@ -74,6 +74,12 @@ public class RefreshTokenService {
         refreshTokenRepository.deleteByToken(token);
     }
 
+    // 사용자 전체 세션(리프레시 토큰) 폐기
+    @Transactional
+    public void revokeAllForUser(Long userId) {
+        refreshTokenRepository.deleteByUserId(userId);
+    }
+
     //문자열 난수 조합
     private String generateSecureToken() {
         byte[] randomBytes = new byte[32];
