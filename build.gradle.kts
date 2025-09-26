@@ -48,10 +48,19 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.session:spring-session-data-redis")
 
+    // AWS S3
+    implementation("io.awspring.cloud:spring-cloud-aws-starter-s3:3.4.0")
+
     runtimeOnly("com.h2database:h2")
     runtimeOnly("com.mysql:mysql-connector-j")
 
     annotationProcessor("org.projectlombok:lombok")
+
+    //json
+    implementation("io.jsonwebtoken:jjwt-api:0.11.5")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")
+// json 파싱용
 
     //Spring AI
     implementation(platform("org.springframework.ai:spring-ai-bom:1.0.0-M4"))
