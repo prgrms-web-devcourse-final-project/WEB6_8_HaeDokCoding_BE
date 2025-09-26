@@ -270,9 +270,11 @@ public class DevInitData {
     public void myBarInit() {
         if (myBarRepository.count() > 0) return;
 
-        User userA = userRepository.findByNickname("사용자A").orElseThrow();
-        User userB = userRepository.findByNickname("사용자B").orElseThrow();
-        User userC = userRepository.findByNickname("사용자C").orElseThrow();
+        User userA = userRepository.findByNickname("사용자A").orElse(null);
+        User userB = userRepository.findByNickname("사용자B").orElse(null);
+        User userC = userRepository.findByNickname("사용자C").orElse(null);
+
+        if (userA == null || userC == null) return;
 
         // 칵테일 참조 준비
         var cocktails = cocktailRepository.findAll();
@@ -290,9 +292,10 @@ public class DevInitData {
         myBarRepository.findByUser_IdAndCocktail_Id(userA.getId(), c1.getId()).ifPresent(m -> m.setKeptAt(java.time.LocalDateTime.now().minusDays(2)));
         myBarRepository.findByUser_IdAndCocktail_Id(userA.getId(), c2.getId()).ifPresent(m -> m.setKeptAt(java.time.LocalDateTime.now().minusDays(1)));
 
-        // B: c3 keep 후 unkeep -> DELETED
-        myBarService.keep(userB.getId(), c3.getId());
-        myBarService.unkeep(userB.getId(), c3.getId());
+        if (userB != null && !userB.isDeleted()) {
+            myBarService.keep(userB.getId(), c3.getId());
+            myBarService.unkeep(userB.getId(), c3.getId());
+        }
 
         // C: c2(now-3d), c3(now-2d), c4(now-1h)
         myBarService.keep(userC.getId(), c2.getId());
