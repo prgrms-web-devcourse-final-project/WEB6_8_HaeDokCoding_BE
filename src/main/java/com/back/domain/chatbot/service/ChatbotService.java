@@ -90,6 +90,14 @@ public class ChatbotService {
     @Transactional
     public ChatResponseDto sendMessage(ChatRequestDto requestDto) {
         try {
+            // 단계별 추천 시작 요청인지 확인
+            if (requestDto.isStartStepRecommendation() || isStepRecommendationTrigger(requestDto.getMessage())) {
+                StepRecommendationResponseDto stepRecommendation = getAlcoholStrengthOptions();
+                String response = "단계별 맞춤 추천을 시작합니다! 🎯";
+                saveConversation(requestDto, response);
+                return new ChatResponseDto(response, stepRecommendation);
+            }
+
             // 메시지 타입 감지
             MessageType messageType = detectMessageType(requestDto.getMessage());
 
@@ -249,6 +257,12 @@ public class ChatbotService {
         }
 
         return MessageType.CASUAL_CHAT;
+    }
+
+    // 단계별 추천 시작 키워드 감지
+    private boolean isStepRecommendationTrigger(String message) {
+        String lower = message.toLowerCase().trim();
+        return lower.contains("단계별 추천");
     }
 
     @Transactional(readOnly = true)
