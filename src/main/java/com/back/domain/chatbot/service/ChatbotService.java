@@ -89,23 +89,15 @@ public class ChatbotService {
     @Transactional
     public ChatResponseDto sendMessage(ChatRequestDto requestDto) {
         try {
-            // 디버깅용 로그 추가
-            log.info("=== DEBUG INFO ===");
-            log.info("isStepRecommendation: {}", requestDto.isStepRecommendation());
-            log.info("currentStep: {}", requestDto.getCurrentStep());
-            log.info("selectedAlcoholStrength: {}", requestDto.getSelectedAlcoholStrength());
-            log.info("message: {}", requestDto.getMessage());
-            log.info("==================");
-
             // 단계별 추천 모드 확인 (currentStep이 있으면 무조건 단계별 추천 모드)
             if (requestDto.isStepRecommendation() ||
                 requestDto.getCurrentStep() != null ||
                 isStepRecommendationTrigger(requestDto.getMessage())) {
-                log.info("단계별 추천 모드로 진입");
+                log.info("Recommendation chat mode for userId: {}", requestDto.getUserId());
                 return handleStepRecommendation(requestDto);
             }
 
-            log.info("일반 채팅 모드로 진입");
+            log.info("Normal chat mode for userId: {}", requestDto.getUserId());
 
             // 메시지 타입 감지
             MessageType messageType = detectMessageType(requestDto.getMessage());
@@ -276,9 +268,7 @@ public class ChatbotService {
 
     // 단계별 추천 처리 통합 메서드
     private ChatResponseDto handleStepRecommendation(ChatRequestDto requestDto) {
-        log.info("=== handleStepRecommendation 진입 ===");
         Integer currentStep = requestDto.getCurrentStep();
-        log.info("currentStep in handler: {}", currentStep);
 
         // 단계가 지정되지 않았거나 첫 시작인 경우
         if (currentStep == null || currentStep <= 0) {
