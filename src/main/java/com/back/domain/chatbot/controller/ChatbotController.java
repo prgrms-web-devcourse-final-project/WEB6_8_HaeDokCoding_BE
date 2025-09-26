@@ -2,8 +2,6 @@ package com.back.domain.chatbot.controller;
 
 import com.back.domain.chatbot.dto.ChatRequestDto;
 import com.back.domain.chatbot.dto.ChatResponseDto;
-import com.back.domain.chatbot.dto.StepRecommendationRequestDto;
-import com.back.domain.chatbot.dto.StepRecommendationResponseDto;
 import com.back.domain.chatbot.entity.ChatConversation;
 import com.back.domain.chatbot.service.ChatbotService;
 import com.back.global.rsData.RsData;
@@ -47,15 +45,4 @@ public class ChatbotController {
         }
     }
 
-    @PostMapping("/step-recommendation")
-    public ResponseEntity<RsData<StepRecommendationResponseDto>> getStepRecommendation(@Valid @RequestBody StepRecommendationRequestDto requestDto) {
-        try {
-            StepRecommendationResponseDto response = chatbotService.getStepRecommendation(requestDto);
-            return ResponseEntity.ok(RsData.successOf(response));
-        } catch (Exception e) {
-            log.error("단계별 추천 처리 중 오류 발생: ", e);
-            return ResponseEntity.internalServerError()
-                    .body(RsData.failOf("서버 오류가 발생했습니다."));
-        }
-    }
 }

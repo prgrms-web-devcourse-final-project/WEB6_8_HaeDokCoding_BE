@@ -2,7 +2,6 @@ package com.back.domain.chatbot.service;
 
 import com.back.domain.chatbot.dto.ChatRequestDto;
 import com.back.domain.chatbot.dto.ChatResponseDto;
-import com.back.domain.chatbot.dto.StepRecommendationRequestDto;
 import com.back.domain.chatbot.dto.StepRecommendationResponseDto;
 import com.back.domain.chatbot.entity.ChatConversation;
 import com.back.domain.chatbot.repository.ChatConversationRepository;
@@ -90,12 +89,9 @@ public class ChatbotService {
     @Transactional
     public ChatResponseDto sendMessage(ChatRequestDto requestDto) {
         try {
-            // 단계별 추천 시작 요청인지 확인
-            if (requestDto.isStartStepRecommendation() || isStepRecommendationTrigger(requestDto.getMessage())) {
-                StepRecommendationResponseDto stepRecommendation = getAlcoholStrengthOptions();
-                String response = "단계별 맞춤 추천을 시작합니다! 🎯";
-                saveConversation(requestDto, response);
-                return new ChatResponseDto(response, stepRecommendation);
+            // 단계별 추천 모드 확인
+            if (requestDto.isStepRecommendation() || isStepRecommendationTrigger(requestDto.getMessage())) {
+                return handleStepRecommendation(requestDto);
             }
 
             // 메시지 타입 감지
@@ -265,28 +261,55 @@ public class ChatbotService {
         return lower.contains("단계별 추천");
     }
 
+    // 단계별 추천 처리 통합 메서드
+    private ChatResponseDto handleStepRecommendation(ChatRequestDto requestDto) {
+        Integer currentStep = requestDto.getCurrentStep();
+
+        // 단계가 지정되지 않았거나 첫 시작인 경우
+        if (currentStep == null || currentStep <= 0) {
+            currentStep = 1;
+        }
+
+        StepRecommendationResponseDto stepRecommendation;
+        String chatResponse;
+
+        switch (currentStep) {
+            case 1:
+                stepRecommendation = getAlcoholStrengthOptions();
+                chatResponse = "단계별 맞춤 추천을 시작합니다! 🎯\n원하시는 도수를 선택해주세요!";
+                break;
+            case 2:
+                stepRecommendation = getAlcoholBaseTypeOptions(requestDto.getSelectedAlcoholStrength());
+                chatResponse = "좋은 선택이네요! 이제 베이스가 될 술을 선택해주세요 🍸";
+                break;
+            case 3:
+                stepRecommendation = getCocktailTypeOptions(requestDto.getSelectedAlcoholStrength(), requestDto.getSelectedAlcoholBaseType());
+                chatResponse = "완벽해요! 마지막으로 어떤 스타일로 즐기실 건가요? 🥃";
+                break;
+            case 4:
+                stepRecommendation = getFinalRecommendations(
+                    requestDto.getSelectedAlcoholStrength(),
+                    requestDto.getSelectedAlcoholBaseType(),
+                    requestDto.getSelectedCocktailType()
+                );
+                chatResponse = stepRecommendation.getStepTitle();
+                break;
+            default:
+                stepRecommendation = getAlcoholStrengthOptions();
+                chatResponse = "단계별 맞춤 추천을 시작합니다! 🎯";
+        }
+
+        // 대화 기록 저장
+        saveConversation(requestDto, chatResponse);
+
+        return new ChatResponseDto(chatResponse, stepRecommendation);
+    }
+
     @Transactional(readOnly = true)
     public List<ChatConversation> getUserChatHistory(Long userId) {
         return chatConversationRepository.findByUserIdOrderByCreatedAtDesc(userId, Pageable.unpaged()).getContent();
     }
 
-    // 단계별 추천 로직
-    public StepRecommendationResponseDto getStepRecommendation(StepRecommendationRequestDto requestDto) {
-        Integer currentStep = requestDto.getStep();
-
-        switch (currentStep) {
-            case 1:
-                return getAlcoholStrengthOptions();
-            case 2:
-                return getAlcoholBaseTypeOptions(requestDto.getAlcoholStrength());
-            case 3:
-                return getCocktailTypeOptions(requestDto.getAlcoholStrength(), requestDto.getAlcoholBaseType());
-            case 4:
-                return getFinalRecommendations(requestDto);
-            default:
-                return getAlcoholStrengthOptions(); // 기본값은 첫 번째 단계
-        }
-    }
 
     private StepRecommendationResponseDto getAlcoholStrengthOptions() {
         List<StepRecommendationResponseDto.StepOption> options = new ArrayList<>();
@@ -348,11 +371,14 @@ public class ChatbotService {
         );
     }
 
-    private StepRecommendationResponseDto getFinalRecommendations(StepRecommendationRequestDto requestDto) {
+    private StepRecommendationResponseDto getFinalRecommendations(
+            AlcoholStrength alcoholStrength,
+            AlcoholBaseType alcoholBaseType,
+            CocktailType cocktailType) {
         // 필터링 조건에 맞는 칵테일 검색
-        List<AlcoholStrength> strengths = List.of(requestDto.getAlcoholStrength());
-        List<AlcoholBaseType> baseTypes = List.of(requestDto.getAlcoholBaseType());
-        List<CocktailType> cocktailTypes = List.of(requestDto.getCocktailType());
+        List<AlcoholStrength> strengths = List.of(alcoholStrength);
+        List<AlcoholBaseType> baseTypes = List.of(alcoholBaseType);
+        List<CocktailType> cocktailTypes = List.of(cocktailType);
 
         Page<Cocktail> cocktailPage = cocktailRepository.searchWithFilters(
             null, // 키워드 없음
