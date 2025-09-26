@@ -2,8 +2,16 @@ package com.back.domain.chatbot.service;
 
 import com.back.domain.chatbot.dto.ChatRequestDto;
 import com.back.domain.chatbot.dto.ChatResponseDto;
+import com.back.domain.chatbot.dto.StepRecommendationRequestDto;
+import com.back.domain.chatbot.dto.StepRecommendationResponseDto;
 import com.back.domain.chatbot.entity.ChatConversation;
 import com.back.domain.chatbot.repository.ChatConversationRepository;
+import com.back.domain.cocktail.dto.CocktailSummaryResponseDto;
+import com.back.domain.cocktail.entity.Cocktail;
+import com.back.domain.cocktail.enums.AlcoholBaseType;
+import com.back.domain.cocktail.enums.AlcoholStrength;
+import com.back.domain.cocktail.enums.CocktailType;
+import com.back.domain.cocktail.repository.CocktailRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +20,8 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,8 +30,10 @@ import org.springframework.util.StreamUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +42,7 @@ public class ChatbotService {
 
     private final ChatModel chatModel;
     private final ChatConversationRepository chatConversationRepository;
+    private final CocktailRepository cocktailRepository;
 
 
     @Value("classpath:prompts/chatbot-system-prompt.txt")
@@ -241,6 +254,120 @@ public class ChatbotService {
     @Transactional(readOnly = true)
     public List<ChatConversation> getUserChatHistory(Long userId) {
         return chatConversationRepository.findByUserIdOrderByCreatedAtDesc(userId, Pageable.unpaged()).getContent();
+    }
+
+    // 단계별 추천 로직
+    public StepRecommendationResponseDto getStepRecommendation(StepRecommendationRequestDto requestDto) {
+        Integer currentStep = requestDto.getStep();
+
+        switch (currentStep) {
+            case 1:
+                return getAlcoholStrengthOptions();
+            case 2:
+                return getAlcoholBaseTypeOptions(requestDto.getAlcoholStrength());
+            case 3:
+                return getCocktailTypeOptions(requestDto.getAlcoholStrength(), requestDto.getAlcoholBaseType());
+            case 4:
+                return getFinalRecommendations(requestDto);
+            default:
+                return getAlcoholStrengthOptions(); // 기본값은 첫 번째 단계
+        }
+    }
+
+    private StepRecommendationResponseDto getAlcoholStrengthOptions() {
+        List<StepRecommendationResponseDto.StepOption> options = new ArrayList<>();
+
+        for (AlcoholStrength strength : AlcoholStrength.values()) {
+            options.add(new StepRecommendationResponseDto.StepOption(
+                strength.name(),
+                strength.getDescription(),
+                null
+            ));
+        }
+
+        return new StepRecommendationResponseDto(
+            1,
+            "원하시는 도수를 선택해주세요!",
+            options,
+            null,
+            false
+        );
+    }
+
+    private StepRecommendationResponseDto getAlcoholBaseTypeOptions(AlcoholStrength alcoholStrength) {
+        List<StepRecommendationResponseDto.StepOption> options = new ArrayList<>();
+
+        for (AlcoholBaseType baseType : AlcoholBaseType.values()) {
+            options.add(new StepRecommendationResponseDto.StepOption(
+                baseType.name(),
+                baseType.getDescription(),
+                null
+            ));
+        }
+
+        return new StepRecommendationResponseDto(
+            2,
+            "베이스가 될 술을 선택해주세요!",
+            options,
+            null,
+            false
+        );
+    }
+
+    private StepRecommendationResponseDto getCocktailTypeOptions(AlcoholStrength alcoholStrength, AlcoholBaseType alcoholBaseType) {
+        List<StepRecommendationResponseDto.StepOption> options = new ArrayList<>();
+
+        for (CocktailType cocktailType : CocktailType.values()) {
+            options.add(new StepRecommendationResponseDto.StepOption(
+                cocktailType.name(),
+                cocktailType.getDescription(),
+                null
+            ));
+        }
+
+        return new StepRecommendationResponseDto(
+            3,
+            "어떤 종류의 잔으로 드시겠어요?",
+            options,
+            null,
+            false
+        );
+    }
+
+    private StepRecommendationResponseDto getFinalRecommendations(StepRecommendationRequestDto requestDto) {
+        // 필터링 조건에 맞는 칵테일 검색
+        List<AlcoholStrength> strengths = List.of(requestDto.getAlcoholStrength());
+        List<AlcoholBaseType> baseTypes = List.of(requestDto.getAlcoholBaseType());
+        List<CocktailType> cocktailTypes = List.of(requestDto.getCocktailType());
+
+        Page<Cocktail> cocktailPage = cocktailRepository.searchWithFilters(
+            null, // 키워드 없음
+            strengths,
+            cocktailTypes,
+            baseTypes,
+            PageRequest.of(0, 5) // 최대 5개 추천
+        );
+
+        List<CocktailSummaryResponseDto> recommendations = cocktailPage.getContent().stream()
+            .map(cocktail -> new CocktailSummaryResponseDto(
+                cocktail.getId(),
+                cocktail.getCocktailName(),
+                cocktail.getCocktailImgUrl(),
+                cocktail.getAlcoholStrength()
+            ))
+            .collect(Collectors.toList());
+
+        String stepTitle = recommendations.isEmpty()
+            ? "조건에 맞는 칵테일을 찾을 수 없습니다 😢"
+            : "당신을 위한 맞춤 칵테일 추천입니다! 🍹";
+
+        return new StepRecommendationResponseDto(
+            4,
+            stepTitle,
+            null,
+            recommendations,
+            true
+        );
     }
 
 }
