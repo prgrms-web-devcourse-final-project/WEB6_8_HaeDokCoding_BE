@@ -2,6 +2,7 @@ package com.back.domain.user.entity;
 
 import com.back.domain.post.post.entity.PostLike;
 import jakarta.persistence.*;
+import com.back.domain.user.enums.UserStatus;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -56,6 +57,13 @@ public class User {
     @Column(nullable = false)
     private boolean isFirstLogin = true;
 
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private UserStatus status = UserStatus.ACTIVE;
+
+    private LocalDateTime deletedAt;
+
     // 양방향 매핑을 위한 필드
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostLike> postLikes = new ArrayList<>();
@@ -81,5 +89,18 @@ public class User {
                 .stream()
                 .map(auth -> new SimpleGrantedAuthority("ROLE_" + auth))
                 .toList();
+    }
+
+    public boolean isDeleted() {
+        return this.status == UserStatus.DELETED;
+    }
+
+    public void markDeleted(String anonymizedNickname) {
+        this.status = UserStatus.DELETED;
+        this.deletedAt = LocalDateTime.now();
+        this.nickname = anonymizedNickname;
+        // 민감정보 최소화: 재가입 허용을 위해 이메일/OAuth 식별자 제거
+        this.email = null;
+        this.oauthId = null;
     }
 }
