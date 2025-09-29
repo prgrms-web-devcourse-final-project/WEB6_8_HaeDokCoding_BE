@@ -41,6 +41,7 @@ public class Cocktail {
 
     private String ingredient;
 
+    @Column(length = 1000)
     private String recipe;
 
     private String cocktailImgUrl;
