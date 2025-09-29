@@ -6,6 +6,7 @@ import com.back.domain.user.enums.UserStatus;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
@@ -16,6 +17,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "users")  // 예약어 충돌 방지를 위해 "users" 권장
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 @NoArgsConstructor

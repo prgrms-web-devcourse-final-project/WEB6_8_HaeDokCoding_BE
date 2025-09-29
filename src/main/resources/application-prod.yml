@@ -23,6 +23,12 @@ spring:
     properties:
       hibernate:
         show_sql: false
+  cloud:
+    aws:
+      region:
+        static: ap-northeast-2
+      stack:
+        auto: false
 
 springdoc:
   swagger-ui:
