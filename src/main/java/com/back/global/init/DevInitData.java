@@ -56,18 +56,6 @@ public class DevInitData {
     }
 
     @Transactional
-    public void cocktailInit() throws Exception {
-        // H2 DB에 이미 데이터가 들어가 있는지 확인
-        if (cocktailRepository.count() > 0) {
-            System.out.println("Cocktail 데이터가 이미 존재합니다.");
-            return;
-        }
-
-        // data-h2.sql에서 자동 삽입되므로 여기서는 추가하지 않음.
-        System.out.println("Cocktail 초기화: CSV에서 데이터를 이미 로드합니다.");
-    }
-
-    @Transactional
     public void userInit() {
         userRepository.findByNickname("사용자A").orElseGet(() ->
                 userRepository.save(User.builder().nickname("사용자A").role("USER").build())
