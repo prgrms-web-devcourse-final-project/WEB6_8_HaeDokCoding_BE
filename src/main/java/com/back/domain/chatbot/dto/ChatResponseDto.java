@@ -14,12 +14,10 @@ import java.time.LocalDateTime;
 public class ChatResponseDto {
 
     private String response;
-    private String sessionId;
     private LocalDateTime timestamp;
 
-    public ChatResponseDto(String response, String sessionId) {
+    public ChatResponseDto(String response) {
         this.response = response;
-        this.sessionId = sessionId;
         this.timestamp = LocalDateTime.now();
     }
 }

@@ -17,6 +17,7 @@ import com.back.domain.post.post.repository.PostRepository;
 import com.back.domain.post.post.repository.TagRepository;
 import com.back.domain.user.entity.User;
 import com.back.global.rq.Rq;
+import com.back.domain.user.service.AbvScoreService;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -35,6 +36,7 @@ public class PostService {
   private final PostLikeRepository postLikeRepository;
   private final NotificationService notificationService;
   private final Rq rq;
+  private final AbvScoreService abvScoreService;
 
   // 게시글 작성 로직
   @Transactional
@@ -58,7 +60,10 @@ public class PostService {
       addTag(tagNames, post);
     }
 
-    return new PostResponseDto(postRepository.save(post));
+    Post saved = postRepository.save(post);
+    // 활동 점수: 게시글 작성 +0.5
+    abvScoreService.awardForPost(user.getId());
+    return new PostResponseDto(saved);
   }
 
   // 게시글 다건 조회 로직
@@ -136,6 +141,8 @@ public class PostService {
         .orElseThrow(() -> new NoSuchElementException("해당 게시글을 찾을 수 없습니다. ID: " + postId));
 
     post.updateStatus(PostStatus.DELETED);
+    // 활동 점수: 게시글 삭제 시 -0.5 (작성자 기준)
+    abvScoreService.revokeForPost(post.getUser().getId());
 
     // soft delete를 사용하기 위해 레포지토리 삭제 작업은 진행하지 않음.
 //    postRepository.delete(post);
@@ -156,6 +163,8 @@ public class PostService {
       existingLike.get().updateStatus(PostLikeStatus.NONE);
       postLikeRepository.delete(existingLike.get());
       post.decreaseLikeCount();
+      // 활동 점수: 추천 취소 시 -0.1
+      abvScoreService.revokeForLike(user.getId());
     } else {
       // 추천 추가
       PostLike postLike = PostLike.builder()
@@ -165,6 +174,8 @@ public class PostService {
           .build();
       postLikeRepository.save(postLike);
       post.increaseLikeCount();
+      // 활동 점수: 추천 추가 시 +0.1
+      abvScoreService.awardForLike(user.getId());
     }
 
     // 게시글 작성자에게 알림 전송

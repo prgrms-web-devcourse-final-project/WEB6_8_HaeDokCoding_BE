@@ -93,9 +93,9 @@ public class UserAuthService {
         String uniqueNickname = generateNickname(nickname);
 
         User user = User.builder()
-                .email(email)
+                .email(email != null ? email : "")
                 .nickname(uniqueNickname)
-                .abvDegree(0.0)
+                .abvDegree(5.0)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .role("USER")
@@ -112,7 +112,8 @@ public class UserAuthService {
         if (existingUser.isPresent()) {
             // 기존 사용자 업데이트 (이메일만 업데이트)
             User user = existingUser.get();
-            user.setEmail(email);
+            // null 체크 후 빈 문자열로 대체
+            user.setEmail(email != null ? email : "");
             return RsData.of(200, "회원 정보가 업데이트 되었습니다", user); //더티체킹
         } else {
             User newUser = joinSocial(oauthId, email, nickname);
@@ -137,6 +138,8 @@ public class UserAuthService {
         String accessToken = jwtUtil.generateAccessToken(userId, email, nickname);
         String refreshToken = refreshTokenService.generateRefreshToken(userId);
 
+        log.debug("토큰 발급 완료 - userId: {}, accessToken: {}, refreshToken: {}", userId, accessToken, refreshToken);
+
         jwtUtil.addAccessTokenToCookie(response, accessToken);
         jwtUtil.addRefreshTokenToCookie(response, refreshToken);
     }
@@ -144,8 +147,15 @@ public class UserAuthService {
     public RefreshTokenResDto refreshTokens(HttpServletRequest request, HttpServletResponse response) {
         try {
             String oldRefreshToken = jwtUtil.getRefreshTokenFromCookie(request);
+            log.debug("토큰 갱신 시도 - 받은 RefreshToken: {}", oldRefreshToken);
 
-            if (oldRefreshToken == null || !refreshTokenService.validateToken(oldRefreshToken)) {
+            if (oldRefreshToken == null) {
+                log.error("RefreshToken이 쿠키에서 발견되지 않음");
+                return null;
+            }
+
+            if (!refreshTokenService.validateToken(oldRefreshToken)) {
+                log.error("RefreshToken 검증 실패: {}", oldRefreshToken);
                 return null;
             }
 

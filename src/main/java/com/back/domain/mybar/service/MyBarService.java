@@ -7,6 +7,7 @@ import com.back.domain.mybar.entity.MyBar;
 import com.back.domain.mybar.enums.KeepStatus;
 import com.back.domain.mybar.repository.MyBarRepository;
 import com.back.domain.user.repository.UserRepository;
+import com.back.domain.user.service.AbvScoreService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,6 +27,7 @@ public class MyBarService {
     private final MyBarRepository myBarRepository;
     private final UserRepository userRepository;
     private final CocktailRepository cocktailRepository;
+    private final AbvScoreService abvScoreService;
 
     // 내 바 목록 조회 (무한스크롤)
     // - 커서: lastKeptAt + lastId 조합으로 안정적인 정렬/페이지네이션
@@ -83,6 +85,8 @@ public class MyBarService {
                 // 해제돼 있던 건 복원
                 myBar.setStatus(KeepStatus.ACTIVE);
                 myBar.setDeletedAt(null);
+                // 활동 점수: 복원 시 +0.1
+                abvScoreService.awardForKeep(userId);
             }
             return; // 이미 ACTIVE여도 keptAt 갱신으로 충분
         }
@@ -95,12 +99,18 @@ public class MyBarService {
         myBar.setKeptAt(now);
 
         myBarRepository.save(myBar);
+        // 활동 점수: 신규 keep 시 +0.1
+        abvScoreService.awardForKeep(userId);
     }
 
     /** 킵 해제(소프트 삭제) — 멱등 처리 */
     @Transactional
     public void unkeep(Long userId, Long cocktailId) {
-        myBarRepository.softDeleteByUserAndCocktail(userId, cocktailId);
+        int changed = myBarRepository.softDeleteByUserAndCocktail(userId, cocktailId);
+        // 실제로 ACTIVE -> DELETED로 변경된 경우만 -0.1
+        if (changed > 0) {
+            abvScoreService.revokeForKeep(userId);
+        }
     }
 }
 

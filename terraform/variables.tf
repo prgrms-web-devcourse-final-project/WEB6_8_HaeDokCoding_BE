@@ -17,6 +17,16 @@ variable "prefix" {
 
 variable "app_1_domain" {
   description = "app_1 domain"
-  default     = "api.ssoul.o-r.kr"
+  default     = "api.ssoul.life"
+}
 
+variable "s3_bucket_name" {
+  description = "S3 bucket name for file storage"
+  default     = "app-s3-bucket"
+}
+
+variable "s3_public_read" {
+  description = "Enable public read access for S3 bucket"
+  type        = bool
+  default     = true
 }

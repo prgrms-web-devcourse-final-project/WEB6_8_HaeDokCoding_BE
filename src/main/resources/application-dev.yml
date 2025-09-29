@@ -14,13 +14,30 @@ spring:
 
   # JPA 설정
   jpa:
+    defer-datasource-initialization: true
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: create-drop  # 개발용: 시작할 때 테이블 생성, 종료할 때 삭제
+      ddl-auto: create-drop  # 개발용: 시작할 때 테이블 생성, 종료할 때 삭제 / db_dev 에러 방지용으로 update->create-drop 변경
     properties:
       hibernate:
         format_sql: true
         show_sql: true
+
+  sql:
+    init:
+      mode: always           # 항상 실행
+      encoding: UTF-8
+      data-locations: classpath:data-h2.sql
+
+  cloud:
+    aws:
+      region:
+        static: ap-northeast-2
+      stack:
+        auto: false
+      credentials:
+        access-key: ${AWS_ACCESS_KEY_ID:dummy}  # 로컬용 더미값
+        secret-key: ${AWS_SECRET_ACCESS_KEY:dummy}
 
 # Swagger 설정
 springdoc:
@@ -41,7 +58,8 @@ logging:
 # 쿠키 보안 설정 (HTTP 환경용)
 custom:
   cookie:
-    secure: false
+    secure: true
+    same: "Lax"
 
 #  # AI 설정
 #  ai:

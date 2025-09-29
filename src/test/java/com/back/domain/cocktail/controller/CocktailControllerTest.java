@@ -5,14 +5,21 @@ import com.back.domain.cocktail.enums.AlcoholBaseType;
 import com.back.domain.cocktail.enums.AlcoholStrength;
 import com.back.domain.cocktail.enums.CocktailType;
 import com.back.domain.cocktail.repository.CocktailRepository;
-import com.back.domain.cocktail.service.CocktailService;
+import com.back.domain.user.service.UserService;
+import com.back.global.rq.Rq;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +33,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ActiveProfiles("test")
 @SpringBootTest
+@TestPropertySource(properties = {
+        "custom.cookie.secure=false",
+        "custom.cookie.same=Strict"
+})
 @AutoConfigureMockMvc(addFilters = false)
 @Transactional
 public class CocktailControllerTest {
@@ -34,10 +45,6 @@ public class CocktailControllerTest {
 
     @Autowired
     private CocktailRepository cocktailRepository;
-
-    @Autowired
-    private CocktailService cocktailService;
-
 
     @Test
     @DisplayName("칵테일 단건 조회 - 로그인 없이 성공")
@@ -130,4 +137,17 @@ public class CocktailControllerTest {
                 .andExpect(jsonPath("$.message").value("success"))
                 .andExpect(jsonPath("$.data").isArray());
     }
+
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        public Rq rq() {
+            HttpServletRequest req = Mockito.mock(HttpServletRequest.class);
+            HttpServletResponse resp = Mockito.mock(HttpServletResponse.class);
+            UserService userService = Mockito.mock(UserService.class);
+
+            return new Rq(req, resp, userService);
+        }
+    }
+
 }

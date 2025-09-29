@@ -5,9 +5,12 @@ import com.back.global.exception.ServiceException;
 import com.back.global.rsData.RsData;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.transaction.TransactionException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
@@ -30,6 +33,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
  * 500: Internal Server Error
  */
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -156,4 +160,9 @@ public class GlobalExceptionHandler {
                 .body(RsData.of(500, "서버 내부 오류가 발생했습니다.", null));
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<RsData<Void>> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(RsData.of(404, ex.getMessage()));
+    }
 }

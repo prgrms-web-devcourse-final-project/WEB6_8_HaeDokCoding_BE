@@ -26,6 +26,7 @@ public class Cocktail {
     private Long id;
 
     private String cocktailName;
+    private String cocktailNameKo;
 
     @Enumerated(EnumType.STRING)
     private AlcoholStrength alcoholStrength; // 칵테일 알콜도수
@@ -40,6 +41,7 @@ public class Cocktail {
 
     private String ingredient;
 
+    @Column(length = 1000)
     private String recipe;
 
     private String cocktailImgUrl;
