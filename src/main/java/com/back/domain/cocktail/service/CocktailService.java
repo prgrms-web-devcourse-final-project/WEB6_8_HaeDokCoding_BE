@@ -78,7 +78,7 @@ public class CocktailService {
             int size = cocktailSearchRequestDto.getSize() != null && cocktailSearchRequestDto.getSize() > 0
                     ? cocktailSearchRequestDto.getSize() : DEFAULT_SIZE;
 
-            // searchWithFilters에서 조회한 결과값을 pageResult에 저장.
+            // searchAndFilters에서 조회한 결과값을 pageResult에 저장.
             Pageable pageable = PageRequest.of(page, size);
 
             // 빈 리스트(null 또는 [])는 null로 변환

@@ -21,7 +21,7 @@ public class CocktailRecommendController {
 
     private final RecommendService recommendService;
 
-    // 상세페이지 추천 (DTO로 반환)
+    // 상세페이지 3개 칵테일 추천 (DTO로 반환)
     @Operation(summary = "상세페이지 유사 칵테일 추천", description = "현재 칵테일과 유사한 칵테일 최대 3개를 반환합니다.")
     @GetMapping("/related")
     public RsData<List<CocktailRecommendResponseDto>> recommendRelated(@RequestParam Long cocktailId) {

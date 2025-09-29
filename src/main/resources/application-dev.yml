@@ -1,8 +1,4 @@
 spring:
-  sql:
-    init:
-      mode: always
-      data-locations: classpath:data-h2.sql
   # H2 Database 설정
   datasource:
     driver-class-name: org.h2.Driver
@@ -18,13 +14,20 @@ spring:
 
   # JPA 설정
   jpa:
+    defer-datasource-initialization: true
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: update  # 실행전 db_dev 파일 삭제 필요
+      ddl-auto: create-drop  # 개발용: 시작할 때 테이블 생성, 종료할 때 삭제 / db_dev 에러 방지용으로 update->create-drop 변경
     properties:
       hibernate:
         format_sql: true
         show_sql: true
+
+  sql:
+    init:
+      mode: always           # 항상 실행
+      encoding: UTF-8
+      data-locations: classpath:data-h2.sql
 
   cloud:
     aws:
