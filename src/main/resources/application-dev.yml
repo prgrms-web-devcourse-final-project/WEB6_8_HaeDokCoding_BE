@@ -20,7 +20,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: create-drop  # 개발용: 시작할 때 테이블 생성, 종료할 때 삭제 / db_dev 에러 방지용으로 upsdate->create-drop 변경
+      ddl-auto: update  # 실행전 db_dev 파일 삭제 필요
     properties:
       hibernate:
         format_sql: true
