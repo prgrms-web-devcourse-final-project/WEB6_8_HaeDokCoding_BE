@@ -3,6 +3,7 @@ package com.back.domain.cocktail.controller;
 import com.back.domain.cocktail.repository.CocktailRepository;
 import com.back.global.rsData.RsData;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,13 +19,16 @@ import java.util.Map;
 public class CocktailShareController {
     private final CocktailRepository cocktailRepository;
 
+    @Value("${custom.prod.frontUrl}")
+    private String frontUrl;
+
     @GetMapping("/{id}/share")
     public ResponseEntity<RsData<Map<String, String>>> getShareLink(@PathVariable Long id) {
         return cocktailRepository.findById(id)
                 .map(cocktail -> {
                     Map<String, String> response = Map.of(
                             // 공유 URL
-                            "url", "https://www.ssoul.life/cocktails/" + cocktail.getId(),
+                            "url", frontUrl +"/cocktails/" + cocktail.getId(),
                             // 공유 제목
                             "title", cocktail.getCocktailName(),
                             // 공유 이미지 (선택)
