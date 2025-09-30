@@ -11,5 +11,5 @@ public interface ChatConversationRepository extends JpaRepository<ChatConversati
 
     List<ChatConversation> findByUserIdOrderByCreatedAtDesc(Long userId);
 
-    List<ChatConversation> findTop5ByUserIdOrderByCreatedAtDesc(Long userId);
+    List<ChatConversation> findTop10ByUserIdOrderByCreatedAtDesc(Long userId);
 }
