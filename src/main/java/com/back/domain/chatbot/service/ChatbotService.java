@@ -2,6 +2,7 @@ package com.back.domain.chatbot.service;
 
 import com.back.domain.chatbot.dto.ChatRequestDto;
 import com.back.domain.chatbot.dto.ChatResponseDto;
+import com.back.domain.chatbot.dto.SaveBotMessageDto;
 import com.back.domain.chatbot.dto.StepRecommendationResponseDto;
 import com.back.domain.chatbot.entity.ChatConversation;
 import com.back.domain.chatbot.enums.MessageSender;
@@ -22,7 +23,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
@@ -133,6 +133,11 @@ public class ChatbotService {
         }
     }
 
+    // ============ 수정된 메서드들 ============
+
+    /**
+     * 대화 컨텍스트 빌드 - 변경사항: sender로 구분하여 대화 재구성
+     */
     private String buildConversationContext(List<ChatConversation> recentChats) {
         if (recentChats.isEmpty()) {
             return "";
@@ -160,7 +165,7 @@ public class ChatbotService {
      * 대화 저장 - 변경사항: 사용자 메시지와 봇 응답을 각각 별도로 저장
      */
     @Transactional
-    public void saveConversation(ChatRequestDto requestDto, String response) {
+    private void saveConversation(ChatRequestDto requestDto, String response) {
         // 1. 사용자 메시지 저장
         ChatConversation userMessage = ChatConversation.builder()
                 .userId(requestDto.getUserId())
@@ -186,6 +191,51 @@ public class ChatbotService {
     @Transactional(readOnly = true)
     public List<ChatConversation> getUserChatHistory(Long userId) {
         return chatConversationRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    }
+
+    /**
+     * FE에서 생성한 봇 메시지를 DB에 저장
+     * 예: 인사말, 안내 메시지, 에러 메시지 등
+     */
+    @Transactional
+    public ChatConversation saveBotMessage(SaveBotMessageDto dto) {
+        ChatConversation botMessage = ChatConversation.builder()
+                .userId(dto.getUserId())
+                .message(dto.getMessage())
+                .sender(MessageSender.CHATBOT)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        return chatConversationRepository.save(botMessage);
+    }
+
+    /**
+     * 기본 인사말 생성 및 저장
+     * 채팅 시작 시 호출하여 인사말을 DB에 저장
+     */
+    @Transactional
+    public ChatConversation createGreetingMessage(Long userId) {
+        String greetingMessage = "안녕하세요! 🍹 바텐더 '쑤리'에요.\n" +
+                "취향에 맞는 칵테일을 추천해드릴게요!\n" +
+                "어떤 유형으로 찾아드릴까요?";
+
+        ChatConversation greeting = ChatConversation.builder()
+                .userId(userId)
+                .message(greetingMessage)
+                .sender(MessageSender.CHATBOT)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        return chatConversationRepository.save(greeting);
+    }
+
+    /**
+     * 사용자의 첫 대화 여부 확인
+     * 첫 대화인 경우 인사말 자동 생성에 활용 가능
+     */
+    @Transactional(readOnly = true)
+    public boolean isFirstConversation(Long userId) {
+        return chatConversationRepository.findTop10ByUserIdOrderByCreatedAtDesc(userId).isEmpty();
     }
 
     // ============ 기존 메서드들 (변경 없음) ============
