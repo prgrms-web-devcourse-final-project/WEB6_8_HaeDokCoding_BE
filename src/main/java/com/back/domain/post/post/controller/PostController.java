@@ -8,10 +8,19 @@ import com.back.global.rsData.RsData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/posts")
@@ -23,15 +32,18 @@ public class PostController {
 
   /**
    * 게시글 작성 API
+   *
    * @param reqBody 게시글 작성 요청 DTO
+   * @param images 첨부 이미지 파일들 (optional)
    * @return 작성된 게시글 정보
    */
-  @PostMapping
+  @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   @Operation(summary = "게시글 작성")
   public RsData<PostResponseDto> createPost(
-      @Valid @RequestBody PostCreateRequestDto reqBody
+      @RequestPart("post") @Valid PostCreateRequestDto reqBody,
+      @RequestPart(value = "images", required = false) List<MultipartFile> images
   ) {
-    return RsData.successOf(postService.createPost(reqBody)); // code=200, message="success"
+    return RsData.successOf(postService.createPost(reqBody, images)); // code=200, message="success"
   }
 
   /**
@@ -66,13 +78,14 @@ public class PostController {
    * @param reqBody 게시글 수정 요청 DTO
    * @return 수정된 게시글 정보
    */
-  @PatchMapping("/{postId}")
+  @PatchMapping(value = "/{postId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   @Operation(summary = "게시글 수정")
   public RsData<PostResponseDto> updatePost(
       @PathVariable Long postId,
-      @Valid @RequestBody PostUpdateRequestDto reqBody
+      @RequestPart("post") @Valid PostUpdateRequestDto reqBody,
+      @RequestPart(value = "images", required = false) List<MultipartFile> images
   ) {
-    return RsData.successOf(postService.updatePost(postId, reqBody)); // code=200, message="success"
+    return RsData.successOf(postService.updatePost(postId, reqBody, images)); // code=200, message="success"
   }
 
   /**

@@ -24,7 +24,7 @@ public class CocktailShareController {
                 .map(cocktail -> {
                     Map<String, String> response = Map.of(
                             // 공유 URL
-                            "url", "https://www.ssoul.o-r.kr/cocktails/" + cocktail.getId(),
+                            "url", "https://www.ssoul.life/cocktails/" + cocktail.getId(),
                             // 공유 제목
                             "title", cocktail.getCocktailName(),
                             // 공유 이미지 (선택)
