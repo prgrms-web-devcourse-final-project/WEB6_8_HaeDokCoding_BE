@@ -1,6 +1,8 @@
 package com.back.domain.myhistory.dto;
 
 import com.back.domain.post.post.entity.Post;
+import com.back.domain.post.post.entity.PostImage;
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -11,7 +13,7 @@ import java.time.LocalDateTime;
 public class MyHistoryPostItemDto {
     private Long id;
     private String title;
-    private String imageUrl;
+    private List<String> imageUrls;
     private LocalDateTime createdAt;
     private Integer likeCount;
     private Integer commentCount;
@@ -20,7 +22,9 @@ public class MyHistoryPostItemDto {
         return MyHistoryPostItemDto.builder()
                 .id(p.getId())
                 .title(p.getTitle())
-                .imageUrl(p.getImageUrl())
+                .imageUrls(p.getImages().stream()
+                    .map(PostImage::getUrl)
+                    .toList())
                 .createdAt(p.getCreatedAt())
                 .likeCount(p.getLikeCount())
                 .commentCount(p.getCommentCount())

@@ -36,8 +36,10 @@ spring:
       stack:
         auto: false
       credentials:
-        access-key: ${AWS_ACCESS_KEY_ID:dummy}  # 로컬용 더미값
-        secret-key: ${AWS_SECRET_ACCESS_KEY:dummy}
+        access-key: ${AWS_ACCESS_KEY_ID}  # 로컬용 더미값
+        secret-key: ${AWS_SECRET_ACCESS_KEY}
+      s3:
+        bucket: team2-app-s3-bucket
 
 # Swagger 설정
 springdoc:
