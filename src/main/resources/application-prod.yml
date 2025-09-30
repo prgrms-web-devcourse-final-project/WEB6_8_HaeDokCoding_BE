@@ -45,7 +45,7 @@ custom:
     secure: true
     same: "None"
   site:
-    cookieDomain: ".${BASE_URL}"
+    cookieDomain: "${BASE_URL}"
     frontUrl: "${custom.prod.frontUrl}"
     backUrl: "${custom.prod.backUrl}"
     name: ssoul
