@@ -31,6 +31,9 @@ public class Rq {
     @Value("${custom.cookie.same}")
     private String cookieSameSite;
 
+    @Value("${custom.site.cookieDomain}")
+    private String cookieDomain;
+
 
     public User getActor() {
         return Optional.ofNullable(
@@ -95,6 +98,7 @@ public class Rq {
                 .maxAge(maxAge)
                 .secure(cookieSecure)
                 .sameSite(cookieSameSite)
+                .domain(cookieDomain)
                 .httpOnly(true)
                 .build();
         resp.addHeader("Set-Cookie", cookie.toString());
