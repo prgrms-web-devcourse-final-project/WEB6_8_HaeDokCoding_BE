@@ -1,5 +1,6 @@
 package com.back.domain.chatbot.entity;
 
+import com.back.domain.chatbot.enums.MessageSender;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -22,11 +23,13 @@ public class ChatConversation {
 
     private Long userId;
 
-    @Column(columnDefinition = "TEXT")
-    private String userMessage;
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String message;
 
-    @Column(columnDefinition = "TEXT")
-    private String botResponse;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private MessageSender sender = MessageSender.USER;
 
     @CreatedDate
     private LocalDateTime createdAt;
