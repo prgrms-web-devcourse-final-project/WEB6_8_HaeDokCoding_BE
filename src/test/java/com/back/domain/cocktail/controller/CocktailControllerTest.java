@@ -79,9 +79,9 @@ public class CocktailControllerTest {
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.message").value("success"))
                 .andExpect(jsonPath("$.data.cocktailName").value("모히토"))
-                .andExpect(jsonPath("$.data.alcoholStrength").value("WEAK"))
-                .andExpect(jsonPath("$.data.cocktailType").value("SHORT"))
-                .andExpect(jsonPath("$.data.alcoholBaseType").value("RUM"));
+                .andExpect(jsonPath("$.data.alcoholStrength").value("약한 도수 (1~5%)"))
+                .andExpect(jsonPath("$.data.cocktailType").value("숏"))
+                .andExpect(jsonPath("$.data.alcoholBaseType").value("럼"));
     }
 
     @Test
@@ -177,9 +177,9 @@ public class CocktailControllerTest {
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.message").value("success"))
                 .andExpect(jsonPath("$.data[0].cocktailName").value("모히토"))
-                .andExpect(jsonPath("$.data[0].alcoholStrength").value("WEAK"))
-                .andExpect(jsonPath("$.data[0].cocktailType").value("SHORT"))
-                .andExpect(jsonPath("$.data[0].alcoholBaseType").value("RUM"));
+                .andExpect(jsonPath("$.data[0].alcoholStrength").value("약한 도수 (1~5%)"))
+                .andExpect(jsonPath("$.data[0].cocktailType").value("숏"))
+                .andExpect(jsonPath("$.data[0].alcoholBaseType").value("럼"));
     }
 
     @TestConfiguration
