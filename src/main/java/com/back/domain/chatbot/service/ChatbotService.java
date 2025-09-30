@@ -21,7 +21,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
@@ -312,7 +311,7 @@ public class ChatbotService {
 
     @Transactional(readOnly = true)
     public List<ChatConversation> getUserChatHistory(Long userId) {
-        return chatConversationRepository.findByUserIdOrderByCreatedAtDesc(userId, Pageable.unpaged()).getContent();
+        return chatConversationRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
 

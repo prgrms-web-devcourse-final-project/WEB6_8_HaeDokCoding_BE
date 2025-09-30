@@ -2,6 +2,7 @@ package com.back.domain.chatbot.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDateTime;
 
@@ -27,10 +28,6 @@ public class ChatConversation {
     @Column(columnDefinition = "TEXT")
     private String botResponse;
 
+    @CreatedDate
     private LocalDateTime createdAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
 }
