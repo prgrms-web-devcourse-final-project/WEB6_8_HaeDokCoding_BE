@@ -45,6 +45,21 @@ public class JwtUtil {
                 .compact();
     }
 
+    // 테스트용: 커스텀 만료시간으로 토큰 생성
+    public String generateAccessTokenWithExpiration(Long userId, String email, String nickname, long customExpirationMs) {
+        Date now = new Date();
+        Date expiration = new Date(now.getTime() + customExpirationMs);
+
+        return Jwts.builder()
+                .setSubject(String.valueOf(userId))
+                .claim("email", email)
+                .claim("nickname", nickname)
+                .setIssuedAt(now)
+                .setExpiration(expiration)
+                .signWith(secretKey)
+                .compact();
+    }
+
 
     public void addAccessTokenToCookie(HttpServletResponse response, String accessToken) {
         Cookie cookie = new Cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken);
