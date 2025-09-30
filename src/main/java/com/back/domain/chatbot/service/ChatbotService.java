@@ -6,6 +6,7 @@ import com.back.domain.chatbot.dto.SaveBotMessageDto;
 import com.back.domain.chatbot.dto.StepRecommendationResponseDto;
 import com.back.domain.chatbot.entity.ChatConversation;
 import com.back.domain.chatbot.enums.MessageSender;
+import com.back.domain.chatbot.enums.MessageType;
 import com.back.domain.chatbot.repository.ChatConversationRepository;
 import com.back.domain.cocktail.dto.CocktailSummaryResponseDto;
 import com.back.domain.cocktail.entity.Cocktail;
@@ -98,8 +99,8 @@ public class ChatbotService {
 
             log.info("Normal chat mode for userId: {}", requestDto.getUserId());
 
-            // 메시지 타입 감지
-            MessageType messageType = detectMessageType(requestDto.getMessage());
+            // 메시지 타입 감지 (내부 enum 사용)
+            InternalMessageType messageType = detectMessageType(requestDto.getMessage());
 
             // 최근 대화 기록 조회 (최신 10개 메시지 - USER와 CHATBOT 메시지 모두 포함)
             List<ChatConversation> recentChats =
@@ -125,7 +126,12 @@ public class ChatbotService {
             // 대화 저장 - 사용자 메시지와 봇 응답을 각각 저장
             saveConversation(requestDto, response);
 
-            return new ChatResponseDto(response);
+            // 새로운 구조로 ChatResponseDto 생성
+            return ChatResponseDto.builder()
+                    .message(response)
+                    .type(MessageType.TEXT)
+                    .timestamp(LocalDateTime.now())
+                    .build();
 
         } catch (Exception e) {
             log.error("채팅 응답 생성 중 오류 발생: ", e);
@@ -240,7 +246,7 @@ public class ChatbotService {
 
     // ============ 기존 메서드들 (변경 없음) ============
 
-    private String buildSystemMessage(MessageType type) {
+    private String buildSystemMessage(InternalMessageType type) {
         StringBuilder sb = new StringBuilder(systemPrompt);
 
         // 메시지 타입별 추가 지시사항
@@ -261,11 +267,11 @@ public class ChatbotService {
         return sb.toString();
     }
 
-    private String buildUserMessage(String userMessage, MessageType type) {
+    private String buildUserMessage(String userMessage, InternalMessageType type) {
         return userMessage + "\n\n" + responseRules;
     }
 
-    private OpenAiChatOptions getOptionsForMessageType(MessageType type) {
+    private OpenAiChatOptions getOptionsForMessageType(InternalMessageType type) {
         return switch (type) {
             case RECIPE -> OpenAiChatOptions.builder()
                     .withTemperature(0.3)  // 정확성 중시
@@ -286,14 +292,14 @@ public class ChatbotService {
         };
     }
 
-    private String postProcessResponse(String response, MessageType type) {
+    private String postProcessResponse(String response, InternalMessageType type) {
         // 응답 길이 제한 확인
         if (response.length() > 500) {
             response = response.substring(0, 497) + "...";
         }
 
         // 이모지 추가 (타입별)
-        if (type == MessageType.RECIPE && !response.contains("🍹")) {
+        if (type == InternalMessageType.RECIPE && !response.contains("🍹")) {
             response = "🍹 " + response;
         }
 
@@ -309,28 +315,32 @@ public class ChatbotService {
             errorMessage = "응답 시간이 초과되었습니다. 다시 시도해주세요.";
         }
 
-        return new ChatResponseDto(errorMessage);
+        return ChatResponseDto.builder()
+                .message(errorMessage)
+                .type(MessageType.ERROR)
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 
-    public enum MessageType {
+    public enum InternalMessageType {
         RECIPE, RECOMMENDATION, QUESTION, CASUAL_CHAT
     }
 
-    private MessageType detectMessageType(String message) {
+    private InternalMessageType detectMessageType(String message) {
         String lower = message.toLowerCase();
 
         if (lower.contains("레시피") || lower.contains("만드는") ||
                 lower.contains("제조") || lower.contains("recipe")) {
-            return MessageType.RECIPE;
+            return InternalMessageType.RECIPE;
         } else if (lower.contains("추천") || lower.contains("어때") ||
                 lower.contains("뭐가 좋") || lower.contains("recommend")) {
-            return MessageType.RECOMMENDATION;
+            return InternalMessageType.RECOMMENDATION;
         } else if (lower.contains("?") || lower.contains("뭐") ||
                 lower.contains("어떻") || lower.contains("왜")) {
-            return MessageType.QUESTION;
+            return InternalMessageType.QUESTION;
         }
 
-        return MessageType.CASUAL_CHAT;
+        return InternalMessageType.CASUAL_CHAT;
     }
 
     // 단계별 추천 시작 키워드 감지
@@ -382,7 +392,19 @@ public class ChatbotService {
         // 대화 기록 저장 - 변경된 방식으로 저장
         saveConversation(requestDto, chatResponse);
 
-        return new ChatResponseDto(chatResponse, stepRecommendation);
+        // 메타데이터 생성 (단계별 추천용)
+        ChatResponseDto.MetaData metaData = ChatResponseDto.MetaData.builder()
+                .currentStep(currentStep)
+                .totalSteps(4)
+                .isTyping(false)
+                .build();
+
+        return ChatResponseDto.builder()
+                .message(chatResponse)
+                .timestamp(LocalDateTime.now())
+                .stepData(stepRecommendation)
+                .metaData(metaData)
+                .build();
     }
 
     // ============ 단계별 추천 관련 메서드들 (변경 없음) ============
