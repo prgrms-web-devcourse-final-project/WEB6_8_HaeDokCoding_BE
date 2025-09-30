@@ -127,7 +127,7 @@ public class ChatbotService {
             // 응답 후처리
             response = postProcessResponse(response, messageType);
 
-            // 대화 저장 (sessionId 없이)
+            // 대화 저장 (sessionId 없이) 이후 트랜잭셔널 분리
             saveConversation(requestDto, response);
 
             return new ChatResponseDto(response);

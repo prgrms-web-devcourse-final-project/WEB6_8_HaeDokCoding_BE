@@ -5,6 +5,7 @@ import com.back.domain.chatbot.dto.ChatResponseDto;
 import com.back.domain.chatbot.entity.ChatConversation;
 import com.back.domain.chatbot.service.ChatbotService;
 import com.back.global.rsData.RsData;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ public class ChatbotController {
     private final ChatbotService chatbotService;
 
     @PostMapping("/chat")
+    @Operation(summary = "채팅 메시지 보내기", description = "자율형 대화 및 단계별 추천 두가지 모드 지원")
     public ResponseEntity<RsData<ChatResponseDto>> sendMessage(@Valid @RequestBody ChatRequestDto requestDto) {
         try {
             ChatResponseDto response = chatbotService.sendMessage(requestDto);
@@ -34,6 +36,7 @@ public class ChatbotController {
     }
 
     @GetMapping("/history/user/{userId}")
+    @Operation(summary = "유저 대화 히스토리", description = "사용자 채팅 기록 조회")
     public ResponseEntity<RsData<List<ChatConversation>>> getUserChatHistory(@PathVariable Long userId) {
         try {
             List<ChatConversation> history = chatbotService.getUserChatHistory(userId);
