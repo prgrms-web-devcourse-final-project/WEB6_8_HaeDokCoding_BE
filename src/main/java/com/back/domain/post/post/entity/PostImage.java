@@ -52,7 +52,7 @@ public class PostImage {
   private PostImageStatus status = PostImageStatus.POSTED;
 
   // 이미지 순서
-  @Column(name = "sortOrder")
+  @Column(name = "sort_order")
   private Integer sortOrder;
 
   public void updatePost(Post post) {
