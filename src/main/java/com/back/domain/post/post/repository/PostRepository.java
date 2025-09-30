@@ -7,9 +7,18 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
-  // 첫 페이지 (최신순, id 기준)
-  List<Post> findTop10ByOrderByIdDesc();
 
-  // 이후 페이지 (lastId보다 작은 id들 중 최신순)
+  // 최신순
+  List<Post> findTop10ByOrderByIdDesc();
   List<Post> findTop10ByIdLessThanOrderByIdDesc(Long lastId);
+
+  // 추천순
+  List<Post> findTop10ByOrderByLikeCountDescIdDesc();
+  List<Post> findTop10ByLikeCountLessThanOrLikeCountEqualsAndIdLessThanOrderByLikeCountDescIdDesc(
+      Integer likeCount, Integer likeCount2, Long id);
+
+  // 댓글순
+  List<Post> findTop10ByOrderByCommentCountDescIdDesc();
+  List<Post> findTop10ByCommentCountLessThanOrCommentCountEqualsAndIdLessThanOrderByCommentCountDescIdDesc(
+      Integer commentCount, Integer commentCount2, Long id);
 }

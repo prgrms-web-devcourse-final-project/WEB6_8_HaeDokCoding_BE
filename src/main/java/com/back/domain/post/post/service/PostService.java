@@ -5,6 +5,7 @@ import com.back.domain.notification.service.NotificationService;
 import com.back.domain.post.category.entity.Category;
 import com.back.domain.post.category.repository.CategoryRepository;
 import com.back.domain.post.post.dto.request.PostCreateRequestDto;
+import com.back.domain.post.post.dto.request.PostSortScrollRequestDto;
 import com.back.domain.post.post.dto.request.PostUpdateRequestDto;
 import com.back.domain.post.post.dto.response.PostResponseDto;
 import com.back.domain.post.post.entity.Post;
@@ -97,15 +98,34 @@ public class PostService {
 
   // 게시글 다건 조회 로직
   @Transactional(readOnly = true)
-  public List<PostResponseDto> getAllPosts(Long lastId) {
+  public List<PostResponseDto> getPosts(PostSortScrollRequestDto reqBody) {
     List<Post> posts;
 
-    if (lastId == null) {
-      // 첫 페이지 요청
-      posts = postRepository.findTop10ByOrderByIdDesc();
-    } else {
-      // 이후 페이지 요청
-      posts = postRepository.findTop10ByIdLessThanOrderByIdDesc(lastId);
+    switch (reqBody.postSortStatus()) {
+      case POPULAR -> {
+        if (reqBody.lastId() == null || reqBody.lastLikeCount() == null) {
+          posts = postRepository.findTop10ByOrderByLikeCountDescIdDesc();
+        } else {
+          posts = postRepository.findTop10ByLikeCountLessThanOrLikeCountEqualsAndIdLessThanOrderByLikeCountDescIdDesc(reqBody.lastLikeCount(), reqBody.lastLikeCount(), reqBody.lastId());
+        }
+      }
+      case COMMENTS -> {
+        if (reqBody.lastId() == null || reqBody.lastCommentCount() == null) {
+          posts = postRepository.findTop10ByOrderByCommentCountDescIdDesc();
+        } else {
+          posts = postRepository.findTop10ByCommentCountLessThanOrCommentCountEqualsAndIdLessThanOrderByCommentCountDescIdDesc(reqBody.lastCommentCount(), reqBody.lastCommentCount(), reqBody.lastId());
+        }
+      }
+      case LATEST -> {
+        if (reqBody.lastId() == null) {
+          // 첫 페이지 요청
+          posts = postRepository.findTop10ByOrderByIdDesc();
+        } else {
+          // 이후 페이지 요청
+          posts = postRepository.findTop10ByIdLessThanOrderByIdDesc(reqBody.lastId());
+        }
+      }
+      default -> throw new IllegalArgumentException("지원하지 않는 정렬 기준: " + reqBody.postSortStatus());
     }
 
     return posts.stream()
