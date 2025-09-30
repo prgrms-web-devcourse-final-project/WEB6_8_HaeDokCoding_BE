@@ -103,7 +103,7 @@ public class ChatbotService {
 
             // 최근 대화 기록 조회 (최신 10개 메시지 - USER와 CHATBOT 메시지 모두 포함)
             List<ChatConversation> recentChats =
-                    chatConversationRepository.findTop10ByUserIdOrderByCreatedAtDesc(requestDto.getUserId());
+                    chatConversationRepository.findTop20ByUserIdOrderByCreatedAtDesc(requestDto.getUserId());
 
             // 대화 컨텍스트 생성
             String conversationContext = buildConversationContext(recentChats);
@@ -165,7 +165,7 @@ public class ChatbotService {
      * 대화 저장 - 변경사항: 사용자 메시지와 봇 응답을 각각 별도로 저장
      */
     @Transactional
-    private void saveConversation(ChatRequestDto requestDto, String response) {
+    public void saveConversation(ChatRequestDto requestDto, String response) {
         // 1. 사용자 메시지 저장
         ChatConversation userMessage = ChatConversation.builder()
                 .userId(requestDto.getUserId())
@@ -235,7 +235,7 @@ public class ChatbotService {
      */
     @Transactional(readOnly = true)
     public boolean isFirstConversation(Long userId) {
-        return chatConversationRepository.findTop10ByUserIdOrderByCreatedAtDesc(userId).isEmpty();
+        return chatConversationRepository.findTop20ByUserIdOrderByCreatedAtDesc(userId).isEmpty();
     }
 
     // ============ 기존 메서드들 (변경 없음) ============
@@ -354,7 +354,8 @@ public class ChatbotService {
         switch (currentStep) {
             case 1:
                 stepRecommendation = getAlcoholStrengthOptions();
-                chatResponse = "단계별 맞춤 추천을 시작합니다! 🎯\n원하시는 도수를 선택해주세요!";
+                chatResponse = "단계별로 취향을 찾아드릴게요! 🎯\n원하시는 도수를 선택해주세요! \n " +
+                        "잘 모르는 항목은 '전체'로 체크하셔도 괜찮아요.";
                 break;
             case 2:
                 stepRecommendation = getAlcoholBaseTypeOptions(requestDto.getSelectedAlcoholStrength());
@@ -471,9 +472,12 @@ public class ChatbotService {
                 ))
                 .collect(Collectors.toList());
 
+        // 추천 이유는 각 칵테일별 설명으로 들어가도록 유도
         String stepTitle = recommendations.isEmpty()
                 ? "조건에 맞는 칵테일을 찾을 수 없습니다 😢"
-                : "당신을 위한 맞춤 칵테일 추천입니다! 🍹";
+                : "짠🎉🎉\n" +
+                "칵테일의 자세한 정보는 '상세보기'를 클릭해서 확인할 수 있어요.\n" +
+                "마음에 드는 칵테일은 '킵' 버튼을 눌러 나만의 Bar에 저장해보세요!";
 
         return new StepRecommendationResponseDto(
                 4,
