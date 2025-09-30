@@ -6,7 +6,9 @@ import com.back.domain.myhistory.repository.MyHistoryPostRepository;
 import com.back.domain.myhistory.repository.MyHistoryLikedPostRepository;
 import com.back.domain.post.comment.entity.Comment;
 import com.back.domain.post.post.entity.Post;
+import com.back.domain.post.post.entity.PostLike;
 import com.back.domain.post.post.enums.PostStatus;
+import com.back.domain.post.post.enums.PostLikeStatus;
 import com.back.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -127,19 +129,19 @@ public class MyHistoryService {
         int safeLimit = Math.max(1, Math.min(limit, 100));
         int fetchSize = safeLimit + 1;
 
-        List<com.back.domain.post.post.entity.PostLike> rows;
+        List<PostLike> rows;
         if (lastCreatedAt == null || lastId == null) {
             rows = myHistoryLikedPostRepository.findMyLikedPostsFirstPage(
                     userId,
-                    com.back.domain.post.post.enums.PostLikeStatus.LIKE,
-                    com.back.domain.post.post.enums.PostStatus.DELETED,
+                    PostLikeStatus.LIKE,
+                    PostStatus.DELETED,
                     PageRequest.of(0, fetchSize)
             );
         } else {
             rows = myHistoryLikedPostRepository.findMyLikedPostsAfter(
                     userId,
-                    com.back.domain.post.post.enums.PostLikeStatus.LIKE,
-                    com.back.domain.post.post.enums.PostStatus.DELETED,
+                    PostLikeStatus.LIKE,
+                    PostStatus.DELETED,
                     lastCreatedAt,
                     lastId,
                     PageRequest.of(0, fetchSize)
@@ -150,12 +152,12 @@ public class MyHistoryService {
         if (hasNext) rows = rows.subList(0, safeLimit);
 
         List<MyHistoryLikedPostItemDto> items = new ArrayList<>();
-        for (com.back.domain.post.post.entity.PostLike postLike : rows) items.add(MyHistoryLikedPostItemDto.from(postLike));
+        for (PostLike postLike : rows) items.add(MyHistoryLikedPostItemDto.from(postLike));
 
         LocalDateTime nextCreatedAt = null;
         Long nextId = null;
         if (hasNext && !rows.isEmpty()) {
-            com.back.domain.post.post.entity.PostLike last = rows.get(rows.size() - 1);
+            PostLike last = rows.get(rows.size() - 1);
             nextCreatedAt = last.getCreatedAt();
             nextId = last.getId();
         }
@@ -165,10 +167,10 @@ public class MyHistoryService {
 
     @Transactional(readOnly = true)
     public MyHistoryPostGoResponseDto getPostLinkFromMyLikedPost(Long userId, Long postId) {
-        com.back.domain.post.post.entity.PostLike postLike = myHistoryLikedPostRepository.findByPostIdAndUserIdLike(
+        PostLike postLike = myHistoryLikedPostRepository.findByPostIdAndUserIdLike(
                 postId,
                 userId,
-                com.back.domain.post.post.enums.PostLikeStatus.LIKE
+                PostLikeStatus.LIKE
         );
         if (postLike == null) {
             throw new ServiceException(404, "좋아요한 게시글을 찾을 수 없습니다.");
