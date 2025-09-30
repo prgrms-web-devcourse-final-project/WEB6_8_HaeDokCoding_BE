@@ -21,6 +21,7 @@ public class ChatConversation {
     @GeneratedValue(strategy = IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private Long userId;
 
     @Column(columnDefinition = "TEXT", nullable = false)

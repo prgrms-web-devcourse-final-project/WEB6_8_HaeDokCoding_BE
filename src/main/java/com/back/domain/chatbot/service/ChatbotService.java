@@ -108,7 +108,7 @@ public class ChatbotService {
             // 대화 컨텍스트 생성
             String conversationContext = buildConversationContext(recentChats);
 
-            // ChatClient 빌더 생성
+            // ChatClient 빌더 생성 - .message 체인 방식 포기
             var promptBuilder = chatClient.prompt()
                     .system(buildSystemMessage(messageType) + conversationContext)
                     .user(buildUserMessage(requestDto.getMessage(), messageType));
@@ -354,7 +354,8 @@ public class ChatbotService {
         switch (currentStep) {
             case 1:
                 stepRecommendation = getAlcoholStrengthOptions();
-                chatResponse = "단계별로 취향을 찾아드릴게요! 🎯\n원하시는 도수를 선택해주세요! \n " +
+                chatResponse = "단계별로 취향을 찾아드릴게요! 🎯\n" +
+                        "원하시는 도수를 선택해주세요! \n" +
                         "잘 모르는 항목은 '전체'로 체크하셔도 괜찮아요.";
                 break;
             case 2:
