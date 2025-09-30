@@ -2,6 +2,7 @@ package com.back.domain.cocktail.comment.controller;
 
 import com.back.domain.cocktail.comment.dto.CocktailCommentCreateRequestDto;
 import com.back.domain.cocktail.comment.dto.CocktailCommentResponseDto;
+import com.back.domain.cocktail.comment.dto.CocktailCommentUpdateRequestDto;
 import com.back.domain.cocktail.comment.service.CocktailCommentService;
 import com.back.domain.post.comment.enums.CommentStatus;
 import com.back.global.jwt.JwtUtil;
@@ -21,11 +22,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -53,7 +55,7 @@ public class CocktailCommentControllerTest {
                 LocalDateTime.now(),
                 LocalDateTime.now(),
                 CommentStatus.PUBLIC,
-                "테스트 내용"+id
+                "테스트 내용" + id
         );
     }
 
@@ -82,7 +84,7 @@ public class CocktailCommentControllerTest {
     }
 
     @Test
-    @DisplayName("칵테일 대글 다건 조회 API 테스트")
+    @DisplayName("칵테일 댓글 다건 조회 API 테스트")
     void t2() throws Exception {
         // given
         List<CocktailCommentResponseDto> firstPage = new ArrayList<>();
@@ -95,8 +97,8 @@ public class CocktailCommentControllerTest {
             secondPage.add(createSampleResponseDto(i));
         }
 
-        given(cocktailCommentService.getCocktailComments(1L,null)).willReturn(firstPage); // 첫 호출(lastId 없음)
-        given(cocktailCommentService.getCocktailComments(1L,21L)).willReturn(secondPage);
+        given(cocktailCommentService.getCocktailComments(1L, null)).willReturn(firstPage); // 첫 호출(lastId 없음)
+        given(cocktailCommentService.getCocktailComments(1L, 21L)).willReturn(secondPage);
 
         // when & then
         mockMvc.perform(get("/cocktails/{cocktailId}/comments", 1L))
@@ -118,5 +120,83 @@ public class CocktailCommentControllerTest {
                 .andExpect(jsonPath("$.data[0].status").value("PUBLIC"))
                 .andExpect(jsonPath("$.data[0].content").value("테스트 내용20"))
                 .andDo(print());
+    }
+
+    @Test
+    @DisplayName("칵테일 댓글 단건 조회 API 테스트")
+    void t3() throws Exception {
+        // given
+        Long cocktailId = 1L;
+        Long cocktailCommentId = 1L;
+        CocktailCommentResponseDto responseDto = createSampleResponseDto(cocktailCommentId);
+        given(cocktailCommentService.getCocktailComment(cocktailId, cocktailCommentId)).willReturn(responseDto);
+
+        // when & then
+        mockMvc.perform(get("/cocktails/{cocktailId}/comments/{cocktailCommentId}", cocktailId, cocktailCommentId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.commentId").value(cocktailCommentId))
+                .andExpect(jsonPath("$.data.cocktailId").value(cocktailId))
+                .andExpect(jsonPath("$.data.userNickName").value("테스트유저1"))
+                .andExpect(jsonPath("$.data.status").value("PUBLIC"))
+                .andExpect(jsonPath("$.data.content").value("테스트 내용1"))
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("칵테일 댓글 수정 API 테스트")
+    void t4() throws Exception {
+        // given
+        Long cocktailId = 1L;
+        Long cocktailCommentId = 1L;
+
+        CocktailCommentUpdateRequestDto requestDto = new CocktailCommentUpdateRequestDto(
+                CommentStatus.PUBLIC,
+                "수정된 내용" + cocktailCommentId
+        );
+
+        CocktailCommentResponseDto responseDto = new CocktailCommentResponseDto(
+                cocktailCommentId,
+                cocktailId,
+                "테스트유저" + cocktailCommentId,
+                LocalDateTime.now(),
+                LocalDateTime.now(),
+                CommentStatus.PUBLIC,
+                "수정된 내용" + cocktailCommentId
+        );
+
+        given(cocktailCommentService.updateCocktailComment(eq(cocktailId), eq(cocktailCommentId), any(CocktailCommentUpdateRequestDto.class)))
+                .willReturn(responseDto);
+
+        // when & then
+        mockMvc.perform(patch("/cocktails/{cocktailId}/comments/{cocktailCommentId}", cocktailId, cocktailCommentId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.commentId").value(cocktailCommentId))
+                .andExpect(jsonPath("$.data.cocktailId").value(cocktailId))
+                .andExpect(jsonPath("$.data.userNickName").value("테스트유저" + cocktailCommentId))
+                .andExpect(jsonPath("$.data.status").value("PUBLIC"))
+                .andExpect(jsonPath("$.data.content").value("수정된 내용" + cocktailCommentId))
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("칵테일 댓글 삭제 API 테스트")
+    void t5() throws Exception {
+        // given
+        Long cocktailId = 1L;
+        Long cocktailCommentId = 1L;
+
+        willDoNothing().given(cocktailCommentService).deleteCocktailComment(cocktailId, cocktailCommentId);
+
+        // when & then
+        mockMvc.perform(delete("/cocktails/{cocktailId}/comments/{cocktailCommentId}", cocktailId, cocktailCommentId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("success"))
+                .andExpect(jsonPath("$.data").value(nullValue())) // null 이므로 empty 체크 가능
+                .andDo(print());
+
+        // 추가 검증: 서비스 메소드가 정확히 호출됐는지 확인
+        verify(cocktailCommentService).deleteCocktailComment(cocktailId, cocktailCommentId);
     }
 }
