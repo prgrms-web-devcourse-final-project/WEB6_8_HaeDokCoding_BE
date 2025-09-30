@@ -59,7 +59,10 @@ class PostControllerTest {
         PostStatus.PUBLIC,
         "테스트 제목" + id,
         "테스트 내용" + id,
-        "http://example.com/image.jpg",
+        List.of(
+            "http://example.com/image1.jpg",
+            "http://example.com/image2.jpg"
+        ), // 이미지 리스트
         "http://example.com/video.mp4",
         List.of("태그1", "태그2"),
         0, // likeCount
@@ -77,12 +80,11 @@ class PostControllerTest {
         PostStatus.PUBLIC,
         "테스트 제목1",
         "테스트 내용1",
-        "http://example.com/image1.jpg",
         "http://example.com/video1.mp4",
         List.of("태그1", "태그2")
     );
     PostResponseDto responseDto = createSampleResponseDto(1L);
-    given(postService.createPost(any(PostCreateRequestDto.class))).willReturn(responseDto);
+    given(postService.createPost(any(PostCreateRequestDto.class), any(null))).willReturn(responseDto);
 
     // when & then
     mockMvc.perform(post("/posts")
@@ -193,7 +195,10 @@ class PostControllerTest {
         PostStatus.PUBLIC,
         "수정된 제목" + postId,
         "수정된 내용" + postId,
-        "http://example.com/image.jpg",
+        List.of(
+            1L,
+            2L
+        ), // 이미지 리스트
         "http://example.com/video.mp4",
         List.of("태그1", "태그2")
     );
@@ -206,14 +211,17 @@ class PostControllerTest {
         PostStatus.PUBLIC,
         requestDto.title(),
         requestDto.content(),
-        "http://example.com/image.jpg",
+        List.of(
+            "http://example.com/image1.jpg",
+            "http://example.com/image2.jpg"
+        ), // 이미지 리스트
         "http://example.com/video.mp4",
         List.of("태그1", "태그2"),
         0, // likeCount
         0,  // commentCount
         0 // viewCount
     );
-    given(postService.updatePost(eq(1L), any(PostUpdateRequestDto.class))).willReturn(responseDto);
+    given(postService.updatePost(eq(1L), any(PostUpdateRequestDto.class), any(null))).willReturn(responseDto);
 
     // when & then
     mockMvc.perform(patch("/posts/{postId}", postId)
