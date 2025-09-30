@@ -6,11 +6,13 @@ import com.back.domain.myhistory.dto.MyHistoryPostListDto;
 import com.back.domain.myhistory.dto.MyHistoryLikedPostListDto;
 import com.back.domain.myhistory.service.MyHistoryService;
 import com.back.global.rsData.RsData;
+import com.back.global.security.SecurityUser;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +23,7 @@ import java.time.LocalDateTime;
 @RequestMapping("/me")
 @RequiredArgsConstructor
 @Validated
+@PreAuthorize("isAuthenticated()")
 public class MyHistoryController {
 
     private final MyHistoryService myHistoryService;
@@ -36,11 +39,12 @@ public class MyHistoryController {
     @GetMapping("/posts")
     @Operation(summary = "내 게시글 목록", description = "내가 작성한 게시글 최신순 목록. 무한스크롤 파라미터 지원")
     public RsData<MyHistoryPostListDto> getMyPosts(
-            @AuthenticationPrincipal(expression = "id") Long userId,
+            @AuthenticationPrincipal SecurityUser principal,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime lastCreatedAt,
             @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit
     ) {
+        Long userId = principal.getId();
         MyHistoryPostListDto body = myHistoryService.getMyPosts(userId, lastCreatedAt, lastId, limit);
         return RsData.successOf(body);
     }
@@ -54,9 +58,10 @@ public class MyHistoryController {
     @GetMapping("/posts/{id}")
     @Operation(summary = "내 게시글로 이동", description = "내가 작성한 게시글 상세 링크 정보 반환")
     public RsData<com.back.domain.myhistory.dto.MyHistoryPostGoResponseDto> goFromPost(
-            @AuthenticationPrincipal(expression = "id") Long userId,
+            @AuthenticationPrincipal SecurityUser principal,
             @PathVariable("id") Long postId
     ) {
+        Long userId = principal.getId();
         var body = myHistoryService.getPostLinkFromMyPost(userId, postId);
         return RsData.successOf(body);
     }
@@ -72,11 +77,12 @@ public class MyHistoryController {
     @GetMapping("/comments")
     @Operation(summary = "내 댓글 목록", description = "내가 작성한 댓글 최신순 목록. 무한스크롤 파라미터 지원")
     public RsData<MyHistoryCommentListDto> getMyComments(
-            @AuthenticationPrincipal(expression = "id") Long userId,
+            @AuthenticationPrincipal SecurityUser principal,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime lastCreatedAt,
             @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit
     ) {
+        Long userId = principal.getId();
         MyHistoryCommentListDto body = myHistoryService.getMyComments(userId, lastCreatedAt, lastId, limit);
         return RsData.successOf(body);
     }
@@ -92,11 +98,12 @@ public class MyHistoryController {
     @GetMapping("/likes")
     @Operation(summary = "좋아요한 게시글 목록", description = "좋아요한 게시글 최신순 목록. 무한스크롤 파라미터 지원")
     public RsData<MyHistoryLikedPostListDto> getMyLikedPosts(
-            @AuthenticationPrincipal(expression = "id") Long userId,
+            @AuthenticationPrincipal SecurityUser principal,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime lastCreatedAt,
             @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit
     ) {
+        Long userId = principal.getId();
         MyHistoryLikedPostListDto body = myHistoryService.getMyLikedPosts(userId, lastCreatedAt, lastId, limit);
         return RsData.successOf(body);
     }
@@ -110,9 +117,10 @@ public class MyHistoryController {
     @GetMapping("/comments/{id}")
     @Operation(summary = "댓글에서 게시글 이동", description = "내 댓글이 달린 게시글 상세 링크 정보 반환")
     public RsData<MyHistoryCommentGoResponseDto> goFromComment(
-            @AuthenticationPrincipal(expression = "id") Long userId,
+            @AuthenticationPrincipal SecurityUser principal,
             @PathVariable("id") Long commentId
     ) {
+        Long userId = principal.getId();
         var body = myHistoryService.getPostLinkFromMyComment(userId, commentId);
         return RsData.successOf(body);
     }
@@ -126,9 +134,10 @@ public class MyHistoryController {
     @GetMapping("/likes/{id}")
     @Operation(summary = "좋아요 목록에서 이동", description = "좋아요한 게시글 상세 링크 정보 반환")
     public RsData<com.back.domain.myhistory.dto.MyHistoryPostGoResponseDto> goFromLikedPost(
-            @AuthenticationPrincipal(expression = "id") Long userId,
+            @AuthenticationPrincipal SecurityUser principal,
             @PathVariable("id") Long postId
     ) {
+        Long userId = principal.getId();
         var body = myHistoryService.getPostLinkFromMyLikedPost(userId, postId);
         return RsData.successOf(body);
     }

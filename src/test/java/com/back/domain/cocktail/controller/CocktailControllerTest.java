@@ -1,5 +1,6 @@
 package com.back.domain.cocktail.controller;
 
+import com.back.domain.cocktail.dto.CocktailSearchRequestDto;
 import com.back.domain.cocktail.entity.Cocktail;
 import com.back.domain.cocktail.enums.AlcoholBaseType;
 import com.back.domain.cocktail.enums.AlcoholStrength;
@@ -7,6 +8,7 @@ import com.back.domain.cocktail.enums.CocktailType;
 import com.back.domain.cocktail.repository.CocktailRepository;
 import com.back.domain.user.service.UserService;
 import com.back.global.rq.Rq;
+import com.back.global.standard.util.Ut;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.DisplayName;
@@ -27,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -138,6 +141,47 @@ public class CocktailControllerTest {
                 .andExpect(jsonPath("$.data").isArray());
     }
 
+    @Test
+    @DisplayName("칵테일 검색 및 필터링")
+    void t5() throws Exception {
+        // given: DB에 칵테일 저장
+        Cocktail savedCocktail = cocktailRepository.save(
+                Cocktail.builder()
+                        .cocktailName("모히토")
+                        .alcoholStrength(AlcoholStrength.WEAK)
+                        .cocktailType(CocktailType.SHORT)
+                        .alcoholBaseType(AlcoholBaseType.RUM)
+                        .cocktailImgUrl("https://example.com/image.jpg")
+                        .cocktailStory("상쾌한 라임과 민트")
+                        .ingredient("라임, 민트, 럼, 설탕, 탄산수")
+                        .recipe("라임과 민트를 섞고 럼을 넣고 탄산수로 완성")
+                        .createdAt(LocalDateTime.now())
+                        .updatedAt(LocalDateTime.now())
+                        .build()
+        );
+
+        // 검색 조건 (키워드: "모히토")
+        CocktailSearchRequestDto requestDto = new CocktailSearchRequestDto();
+        requestDto.setKeyword("모히토");
+
+        // when: POST 요청
+        ResultActions resultActions = mvc.perform(
+                post("/cocktails/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(Ut.json.toString(requestDto))
+        ).andDo(print());
+
+        // then: 상태코드, JSON 구조 검증
+        resultActions
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.message").value("success"))
+                .andExpect(jsonPath("$.data[0].cocktailName").value("모히토"))
+                .andExpect(jsonPath("$.data[0].alcoholStrength").value("WEAK"))
+                .andExpect(jsonPath("$.data[0].cocktailType").value("SHORT"))
+                .andExpect(jsonPath("$.data[0].alcoholBaseType").value("RUM"));
+    }
+
     @TestConfiguration
     static class TestConfig {
         @Bean
@@ -149,5 +193,4 @@ public class CocktailControllerTest {
             return new Rq(req, resp, userService);
         }
     }
-
 }

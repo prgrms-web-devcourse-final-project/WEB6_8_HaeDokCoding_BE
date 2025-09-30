@@ -8,7 +8,8 @@ public record PostUpdateRequestDto(
     PostStatus status,
     String title,
     String content,
-    String imageUrl,
+    // 기존 이미지 중 유지할 이미지 ID 목록
+    List<Long> keepImageIds,
     String videoUrl,
     List<String> tags
 ) {

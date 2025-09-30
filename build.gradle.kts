@@ -50,6 +50,7 @@ dependencies {
 
     // AWS S3
     implementation("io.awspring.cloud:spring-cloud-aws-starter-s3:3.4.0")
+    implementation("com.amazonaws:aws-java-sdk-s3:1.12.777")
 
     runtimeOnly("com.h2database:h2")
     runtimeOnly("com.mysql:mysql-connector-j")

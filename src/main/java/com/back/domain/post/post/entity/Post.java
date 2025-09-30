@@ -1,6 +1,7 @@
 package com.back.domain.post.post.entity;
 
 import com.back.domain.post.category.entity.Category;
+import com.back.domain.post.comment.entity.Comment;
 import com.back.domain.post.post.enums.PostStatus;
 import com.back.domain.user.entity.User;
 import jakarta.persistence.*;
@@ -62,9 +63,14 @@ public class Post {
   @Column(name = "content", nullable = false, columnDefinition = "TEXT")
   private String content;
 
-  // 게시글 이미지 URL
-  @Column(name = "image_url")
-  private String imageUrl;
+  // Post → Comment = 1:N
+  @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<Comment> comments = new ArrayList<>();
+
+  // Post → PostImage = 1:N
+  @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OrderBy("sortOrder ASC") // 조회 시 순서대로 정렬
+  private List<PostImage> images = new ArrayList<>();
 
   // 게시글 동영상 URL
   @Column(name = "video_url")
@@ -105,8 +111,12 @@ public class Post {
     this.content = content;
   }
 
-  public void updateImage(String imageUrl) {
-    this.imageUrl = imageUrl;
+  public void updateImages(List<PostImage> images) {
+    this.images.clear();
+    for (PostImage i : images) {
+      i.updatePost(this);
+      this.images.add(i);
+    }
   }
 
   public void updateVideo(String videoUrl) {

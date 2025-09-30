@@ -56,7 +56,6 @@ public class CocktailController {
         // 서비스 호출
         List<CocktailSearchResponseDto> searchResults = cocktailService.searchAndFilter(cocktailSearchRequestDto);
 
-        // RsData로 통일된 응답 반환
         return RsData.successOf(searchResults);
     }
 }
