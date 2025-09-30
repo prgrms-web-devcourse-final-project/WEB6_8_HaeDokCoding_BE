@@ -89,44 +89,17 @@ public class ChatbotService {
     @Transactional
     public ChatResponseDto sendMessage(ChatRequestDto requestDto) {
         try {
-            // 단계별 추천 모드 확인 (currentStep이 있으면 무조건 단계별 추천 모드)
+            // 단계별 추천 모드
             if (requestDto.isStepRecommendation() ||
-                    requestDto.getCurrentStep() != null ||
-                    isStepRecommendationTrigger(requestDto.getMessage())) {
-                log.info("Recommendation chat mode for userId: {}", requestDto.getUserId());
+                requestDto.getCurrentStep() != null) {
+
                 return handleStepRecommendation(requestDto);
             }
 
-            log.info("Normal chat mode for userId: {}", requestDto.getUserId());
+            // 일반 대화 모드
+            String response = generateAIResponse(requestDto);
 
-            // 메시지 타입 감지 (내부 enum 사용)
-            InternalMessageType messageType = detectMessageType(requestDto.getMessage());
-
-            // 최근 대화 기록 조회 (최신 10개 메시지 - USER와 CHATBOT 메시지 모두 포함)
-            List<ChatConversation> recentChats =
-                    chatConversationRepository.findTop20ByUserIdOrderByCreatedAtDesc(requestDto.getUserId());
-
-            // 대화 컨텍스트 생성
-            String conversationContext = buildConversationContext(recentChats);
-
-            // ChatClient 빌더 생성 - .message 체인 방식 포기
-            var promptBuilder = chatClient.prompt()
-                    .system(buildSystemMessage(messageType) + conversationContext)
-                    .user(buildUserMessage(requestDto.getMessage(), messageType));
-
-            // 응답 생성
-            String response = promptBuilder
-                    .options(getOptionsForMessageType(messageType))
-                    .call()
-                    .content();
-
-            // 응답 후처리
-            response = postProcessResponse(response, messageType);
-
-            // 대화 저장 - 사용자 메시지와 봇 응답을 각각 저장
-            saveConversation(requestDto, response);
-
-            // 새로운 구조로 ChatResponseDto 생성
+            // 일반 텍스트 응답 생성 (type이 자동으로 TEXT로 설정됨)
             return ChatResponseDto.builder()
                     .message(response)
                     .type(MessageType.TEXT)
@@ -135,7 +108,13 @@ public class ChatbotService {
 
         } catch (Exception e) {
             log.error("채팅 응답 생성 중 오류 발생: ", e);
-            return handleError(e);
+
+            // 에러 응답
+            return ChatResponseDto.builder()
+                    .message("죄송합니다. 일시적인 오류가 발생했습니다.")
+                    .type(MessageType.ERROR)
+                    .timestamp(LocalDateTime.now())
+                    .build();
         }
     }
 
@@ -306,19 +285,53 @@ public class ChatbotService {
         return response;
     }
 
-    private ChatResponseDto handleError(Exception e) {
-        String errorMessage = "죄송합니다. 잠시 후 다시 시도해주세요.";
+    /**
+     * AI 응답 생성
+     */
+    private String generateAIResponse(ChatRequestDto requestDto) {
+        log.info("Normal chat mode for userId: {}", requestDto.getUserId());
 
-        if (e.getMessage().contains("rate limit")) {
-            errorMessage = "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.";
-        } else if (e.getMessage().contains("timeout")) {
-            errorMessage = "응답 시간이 초과되었습니다. 다시 시도해주세요.";
-        }
+        // 메시지 타입 감지 (내부 enum 사용)
+        InternalMessageType messageType = detectMessageType(requestDto.getMessage());
 
+        // 최근 대화 기록 조회 (최신 20개 메시지 - USER와 CHATBOT 메시지 모두 포함)
+        List<ChatConversation> recentChats =
+                chatConversationRepository.findTop20ByUserIdOrderByCreatedAtDesc(requestDto.getUserId());
+
+        // 대화 컨텍스트 생성
+        String conversationContext = buildConversationContext(recentChats);
+
+        // ChatClient 빌더 생성
+        var promptBuilder = chatClient.prompt()
+                .system(buildSystemMessage(messageType) + conversationContext)
+                .user(buildUserMessage(requestDto.getMessage(), messageType));
+
+        // 응답 생성
+        String response = promptBuilder
+                .options(getOptionsForMessageType(messageType))
+                .call()
+                .content();
+
+        // 응답 후처리
+        response = postProcessResponse(response, messageType);
+
+        // 대화 저장 - 사용자 메시지와 봇 응답을 각각 저장
+        saveConversation(requestDto, response);
+
+        return response;
+    }
+
+    /**
+     * 로딩 메시지 생성
+     */
+    public ChatResponseDto createLoadingMessage() {
         return ChatResponseDto.builder()
-                .message(errorMessage)
-                .type(MessageType.ERROR)
+                .message("응답을 생성하는 중...")
+                .type(MessageType.LOADING)
                 .timestamp(LocalDateTime.now())
+                .metaData(ChatResponseDto.MetaData.builder()
+                        .isTyping(true)
+                        .build())
                 .build();
     }
 
@@ -349,61 +362,68 @@ public class ChatbotService {
         return lower.contains("단계별 추천");
     }
 
-    // 단계별 추천 처리 통합 메서드 - 변경사항: 대화 저장 방식 변경
     private ChatResponseDto handleStepRecommendation(ChatRequestDto requestDto) {
         Integer currentStep = requestDto.getCurrentStep();
-
-        // 단계가 지정되지 않았거나 첫 시작인 경우
         if (currentStep == null || currentStep <= 0) {
             currentStep = 1;
         }
 
-        StepRecommendationResponseDto stepRecommendation;
-        String chatResponse;
+        StepRecommendationResponseDto stepData;
+        String message;
+        MessageType type;
 
         switch (currentStep) {
             case 1:
-                stepRecommendation = getAlcoholStrengthOptions();
-                chatResponse = "단계별로 취향을 찾아드릴게요! 🎯\n" +
-                        "원하시는 도수를 선택해주세요! \n" +
-                        "잘 모르는 항목은 '전체'로 체크하셔도 괜찮아요.";
+                stepData = getAlcoholStrengthOptions();
+                message = "단계별 맞춤 추천을 시작합니다! 🎯\n원하시는 도수를 선택해주세요!";
+                type = MessageType.RADIO_OPTIONS;
                 break;
+
             case 2:
-                stepRecommendation = getAlcoholBaseTypeOptions(requestDto.getSelectedAlcoholStrength());
-                chatResponse = "좋은 선택이네요! 이제 베이스가 될 술을 선택해주세요 🍸";
+                stepData = getAlcoholBaseTypeOptions(requestDto.getSelectedAlcoholStrength());
+                message = "좋은 선택이네요! 이제 베이스가 될 술을 선택해주세요 🍸";
+                type = MessageType.RADIO_OPTIONS;
                 break;
+
             case 3:
-                stepRecommendation = getCocktailTypeOptions(requestDto.getSelectedAlcoholStrength(), requestDto.getSelectedAlcoholBaseType());
-                chatResponse = "완벽해요! 마지막으로 어떤 스타일로 즐기실 건가요? 🥃";
-                break;
-            case 4:
-                stepRecommendation = getFinalRecommendations(
-                        requestDto.getSelectedAlcoholStrength(),
-                        requestDto.getSelectedAlcoholBaseType(),
-                        requestDto.getSelectedCocktailType()
+                stepData = getCocktailTypeOptions(
+                    requestDto.getSelectedAlcoholStrength(),
+                    requestDto.getSelectedAlcoholBaseType()
                 );
-                chatResponse = stepRecommendation.getStepTitle();
+                message = "완벽해요! 마지막으로 어떤 스타일로 즐기실 건가요? 🥃";
+                type = MessageType.RADIO_OPTIONS;
                 break;
+
+            case 4:
+                stepData = getFinalRecommendations(
+                    requestDto.getSelectedAlcoholStrength(),
+                    requestDto.getSelectedAlcoholBaseType(),
+                    requestDto.getSelectedCocktailType()
+                );
+                message = stepData.getStepTitle();
+                type = MessageType.CARD_LIST;  // 최종 추천은 카드 리스트
+                break;
+
             default:
-                stepRecommendation = getAlcoholStrengthOptions();
-                chatResponse = "단계별 맞춤 추천을 시작합니다! 🎯";
+                stepData = getAlcoholStrengthOptions();
+                message = "단계별 맞춤 추천을 시작합니다! 🎯";
+                type = MessageType.RADIO_OPTIONS;
         }
 
-        // 대화 기록 저장 - 변경된 방식으로 저장
-        saveConversation(requestDto, chatResponse);
-
-        // 메타데이터 생성 (단계별 추천용)
+        // 메타데이터 포함
         ChatResponseDto.MetaData metaData = ChatResponseDto.MetaData.builder()
                 .currentStep(currentStep)
                 .totalSteps(4)
-                .isTyping(false)
+                .isTyping(true)
+                .delay(300)
                 .build();
 
         return ChatResponseDto.builder()
-                .message(chatResponse)
-                .timestamp(LocalDateTime.now())
-                .stepData(stepRecommendation)
+                .message(message)
+                .type(type)
+                .stepData(stepData)
                 .metaData(metaData)
+                .timestamp(LocalDateTime.now())
                 .build();
     }
 
