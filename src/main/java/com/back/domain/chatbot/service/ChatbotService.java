@@ -465,13 +465,14 @@ public class ChatbotService {
         );
 
         List<CocktailSummaryResponseDto> recommendations = cocktailPage.getContent().stream()
-                .map(cocktail -> new CocktailSummaryResponseDto(
-                        cocktail.getId(),
-                        cocktail.getCocktailName(),
-                        cocktail.getCocktailImgUrl(),
-                        cocktail.getAlcoholStrength()
-                ))
-                .collect(Collectors.toList());
+            .map(cocktail -> new CocktailSummaryResponseDto(
+                cocktail.getId(),
+                cocktail.getCocktailName(),
+                cocktail.getCocktailNameKo(),
+                cocktail.getCocktailImgUrl(),
+                cocktail.getAlcoholStrength().getDescription()
+            ))
+            .collect(Collectors.toList());
 
         // 추천 이유는 각 칵테일별 설명으로 들어가도록 유도
         String stepTitle = recommendations.isEmpty()

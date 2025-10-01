@@ -37,8 +37,8 @@ public class RecommendService {
                         c.getCocktailNameKo(),
                         c.getCocktailName(),
                         c.getCocktailImgUrl(),
-                        c.getAlcoholStrength().name(),
-                        c.getAlcoholBaseType().name()
+                        c.getAlcoholStrength().getDescription(),
+                        c.getAlcoholBaseType().getDescription()
                 ))
                 .toList();
     }

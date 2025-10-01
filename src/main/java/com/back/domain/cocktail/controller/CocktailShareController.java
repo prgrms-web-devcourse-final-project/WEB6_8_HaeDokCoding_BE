@@ -1,42 +1,36 @@
 package com.back.domain.cocktail.controller;
 
-import com.back.domain.cocktail.repository.CocktailRepository;
+import com.back.domain.cocktail.dto.CocktailShareResponseDto;
+import com.back.domain.cocktail.entity.Cocktail;
+import com.back.domain.cocktail.service.CocktailService;
 import com.back.global.rsData.RsData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/cocktails")
 @RequiredArgsConstructor
 public class CocktailShareController {
-    private final CocktailRepository cocktailRepository;
+    private final CocktailService cocktailService;
 
     @Value("${custom.prod.frontUrl}")
     private String frontUrl;
 
     @GetMapping("/{id}/share")
-    public ResponseEntity<RsData<Map<String, String>>> getShareLink(@PathVariable Long id) {
-        return cocktailRepository.findById(id)
-                .map(cocktail -> {
-                    Map<String, String> response = Map.of(
-                            // 공유 URL
-                            "url", frontUrl +"/cocktails/" + cocktail.getId(),
-                            // 공유 제목
-                            "title", cocktail.getCocktailName(),
-                            // 공유 이미지 (선택)
-                            "imageUrl", cocktail.getCocktailImgUrl()
-                    );
-                    return ResponseEntity.ok(RsData.successOf(response));
-                })
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(RsData.failOf("칵테일을 찾을 수 없습니다.")));
+    public ResponseEntity<RsData<CocktailShareResponseDto>> getShareLink(@PathVariable Long id) {
+        Cocktail cocktail = cocktailService.getCocktailById(id);
+
+        CocktailShareResponseDto responseDto = new CocktailShareResponseDto(
+                frontUrl + "/cocktails/" + cocktail.getId(),
+                cocktail.getCocktailNameKo(),
+                cocktail.getCocktailImgUrl()
+        );
+
+        return ResponseEntity.ok(RsData.successOf(responseDto));
     }
 }
