@@ -11,12 +11,13 @@ import com.back.domain.post.comment.repository.CommentRepository;
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.repository.PostRepository;
 import com.back.domain.user.entity.User;
-import com.back.global.rq.Rq;
 import com.back.domain.user.service.AbvScoreService;
-import java.util.List;
+import com.back.global.rq.Rq;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
