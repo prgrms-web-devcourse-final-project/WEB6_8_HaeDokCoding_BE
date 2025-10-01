@@ -198,7 +198,8 @@ public class ChatbotService {
     /**
      * 기본 인사말 생성 및 저장
      * 채팅 시작 시 호출하여 인사말을 DB에 저장
-     * MessageType.BUTTON_OPTIONS와 options 데이터를 포함한 ChatResponseDto 반환
+     * 이미 동일한 인사말이 존재하면 중복 저장하지 않음
+     * MessageType.RADIO_OPTIONS와 options 데이터를 포함한 ChatResponseDto 반환
      */
     @Transactional
     public ChatResponseDto createGreetingMessage(Long userId) {
@@ -229,14 +230,22 @@ public class ChatbotService {
                 false
         );
 
-        // DB에 인사말 저장
-        ChatConversation greeting = ChatConversation.builder()
-                .userId(userId)
-                .message(greetingMessage)
-                .sender(MessageSender.CHATBOT)
-                .createdAt(LocalDateTime.now())
-                .build();
-        chatConversationRepository.save(greeting);
+        // 중복 확인: 동일한 인사말이 이미 존재하는지 확인
+        boolean greetingExists = chatConversationRepository.existsByUserIdAndMessage(userId, greetingMessage);
+
+        // 중복되지 않을 경우에만 DB에 저장
+        if (!greetingExists) {
+            ChatConversation greeting = ChatConversation.builder()
+                    .userId(userId)
+                    .message(greetingMessage)
+                    .sender(MessageSender.CHATBOT)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            chatConversationRepository.save(greeting);
+            log.info("인사말 저장 완료 - userId: {}", userId);
+        } else {
+            log.info("이미 인사말이 존재하여 저장 생략 - userId: {}", userId);
+        }
 
         // ChatResponseDto 반환
         return ChatResponseDto.builder()
