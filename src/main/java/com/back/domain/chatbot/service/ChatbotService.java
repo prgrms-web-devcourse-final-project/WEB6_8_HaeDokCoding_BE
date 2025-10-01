@@ -422,15 +422,15 @@ public class ChatbotService {
                 break;
 
             case 2:
-                stepData = getAlcoholBaseTypeOptions(requestDto.getSelectedAlcoholStrength());
+                stepData = getAlcoholBaseTypeOptions(parseAlcoholStrength(requestDto.getSelectedAlcoholStrength()));
                 message = "좋은 선택이네요! 이제 베이스가 될 술을 선택해주세요 🍸";
                 type = MessageType.RADIO_OPTIONS;
                 break;
 
             case 3:
                 stepData = getCocktailTypeOptions(
-                    requestDto.getSelectedAlcoholStrength(),
-                    requestDto.getSelectedAlcoholBaseType()
+                    parseAlcoholStrength(requestDto.getSelectedAlcoholStrength()),
+                    parseAlcoholBaseType(requestDto.getSelectedAlcoholBaseType())
                 );
                 message = "완벽해요! 마지막으로 어떤 스타일로 즐기실 건가요? 🥃";
                 type = MessageType.RADIO_OPTIONS;
@@ -438,9 +438,9 @@ public class ChatbotService {
 
             case 4:
                 stepData = getFinalRecommendations(
-                    requestDto.getSelectedAlcoholStrength(),
-                    requestDto.getSelectedAlcoholBaseType(),
-                    requestDto.getSelectedCocktailType()
+                    parseAlcoholStrength(requestDto.getSelectedAlcoholStrength()),
+                    parseAlcoholBaseType(requestDto.getSelectedAlcoholBaseType()),
+                    parseCocktailType(requestDto.getSelectedCocktailType())
                 );
                 message = stepData.getStepTitle();
                 type = MessageType.CARD_LIST;  // 최종 추천은 카드 리스트
@@ -470,6 +470,43 @@ public class ChatbotService {
     }
 
     // ============ 단계별 추천 관련 메서드들 ============
+    // "ALL" 또는 null/빈값은 null로 처리하여 전체 선택 의미
+
+    private AlcoholStrength parseAlcoholStrength(String value) {
+        if (value == null || value.trim().isEmpty() || "ALL".equalsIgnoreCase(value)) {
+            return null;
+        }
+        try {
+            return AlcoholStrength.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid AlcoholStrength value: {}", value);
+            return null;
+        }
+    }
+
+    private AlcoholBaseType parseAlcoholBaseType(String value) {
+        if (value == null || value.trim().isEmpty() || "ALL".equalsIgnoreCase(value)) {
+            return null;
+        }
+        try {
+            return AlcoholBaseType.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid AlcoholBaseType value: {}", value);
+            return null;
+        }
+    }
+
+    private CocktailType parseCocktailType(String value) {
+        if (value == null || value.trim().isEmpty() || "ALL".equalsIgnoreCase(value)) {
+            return null;
+        }
+        try {
+            return CocktailType.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid CocktailType value: {}", value);
+            return null;
+        }
+    }
 
     private StepRecommendationResponseDto getAlcoholStrengthOptions() {
         List<StepRecommendationResponseDto.StepOption> options = new ArrayList<>();

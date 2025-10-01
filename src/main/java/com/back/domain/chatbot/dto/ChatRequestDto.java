@@ -1,8 +1,5 @@
 package com.back.domain.chatbot.dto;
 
-import com.back.domain.cocktail.enums.AlcoholBaseType;
-import com.back.domain.cocktail.enums.AlcoholStrength;
-import com.back.domain.cocktail.enums.CocktailType;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,7 +18,7 @@ public class ChatRequestDto {
     // 단계별 추천 관련 필드들
     private boolean isStepRecommendation = false;
     private Integer currentStep;
-    private AlcoholStrength selectedAlcoholStrength;
-    private AlcoholBaseType selectedAlcoholBaseType;
-    private CocktailType selectedCocktailType;
+    private String selectedAlcoholStrength;  // "ALL" 처리를 위해 스텝 3개 String으로 변경
+    private String selectedAlcoholBaseType;
+    private String selectedCocktailType;
 }
