@@ -7,6 +7,8 @@ import com.back.domain.post.post.dto.response.PostResponseDto;
 import com.back.domain.post.post.service.PostService;
 import com.back.global.rsData.RsData;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -41,6 +43,7 @@ public class PostController {
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   @Operation(summary = "게시글 작성")
   public RsData<PostResponseDto> createPost(
+      @Parameter(description = "게시글 JSON", required = true, schema = @Schema(type = "string", format = "json"))
       @RequestPart("post") @Valid PostCreateRequestDto reqBody,
       @RequestPart(value = "images", required = false) List<MultipartFile> images
   ) {

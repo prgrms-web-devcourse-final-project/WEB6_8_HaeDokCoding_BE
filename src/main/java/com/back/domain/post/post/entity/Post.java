@@ -87,13 +87,15 @@ public class Post {
   @Column(name = "like_count", nullable = false)
   private Integer likeCount = 0;
 
-  // 게시글 댓글 수
-  @Column(name = "comment_count")
-  private Integer commentCount;
+  // 게시글 댓글 수 (기본값: 0)
+  @Builder.Default
+  @Column(name = "comment_count", nullable = false)
+  private Integer commentCount = 0;
 
-  // 게시글 조회 수
-  @Column(name = "view_count")
-  private Integer viewCount;
+  // 게시글 조회 수 (기본값: 0)
+  @Builder.Default
+  @Column(name = "view_count", nullable = false)
+  private Integer viewCount = 0;
 
   public void updateCategory(Category category) {
     this.category = category;
@@ -138,5 +140,19 @@ public class Post {
 
   public void decreaseLikeCount() {
     this.likeCount--;
+  }
+
+  public void increaseCommentCount() {
+    this.commentCount++;
+  }
+
+  public void decreaseCommentCount() {
+    if (this.commentCount > 0) {
+      this.commentCount--;
+    }
+  }
+
+  public void increaseViewCount() {
+    this.viewCount++;
   }
 }
