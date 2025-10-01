@@ -6,6 +6,7 @@ import com.back.domain.chatbot.dto.SaveBotMessageDto;
 import com.back.domain.chatbot.dto.StepRecommendationResponseDto;
 import com.back.domain.chatbot.entity.ChatConversation;
 import com.back.domain.chatbot.enums.MessageSender;
+import com.back.domain.chatbot.enums.MessageType;
 import com.back.domain.chatbot.repository.ChatConversationRepository;
 import com.back.domain.cocktail.dto.CocktailSummaryResponseDto;
 import com.back.domain.cocktail.entity.Cocktail;
@@ -96,40 +97,25 @@ public class ChatbotService {
                 return handleStepRecommendation(requestDto);
             }
 
-            log.info("Normal chat mode for userId: {}", requestDto.getUserId());
+            // 일반 대화 모드
+            String response = generateAIResponse(requestDto);
 
-            // 메시지 타입 감지
-            MessageType messageType = detectMessageType(requestDto.getMessage());
-
-            // 최근 대화 기록 조회 (최신 10개 메시지 - USER와 CHATBOT 메시지 모두 포함)
-            List<ChatConversation> recentChats =
-                    chatConversationRepository.findTop20ByUserIdOrderByCreatedAtDesc(requestDto.getUserId());
-
-            // 대화 컨텍스트 생성
-            String conversationContext = buildConversationContext(recentChats);
-
-            // ChatClient 빌더 생성 - .message 체인 방식 포기
-            var promptBuilder = chatClient.prompt()
-                    .system(buildSystemMessage(messageType) + conversationContext)
-                    .user(buildUserMessage(requestDto.getMessage(), messageType));
-
-            // 응답 생성
-            String response = promptBuilder
-                    .options(getOptionsForMessageType(messageType))
-                    .call()
-                    .content();
-
-            // 응답 후처리
-            response = postProcessResponse(response, messageType);
-
-            // 대화 저장 - 사용자 메시지와 봇 응답을 각각 저장
-            saveConversation(requestDto, response);
-
-            return new ChatResponseDto(response);
+            // 일반 텍스트 응답 생성 (type이 자동으로 TEXT로 설정됨)
+            return ChatResponseDto.builder()
+                    .message(response)
+                    .type(MessageType.TEXT)
+                    .timestamp(LocalDateTime.now())
+                    .build();
 
         } catch (Exception e) {
             log.error("채팅 응답 생성 중 오류 발생: ", e);
-            return handleError(e);
+
+            // 에러 응답
+            return ChatResponseDto.builder()
+                    .message("죄송합니다. 일시적인 오류가 발생했습니다.")
+                    .type(MessageType.ERROR)
+                    .timestamp(LocalDateTime.now())
+                    .build();
         }
     }
 
@@ -212,21 +198,62 @@ public class ChatbotService {
     /**
      * 기본 인사말 생성 및 저장
      * 채팅 시작 시 호출하여 인사말을 DB에 저장
+     * 이미 동일한 인사말이 존재하면 중복 저장하지 않음
+     * MessageType.RADIO_OPTIONS와 options 데이터를 포함한 ChatResponseDto 반환
      */
     @Transactional
-    public ChatConversation createGreetingMessage(Long userId) {
+    public ChatResponseDto createGreetingMessage(Long userId) {
         String greetingMessage = "안녕하세요! 🍹 바텐더 '쑤리'에요.\n" +
                 "취향에 맞는 칵테일을 추천해드릴게요!\n" +
                 "어떤 유형으로 찾아드릴까요?";
 
-        ChatConversation greeting = ChatConversation.builder()
-                .userId(userId)
-                .message(greetingMessage)
-                .sender(MessageSender.CHATBOT)
-                .createdAt(LocalDateTime.now())
-                .build();
+        // 선택 옵션 생성
+        List<StepRecommendationResponseDto.StepOption> options = List.of(
+                new StepRecommendationResponseDto.StepOption(
+                        "QA",
+                        "질문형 취향 찾기",
+                        null
+                ),
+                new StepRecommendationResponseDto.StepOption(
+                        "STEP",
+                        "단계별 취향 찾기",
+                        null
+                )
+        );
 
-        return chatConversationRepository.save(greeting);
+        // StepRecommendationResponseDto 생성
+        StepRecommendationResponseDto stepData = new StepRecommendationResponseDto(
+                0,  // 인사말은 step 0
+                greetingMessage,
+                options,
+                null,
+                false
+        );
+
+        // 중복 확인: 동일한 인사말이 이미 존재하는지 확인
+        boolean greetingExists = chatConversationRepository.existsByUserIdAndMessage(userId, greetingMessage);
+
+        // 중복되지 않을 경우에만 DB에 저장
+        if (!greetingExists) {
+            ChatConversation greeting = ChatConversation.builder()
+                    .userId(userId)
+                    .message(greetingMessage)
+                    .sender(MessageSender.CHATBOT)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            chatConversationRepository.save(greeting);
+            log.info("인사말 저장 완료 - userId: {}", userId);
+        } else {
+            log.info("이미 인사말이 존재하여 저장 생략 - userId: {}", userId);
+        }
+
+        // ChatResponseDto 반환
+        return ChatResponseDto.builder()
+                .message(greetingMessage)
+                .type(MessageType.RADIO_OPTIONS)
+                .stepData(stepData)
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 
     /**
@@ -240,7 +267,7 @@ public class ChatbotService {
 
     // ============ 기존 메서드들 (변경 없음) ============
 
-    private String buildSystemMessage(MessageType type) {
+    private String buildSystemMessage(InternalMessageType type) {
         StringBuilder sb = new StringBuilder(systemPrompt);
 
         // 메시지 타입별 추가 지시사항
@@ -261,11 +288,11 @@ public class ChatbotService {
         return sb.toString();
     }
 
-    private String buildUserMessage(String userMessage, MessageType type) {
+    private String buildUserMessage(String userMessage, InternalMessageType type) {
         return userMessage + "\n\n" + responseRules;
     }
 
-    private OpenAiChatOptions getOptionsForMessageType(MessageType type) {
+    private OpenAiChatOptions getOptionsForMessageType(InternalMessageType type) {
         return switch (type) {
             case RECIPE -> OpenAiChatOptions.builder()
                     .withTemperature(0.3)  // 정확성 중시
@@ -286,51 +313,89 @@ public class ChatbotService {
         };
     }
 
-    private String postProcessResponse(String response, MessageType type) {
+    private String postProcessResponse(String response, InternalMessageType type) {
         // 응답 길이 제한 확인
         if (response.length() > 500) {
             response = response.substring(0, 497) + "...";
         }
 
         // 이모지 추가 (타입별)
-        if (type == MessageType.RECIPE && !response.contains("🍹")) {
+        if (type == InternalMessageType.RECIPE && !response.contains("🍹")) {
             response = "🍹 " + response;
         }
 
         return response;
     }
 
-    private ChatResponseDto handleError(Exception e) {
-        String errorMessage = "죄송합니다. 잠시 후 다시 시도해주세요.";
+    /**
+     * AI 응답 생성
+     */
+    private String generateAIResponse(ChatRequestDto requestDto) {
+        log.info("Normal chat mode for userId: {}", requestDto.getUserId());
 
-        if (e.getMessage().contains("rate limit")) {
-            errorMessage = "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.";
-        } else if (e.getMessage().contains("timeout")) {
-            errorMessage = "응답 시간이 초과되었습니다. 다시 시도해주세요.";
-        }
+        // 메시지 타입 감지 (내부 enum 사용)
+        InternalMessageType messageType = detectMessageType(requestDto.getMessage());
 
-        return new ChatResponseDto(errorMessage);
+        // 최근 대화 기록 조회 (최신 20개 메시지 - USER와 CHATBOT 메시지 모두 포함)
+        List<ChatConversation> recentChats =
+                chatConversationRepository.findTop20ByUserIdOrderByCreatedAtDesc(requestDto.getUserId());
+
+        // 대화 컨텍스트 생성
+        String conversationContext = buildConversationContext(recentChats);
+
+        // ChatClient 빌더 생성
+        var promptBuilder = chatClient.prompt()
+                .system(buildSystemMessage(messageType) + conversationContext)
+                .user(buildUserMessage(requestDto.getMessage(), messageType));
+
+        // 응답 생성
+        String response = promptBuilder
+                .options(getOptionsForMessageType(messageType))
+                .call()
+                .content();
+
+        // 응답 후처리
+        response = postProcessResponse(response, messageType);
+
+        // 대화 저장 - 사용자 메시지와 봇 응답을 각각 저장
+        saveConversation(requestDto, response);
+
+        return response;
     }
 
-    public enum MessageType {
+    /**
+     * 로딩 메시지 생성
+     */
+    public ChatResponseDto createLoadingMessage() {
+        return ChatResponseDto.builder()
+                .message("응답을 생성하는 중...")
+                .type(MessageType.LOADING)
+                .timestamp(LocalDateTime.now())
+                .metaData(ChatResponseDto.MetaData.builder()
+                        .isTyping(true)
+                        .build())
+                .build();
+    }
+
+    public enum InternalMessageType {
         RECIPE, RECOMMENDATION, QUESTION, CASUAL_CHAT
     }
 
-    private MessageType detectMessageType(String message) {
+    private InternalMessageType detectMessageType(String message) {
         String lower = message.toLowerCase();
 
         if (lower.contains("레시피") || lower.contains("만드는") ||
                 lower.contains("제조") || lower.contains("recipe")) {
-            return MessageType.RECIPE;
+            return InternalMessageType.RECIPE;
         } else if (lower.contains("추천") || lower.contains("어때") ||
                 lower.contains("뭐가 좋") || lower.contains("recommend")) {
-            return MessageType.RECOMMENDATION;
+            return InternalMessageType.RECOMMENDATION;
         } else if (lower.contains("?") || lower.contains("뭐") ||
                 lower.contains("어떻") || lower.contains("왜")) {
-            return MessageType.QUESTION;
+            return InternalMessageType.QUESTION;
         }
 
-        return MessageType.CASUAL_CHAT;
+        return InternalMessageType.CASUAL_CHAT;
     }
 
     // 단계별 추천 시작 키워드 감지
@@ -339,56 +404,82 @@ public class ChatbotService {
         return lower.contains("단계별 추천");
     }
 
-    // 단계별 추천 처리 통합 메서드 - 변경사항: 대화 저장 방식 변경
     private ChatResponseDto handleStepRecommendation(ChatRequestDto requestDto) {
         Integer currentStep = requestDto.getCurrentStep();
-
-        // 단계가 지정되지 않았거나 첫 시작인 경우
         if (currentStep == null || currentStep <= 0) {
             currentStep = 1;
         }
 
-        StepRecommendationResponseDto stepRecommendation;
-        String chatResponse;
+        StepRecommendationResponseDto stepData;
+        String message;
+        MessageType type;
 
         switch (currentStep) {
             case 1:
-                stepRecommendation = getAlcoholStrengthOptions();
-                chatResponse = "단계별로 취향을 찾아드릴게요! 🎯\n" +
-                        "원하시는 도수를 선택해주세요! \n" +
-                        "잘 모르는 항목은 '전체'로 체크하셔도 괜찮아요.";
+                stepData = getAlcoholStrengthOptions();
+                message = "단계별 맞춤 추천을 시작합니다! 🎯\n원하시는 도수를 선택해주세요!";
+                type = MessageType.RADIO_OPTIONS;
                 break;
+
             case 2:
-                stepRecommendation = getAlcoholBaseTypeOptions(requestDto.getSelectedAlcoholStrength());
-                chatResponse = "좋은 선택이네요! 이제 베이스가 될 술을 선택해주세요 🍸";
+                stepData = getAlcoholBaseTypeOptions(requestDto.getSelectedAlcoholStrength());
+                message = "좋은 선택이네요! 이제 베이스가 될 술을 선택해주세요 🍸";
+                type = MessageType.RADIO_OPTIONS;
                 break;
+
             case 3:
-                stepRecommendation = getCocktailTypeOptions(requestDto.getSelectedAlcoholStrength(), requestDto.getSelectedAlcoholBaseType());
-                chatResponse = "완벽해요! 마지막으로 어떤 스타일로 즐기실 건가요? 🥃";
-                break;
-            case 4:
-                stepRecommendation = getFinalRecommendations(
-                        requestDto.getSelectedAlcoholStrength(),
-                        requestDto.getSelectedAlcoholBaseType(),
-                        requestDto.getSelectedCocktailType()
+                stepData = getCocktailTypeOptions(
+                    requestDto.getSelectedAlcoholStrength(),
+                    requestDto.getSelectedAlcoholBaseType()
                 );
-                chatResponse = stepRecommendation.getStepTitle();
+                message = "완벽해요! 마지막으로 어떤 스타일로 즐기실 건가요? 🥃";
+                type = MessageType.RADIO_OPTIONS;
                 break;
+
+            case 4:
+                stepData = getFinalRecommendations(
+                    requestDto.getSelectedAlcoholStrength(),
+                    requestDto.getSelectedAlcoholBaseType(),
+                    requestDto.getSelectedCocktailType()
+                );
+                message = stepData.getStepTitle();
+                type = MessageType.CARD_LIST;  // 최종 추천은 카드 리스트
+                break;
+
             default:
-                stepRecommendation = getAlcoholStrengthOptions();
-                chatResponse = "단계별 맞춤 추천을 시작합니다! 🎯";
+                stepData = getAlcoholStrengthOptions();
+                message = "단계별 맞춤 추천을 시작합니다! 🎯";
+                type = MessageType.RADIO_OPTIONS;
         }
 
-        // 대화 기록 저장 - 변경된 방식으로 저장
-        saveConversation(requestDto, chatResponse);
+        // 메타데이터 포함
+        ChatResponseDto.MetaData metaData = ChatResponseDto.MetaData.builder()
+                .currentStep(currentStep)
+                .totalSteps(4)
+                .isTyping(true)
+                .delay(300)
+                .build();
 
-        return new ChatResponseDto(chatResponse, stepRecommendation);
+        return ChatResponseDto.builder()
+                .message(message)
+                .type(type)
+                .stepData(stepData)
+                .metaData(metaData)
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 
-    // ============ 단계별 추천 관련 메서드들 (변경 없음) ============
+    // ============ 단계별 추천 관련 메서드들 ============
 
     private StepRecommendationResponseDto getAlcoholStrengthOptions() {
         List<StepRecommendationResponseDto.StepOption> options = new ArrayList<>();
+
+        // "전체" 옵션 추가
+        options.add(new StepRecommendationResponseDto.StepOption(
+                "ALL",
+                "전체",
+                null
+        ));
 
         for (AlcoholStrength strength : AlcoholStrength.values()) {
             options.add(new StepRecommendationResponseDto.StepOption(
@@ -410,6 +501,13 @@ public class ChatbotService {
     private StepRecommendationResponseDto getAlcoholBaseTypeOptions(AlcoholStrength alcoholStrength) {
         List<StepRecommendationResponseDto.StepOption> options = new ArrayList<>();
 
+        // "전체" 옵션 추가
+        options.add(new StepRecommendationResponseDto.StepOption(
+                "ALL",
+                "전체",
+                null
+        ));
+
         for (AlcoholBaseType baseType : AlcoholBaseType.values()) {
             options.add(new StepRecommendationResponseDto.StepOption(
                     baseType.name(),
@@ -429,6 +527,13 @@ public class ChatbotService {
 
     private StepRecommendationResponseDto getCocktailTypeOptions(AlcoholStrength alcoholStrength, AlcoholBaseType alcoholBaseType) {
         List<StepRecommendationResponseDto.StepOption> options = new ArrayList<>();
+
+        // "전체" 옵션 추가
+        options.add(new StepRecommendationResponseDto.StepOption(
+                "ALL",
+                "전체",
+                null
+        ));
 
         for (CocktailType cocktailType : CocktailType.values()) {
             options.add(new StepRecommendationResponseDto.StepOption(
@@ -452,16 +557,17 @@ public class ChatbotService {
             AlcoholBaseType alcoholBaseType,
             CocktailType cocktailType) {
         // 필터링 조건에 맞는 칵테일 검색
-        List<AlcoholStrength> strengths = List.of(alcoholStrength);
-        List<AlcoholBaseType> baseTypes = List.of(alcoholBaseType);
-        List<CocktailType> cocktailTypes = List.of(cocktailType);
+        // "ALL" 선택 시 해당 필터를 null로 처리하여 전체 검색
+        List<AlcoholStrength> strengths = (alcoholStrength == null) ? null : List.of(alcoholStrength);
+        List<AlcoholBaseType> baseTypes = (alcoholBaseType == null) ? null : List.of(alcoholBaseType);
+        List<CocktailType> cocktailTypes = (cocktailType == null) ? null : List.of(cocktailType);
 
         Page<Cocktail> cocktailPage = cocktailRepository.searchWithFilters(
                 null, // 키워드 없음
                 strengths,
                 cocktailTypes,
                 baseTypes,
-                PageRequest.of(0, 5) // 최대 5개 추천
+                PageRequest.of(0, 3) // 최대 3개 추천
         );
 
         List<CocktailSummaryResponseDto> recommendations = cocktailPage.getContent().stream()

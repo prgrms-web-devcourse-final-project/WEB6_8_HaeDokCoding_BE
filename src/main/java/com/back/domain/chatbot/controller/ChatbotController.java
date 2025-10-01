@@ -64,9 +64,9 @@ public class ChatbotController {
 
     @PostMapping("/greeting/{userId}")
     @Operation(summary = "인사말 생성", description = "사용자가 채팅을 시작할 때 기본 인사말을 생성하고 저장")
-    public ResponseEntity<RsData<ChatConversation>> createGreeting(@PathVariable Long userId) {
+    public ResponseEntity<RsData<ChatResponseDto>> createGreeting(@PathVariable Long userId) {
         try {
-            ChatConversation greeting = chatbotService.createGreetingMessage(userId);
+            ChatResponseDto greeting = chatbotService.createGreetingMessage(userId);
             return ResponseEntity.ok(RsData.successOf(greeting));
         } catch (Exception e) {
             log.error("인사말 생성 중 오류 발생: ", e);
