@@ -110,6 +110,7 @@ class ProfileControllerTest {
                 .myPostCount(7L)
                 .myCommentCount(14L)
                 .myLikedPostCount(5L)
+                .myKeepCount(9L)
                 .build();
 
         given(profileService.getProfile(principal.getId())).willReturn(responseDto);
@@ -128,7 +129,8 @@ class ProfileControllerTest {
                 .andExpect(jsonPath("$.data.abvLabel").value("12.5%"))
                 .andExpect(jsonPath("$.data.myPostCount").value(7))
                 .andExpect(jsonPath("$.data.myCommentCount").value(14))
-                .andExpect(jsonPath("$.data.myLikedPostCount").value(5));
+                .andExpect(jsonPath("$.data.myLikedPostCount").value(5))
+                .andExpect(jsonPath("$.data.myKeepCount").value(9));
 
         verify(profileService).getProfile(principal.getId());
     }
@@ -144,11 +146,12 @@ class ProfileControllerTest {
                 .nickname("newNick")
                 .email(principal.getEmail())
                 .abvDegree(20.0)
-                .abvLevel(3)
+                .abvLevel(4)
                 .abvLabel("20.0%")
                 .myPostCount(11L)
                 .myCommentCount(8L)
                 .myLikedPostCount(3L)
+                .myKeepCount(15L)
                 .build();
 
         given(profileService.updateProfile(eq(principal.getId()), any(ProfileUpdateRequestDto.class)))
@@ -162,7 +165,8 @@ class ProfileControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.message").value("success"))
-                .andExpect(jsonPath("$.data.nickname").value("newNick"));
+                .andExpect(jsonPath("$.data.nickname").value("newNick"))
+                .andExpect(jsonPath("$.data.myKeepCount").value(15));
 
         ArgumentCaptor<ProfileUpdateRequestDto> captor = ArgumentCaptor.forClass(ProfileUpdateRequestDto.class);
         verify(profileService).updateProfile(eq(principal.getId()), captor.capture());
