@@ -122,8 +122,8 @@ class PostControllerTest {
       secondPage.add(createSampleResponseDto(i));
     }
 
-    given(postService.getPosts(new PostSortScrollRequestDto(null, 0, 0, PostSortStatus.LATEST))).willReturn(firstPage); // 첫 호출(lastId 없음)
-    given(postService.getPosts(new PostSortScrollRequestDto(21L, 0, 0, PostSortStatus.LATEST))).willReturn(secondPage);
+    given(postService.getPosts(new PostSortScrollRequestDto(1L, null, 0, 0, PostSortStatus.LATEST))).willReturn(firstPage); // 첫 호출(lastId 없음)
+    given(postService.getPosts(new PostSortScrollRequestDto(1L, 21L, 0, 0, PostSortStatus.LATEST))).willReturn(secondPage);
 
     // when & then
     mockMvc.perform(get("/posts"))
