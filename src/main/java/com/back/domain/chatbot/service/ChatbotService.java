@@ -567,7 +567,7 @@ public class ChatbotService {
                 strengths,
                 cocktailTypes,
                 baseTypes,
-                PageRequest.of(0, 5) // 최대 5개 추천
+                PageRequest.of(0, 3) // 최대 3개 추천
         );
 
         List<CocktailSummaryResponseDto> recommendations = cocktailPage.getContent().stream()
