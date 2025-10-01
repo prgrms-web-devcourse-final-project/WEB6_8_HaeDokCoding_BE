@@ -89,10 +89,11 @@ public class ChatbotService {
     @Transactional
     public ChatResponseDto sendMessage(ChatRequestDto requestDto) {
         try {
-            // 단계별 추천 모드
+            // 단계별 추천 모드 확인 (currentStep이 있으면 무조건 단계별 추천 모드)
             if (requestDto.isStepRecommendation() ||
-                requestDto.getCurrentStep() != null) {
-
+                    requestDto.getCurrentStep() != null ||
+                    isStepRecommendationTrigger(requestDto.getMessage())) {
+                log.info("Recommendation chat mode for userId: {}", requestDto.getUserId());
                 return handleStepRecommendation(requestDto);
             }
 
