@@ -1,5 +1,7 @@
 package com.back.domain.profile.service;
 
+import com.back.domain.mybar.enums.KeepStatus;
+import com.back.domain.mybar.repository.MyBarRepository;
 import com.back.domain.profile.dto.ProfileResponseDto;
 import com.back.domain.profile.dto.ProfileUpdateRequestDto;
 import com.back.domain.user.entity.User;
@@ -20,10 +22,10 @@ public class ProfileService {
 
     private final UserRepository userRepository;
     private final ProfileQueryRepository profileQueryRepository;
+    private final MyBarRepository myBarRepository;
 
-    // 내 프로필 요약 조회
-    // - 카운트 3종(내 글/내 댓글/내가 좋아요한 글) 조회 후
-    // - DTO 정적 팩토리(of)로 레벨/라벨 계산과 함께 응답 조립
+    // 프로필 요약 조회
+    // - 카운트 4종(글/댓글/내가 좋아요한 글/킵한 칵테일) 조회 후 DTO 팩토리(of)로 레벨/라벨 계산까지 함께 응답 조립
     @Transactional(readOnly = true)
     public ProfileResponseDto getProfile(Long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new ServiceException(404, "사용자를 찾을 수 없습니다."));
@@ -31,17 +33,19 @@ public class ProfileService {
         long postCount = profileQueryRepository.countMyPosts(user.getId(), PostStatus.DELETED);
         long commentCount = profileQueryRepository.countMyComments(user.getId(), CommentStatus.DELETED);
         long likedPostCount = profileQueryRepository.countMyLikedPosts(user.getId(), PostLikeStatus.LIKE);
+        long keepCount = myBarRepository.countByUser_IdAndStatus(user.getId(), KeepStatus.ACTIVE);
 
         return ProfileResponseDto.of(
                 user,
                 postCount,
                 commentCount,
-                likedPostCount
+                likedPostCount,
+                keepCount
         );
     }
 
     // 프로필 수정 (닉네임)
-    // - 길이/중복 검사 후 반영, 이후 최신 프로필 다시 조회
+    // - 길이/중복 검증 반영, 이후 최신 프로필 다시 조회
     @Transactional
     public ProfileResponseDto updateProfile(Long id, ProfileUpdateRequestDto profileUpdateRequestDto) {
         User user = userRepository.findById(id).orElseThrow(() -> new ServiceException(404, "사용자를 찾을 수 없습니다."));
