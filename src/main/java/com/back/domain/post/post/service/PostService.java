@@ -101,31 +101,13 @@ public class PostService {
   public List<PostResponseDto> getPosts(PostSortScrollRequestDto reqBody) {
     List<Post> posts;
 
-    switch (reqBody.postSortStatus()) {
-      case POPULAR -> {
-        if (reqBody.lastId() == null || reqBody.lastLikeCount() == null) {
-          posts = postRepository.findTop10ByOrderByLikeCountDescIdDesc();
-        } else {
-          posts = postRepository.findTop10ByLikeCountLessThanOrLikeCountEqualsAndIdLessThanOrderByLikeCountDescIdDesc(reqBody.lastLikeCount(), reqBody.lastLikeCount(), reqBody.lastId());
-        }
-      }
-      case COMMENTS -> {
-        if (reqBody.lastId() == null || reqBody.lastCommentCount() == null) {
-          posts = postRepository.findTop10ByOrderByCommentCountDescIdDesc();
-        } else {
-          posts = postRepository.findTop10ByCommentCountLessThanOrCommentCountEqualsAndIdLessThanOrderByCommentCountDescIdDesc(reqBody.lastCommentCount(), reqBody.lastCommentCount(), reqBody.lastId());
-        }
-      }
-      case LATEST -> {
-        if (reqBody.lastId() == null) {
-          // 첫 페이지 요청
-          posts = postRepository.findTop10ByOrderByIdDesc();
-        } else {
-          // 이후 페이지 요청
-          posts = postRepository.findTop10ByIdLessThanOrderByIdDesc(reqBody.lastId());
-        }
-      }
-      default -> throw new IllegalArgumentException("지원하지 않는 정렬 기준: " + reqBody.postSortStatus());
+    // 카테고리 ID 유무에 따른 분기 처리
+    if (reqBody.categoryId() != null) {
+      // 카테고리별 조회 로직
+      posts = findPostsByCategory(reqBody);
+    } else {
+      // 카테고리 없음 (전체) 조회
+      posts = findAllPosts(reqBody);
     }
 
     return posts.stream()
@@ -300,5 +282,68 @@ public class PostService {
           );
       post.addTag(tag);
     }
+  }
+
+  // 카테고리 없음 (전체) 조회 메서드
+  private List<Post> findAllPosts(PostSortScrollRequestDto reqBody) {
+    return switch (reqBody.postSortStatus()) {
+      case POPULAR -> {
+        if (reqBody.lastId() == null || reqBody.lastLikeCount() == null) {
+          yield postRepository.findTop10ByOrderByLikeCountDescIdDesc();
+        } else {
+          yield postRepository.findTop10ByLikeCountLessThanOrLikeCountEqualsAndIdLessThanOrderByLikeCountDescIdDesc(reqBody.lastLikeCount(), reqBody.lastLikeCount(), reqBody.lastId());
+        }
+      }
+      case COMMENTS -> {
+        if (reqBody.lastId() == null || reqBody.lastCommentCount() == null) {
+          yield postRepository.findTop10ByOrderByCommentCountDescIdDesc();
+        } else {
+          yield postRepository.findTop10ByCommentCountLessThanOrCommentCountEqualsAndIdLessThanOrderByCommentCountDescIdDesc(reqBody.lastCommentCount(), reqBody.lastCommentCount(), reqBody.lastId());
+        }
+      }
+      case LATEST -> {
+        if (reqBody.lastId() == null) {
+          yield postRepository.findTop10ByOrderByIdDesc();
+        } else {
+          yield postRepository.findTop10ByIdLessThanOrderByIdDesc(reqBody.lastId());
+        }
+      }
+      default -> throw new IllegalArgumentException("지원하지 않는 정렬 기준: " + reqBody.postSortStatus());
+    };
+  }
+
+  // 카테고리별 조회 메서드
+  private List<Post> findPostsByCategory(PostSortScrollRequestDto reqBody) {
+    return switch (reqBody.postSortStatus()) {
+      case POPULAR -> {
+        if (reqBody.lastId() == null || reqBody.lastLikeCount() == null) {
+          yield postRepository.findTop10ByCategoryIdOrderByLikeCountDescIdDesc(
+              reqBody.categoryId());
+        } else {
+          yield postRepository.findTop10ByCategoryIdAndLikeCountLessThanOrLikeCountEqualsAndIdLessThanOrderByLikeCountDescIdDesc(
+              reqBody.categoryId(), reqBody.lastLikeCount(), reqBody.lastLikeCount(),
+              reqBody.lastId());
+        }
+      }
+      case COMMENTS -> {
+        if (reqBody.lastId() == null || reqBody.lastCommentCount() == null) {
+          yield postRepository.findTop10ByCategoryIdOrderByCommentCountDescIdDesc(
+              reqBody.categoryId());
+        } else {
+          yield postRepository.findTop10ByCategoryIdAndCommentCountLessThanOrCommentCountEqualsAndIdLessThanOrderByCommentCountDescIdDesc(
+              reqBody.categoryId(), reqBody.lastCommentCount(), reqBody.lastCommentCount(),
+              reqBody.lastId());
+        }
+      }
+      case LATEST -> {
+        if (reqBody.lastId() == null) {
+          yield postRepository.findTop10ByCategoryIdOrderByIdDesc(reqBody.categoryId());
+        } else {
+          yield postRepository.findTop10ByCategoryIdAndIdLessThanOrderByIdDesc(reqBody.categoryId(),
+              reqBody.lastId());
+        }
+      }
+      default -> throw new IllegalArgumentException("지원하지 않는 정렬 기준: " + reqBody.postSortStatus());
+    };
   }
 }
