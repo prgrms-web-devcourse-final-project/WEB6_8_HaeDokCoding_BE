@@ -15,8 +15,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.back.domain.post.post.dto.request.PostCreateRequestDto;
+import com.back.domain.post.post.dto.request.PostSortScrollRequestDto;
 import com.back.domain.post.post.dto.request.PostUpdateRequestDto;
 import com.back.domain.post.post.dto.response.PostResponseDto;
+import com.back.domain.post.post.enums.PostSortStatus;
 import com.back.domain.post.post.enums.PostStatus;
 import com.back.domain.post.post.service.PostService;
 import com.back.global.jwt.JwtUtil;
@@ -108,7 +110,7 @@ class PostControllerTest {
 
   @Test
   @DisplayName("게시글 다건 조회 API 테스트")
-  void getAllPosts() throws Exception {
+  void getPosts() throws Exception {
     // given
     List<PostResponseDto> firstPage = new ArrayList<>();
     for (long i = 30; i >= 21; i--) {
@@ -120,8 +122,8 @@ class PostControllerTest {
       secondPage.add(createSampleResponseDto(i));
     }
 
-    given(postService.getAllPosts(null)).willReturn(firstPage); // 첫 호출(lastId 없음)
-    given(postService.getAllPosts(21L)).willReturn(secondPage);
+    given(postService.getPosts(new PostSortScrollRequestDto(null, 0, 0, PostSortStatus.LATEST))).willReturn(firstPage); // 첫 호출(lastId 없음)
+    given(postService.getPosts(new PostSortScrollRequestDto(21L, 0, 0, PostSortStatus.LATEST))).willReturn(secondPage);
 
     // when & then
     mockMvc.perform(get("/posts"))
@@ -221,7 +223,7 @@ class PostControllerTest {
         0,  // commentCount
         0 // viewCount
     );
-    given(postService.updatePost(eq(1L), any(PostUpdateRequestDto.class), any(null))).willReturn(responseDto);
+    given(postService.updatePost(eq(1L), any(PostUpdateRequestDto.class), List.of())).willReturn(responseDto);
 
     // when & then
     mockMvc.perform(patch("/posts/{postId}", postId)

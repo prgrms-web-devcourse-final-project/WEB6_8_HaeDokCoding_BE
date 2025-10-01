@@ -11,12 +11,13 @@ import com.back.domain.post.comment.repository.CommentRepository;
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.repository.PostRepository;
 import com.back.domain.user.entity.User;
-import com.back.global.rq.Rq;
 import com.back.domain.user.service.AbvScoreService;
-import java.util.List;
+import com.back.global.rq.Rq;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +33,9 @@ public class CommentService {
   @Transactional
   public CommentResponseDto createComment(Long postId, CommentCreateRequestDto reqBody) {
     User user = rq.getActor();
+    if (user == null) {
+      throw new IllegalStateException("로그인한 사용자만 댓글을 작성할 수 있습니다.");
+    }
 
     Post post = postRepository.findById(postId)
         .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다. id=" + postId));
@@ -51,6 +55,10 @@ public class CommentService {
     );
 
     Comment saved = commentRepository.save(comment);
+
+    // 게시글 댓글 수 증가
+    post.increaseCommentCount();
+
     // 활동 점수: 댓글 작성 +0.2
     abvScoreService.awardForComment(user.getId());
     return new CommentResponseDto(saved);
@@ -100,6 +108,9 @@ public class CommentService {
   public void deleteComment(Long postId, Long commentId) {
     User user = rq.getActor();
 
+    Post post = postRepository.findById(postId)
+        .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다. id=" + postId));
+
     Comment comment = findCommentWithValidation(postId, commentId);
 
     if (!comment.getUser().equals(user)) {
@@ -107,6 +118,9 @@ public class CommentService {
     }
 
     comment.updateStatus(CommentStatus.DELETED);
+
+    // 게시글 댓글 수 감소
+    post.decreaseCommentCount();
     // 활동 점수: 댓글 삭제 시 -0.2 (작성자 기준)
     abvScoreService.revokeForComment(user.getId());
 

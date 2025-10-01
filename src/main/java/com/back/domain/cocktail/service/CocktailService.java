@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
@@ -51,7 +52,7 @@ public class CocktailService {
                 cocktails = cocktailRepository.findByIdLessThanOrderByIdDesc(lastId, PageRequest.of(0, fetchSize));
             }
             return cocktails.stream()
-                    .map(c -> new CocktailSummaryResponseDto(c.getId(), c.getCocktailName(), c.getCocktailImgUrl(), c.getAlcoholStrength()))
+                    .map(c -> new CocktailSummaryResponseDto(c.getId(), c.getCocktailName(), c.getCocktailNameKo(), c.getCocktailImgUrl(), c.getAlcoholStrength().getDescription()))
                     .collect(Collectors.toList());
         }
 
@@ -108,12 +109,12 @@ public class CocktailService {
                     .map(c -> new CocktailSearchResponseDto(
                             c.getId(),
                             c.getCocktailName(),
-                            c.getAlcoholStrength(),
-                            c.getCocktailType(),
-                            c.getAlcoholBaseType(),
+                            c.getCocktailNameKo(),
+                            c.getAlcoholStrength().getDescription(),
+                            c.getCocktailType().getDescription(),
+                            c.getAlcoholBaseType().getDescription(),
                             c.getCocktailImgUrl(),
-                            c.getCocktailStory(),
-                            c.getCreatedAt()
+                            c.getCocktailStory()
                     ))
                     .collect(Collectors.toList());
 
@@ -124,11 +125,50 @@ public class CocktailService {
 //        return CollectionUtils.isEmpty(list) ? null : list;
 //    }
 
-        // 칵테일 상세조회
-        @Transactional(readOnly = true)
-        public CocktailDetailResponseDto getCocktailDetailById (Long cocktailId){
-            Cocktail cocktail = cocktailRepository.findById(cocktailId)
-                    .orElseThrow(() -> new NoSuchElementException("칵테일을 찾을 수 없습니다. id: " + cocktailId));
-            return new CocktailDetailResponseDto(cocktail);
-        }
+    // 칵테일 상세조회
+    @Transactional(readOnly = true)
+    public CocktailDetailResponseDto getCocktailDetailById(Long cocktailId) {
+        Cocktail cocktail = cocktailRepository.findById(cocktailId)
+                .orElseThrow(() -> new NoSuchElementException("칵테일을 찾을 수 없습니다. id: " + cocktailId));
+
+        // ingredient 분수 변환
+        String formattedIngredient = convertFractions(cocktail.getIngredient());
+
+        return new CocktailDetailResponseDto(
+                cocktail.getId(),
+                cocktail.getCocktailName(),
+                cocktail.getCocktailNameKo(),
+                cocktail.getAlcoholStrength().getDescription(),
+                cocktail.getCocktailType().getDescription(),
+                cocktail.getAlcoholBaseType().getDescription(),
+                cocktail.getCocktailImgUrl(),
+                cocktail.getCocktailStory(),
+                formattedIngredient,
+                cocktail.getRecipe()
+        );
     }
+
+    private String convertFractions(String ingredient) {
+        if (ingredient == null) return null;
+
+        // 치환 테이블 생성
+        Map<String, String> fractionMap = Map.of(
+                "1/2", "½",
+                "1/3", "⅓",
+                "2/3", "⅔",
+                "1/4", "¼",
+                "3/4", "¾",
+                "1/8", "⅛",
+                "3/8", "⅜",
+                "5/8", "⅝",
+                "7/8", "⅞"
+        );
+
+        // 테이블 기반 치환
+        for (Map.Entry<String, String> entry : fractionMap.entrySet()) {
+            ingredient = ingredient.replace(entry.getKey(), entry.getValue());
+        }
+
+        return ingredient;
+    }
+}

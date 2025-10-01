@@ -19,7 +19,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: create # 삭제 재성성 과정에서 외래키 제약발생. create 변경 후 배포 테스트
+      ddl-auto: update # 삭제 재성성 과정에서 외래키 제약발생. create 변경 후 배포 테스트
     properties:
       hibernate:
         show_sql: false
@@ -44,8 +44,8 @@ custom:
   cookie:
     secure: true
     same: "None"
-    domain: ${custom.prod.cookieDomain}
   site:
+    cookieDomain: "${BASE_URL}"
     frontUrl: "${custom.prod.frontUrl}"
     backUrl: "${custom.prod.backUrl}"
     name: ssoul

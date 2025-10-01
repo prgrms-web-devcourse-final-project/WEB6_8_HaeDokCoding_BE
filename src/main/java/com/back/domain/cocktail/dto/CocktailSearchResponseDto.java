@@ -1,13 +1,8 @@
 package com.back.domain.cocktail.dto;
 
-import com.back.domain.cocktail.enums.AlcoholBaseType;
-import com.back.domain.cocktail.enums.AlcoholStrength;
-import com.back.domain.cocktail.enums.CocktailType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -16,24 +11,24 @@ public class CocktailSearchResponseDto {
 
     private long cocktailId;
     private String cocktailName;
-    private AlcoholStrength alcoholStrength;
-    private CocktailType cocktailType;
-    private AlcoholBaseType alcoholBaseType;
+    private String cocktailNameKo;
+    private String alcoholStrength;
+    private String cocktailType;
+    private String alcoholBaseType;
     private String cocktailImgUrl;
     private String cocktailStory;
-    private LocalDateTime createdAt;
 
-    public CocktailSearchResponseDto(long cocktailId, String cocktailName,
-                                     AlcoholStrength alcoholStrength, CocktailType cocktailType,
-                                     AlcoholBaseType alcoholBaseType, String cocktailImgUrl,
-                                     String cocktailStory, LocalDateTime createdAt) {
+    public CocktailSearchResponseDto(long cocktailId, String cocktailName, String cocktailNameKo,
+                                     String alcoholStrength, String cocktailType,
+                                     String alcoholBaseType, String cocktailImgUrl,
+                                     String cocktailStory) {
         this.cocktailId = cocktailId;
         this.cocktailName = cocktailName;
+        this.cocktailNameKo = cocktailNameKo;
         this.alcoholStrength = alcoholStrength;
         this.cocktailType = cocktailType;
         this.alcoholBaseType = alcoholBaseType;
         this.cocktailImgUrl = cocktailImgUrl;
         this.cocktailStory = cocktailStory;
-        this.createdAt = createdAt;
     }
 }
