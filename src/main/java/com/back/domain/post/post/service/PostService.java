@@ -136,10 +136,12 @@ public class PostService {
   // 게시글 단건 조회 로직
   @Transactional(readOnly = true)
   public PostResponseDto getPost(Long postId) {
-    return new PostResponseDto(
-        postRepository.findById(postId)
-            .orElseThrow(() -> new NoSuchElementException("해당 게시글을 찾을 수 없습니다. ID: " + postId))
-    );
+    Post post = postRepository.findById(postId)
+        .orElseThrow(() -> new NoSuchElementException("해당 게시글을 찾을 수 없습니다. ID: " + postId));
+
+    post.increaseViewCount();
+
+    return new PostResponseDto(post);
   }
 
   // 게시글 수정 로직
