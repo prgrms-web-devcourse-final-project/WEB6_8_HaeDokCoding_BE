@@ -1,6 +1,14 @@
 spring:
-  profiles:
-    active: test
+  # 테스트용 AWS 프로퍼티 추가
+  cloud:
+    aws:
+      credentials:
+        access-key: test-access-key
+        secret-key: test-secret-key
+      region:
+        static: ap-northeast-2
+      s3:
+        bucket: test-bucket-name
 
   # H2 테스트 데이터베이스
   datasource:
