@@ -469,10 +469,17 @@ public class ChatbotService {
                 .build();
     }
 
-    // ============ 단계별 추천 관련 메서드들 (변경 없음) ============
+    // ============ 단계별 추천 관련 메서드들 ============
 
     private StepRecommendationResponseDto getAlcoholStrengthOptions() {
         List<StepRecommendationResponseDto.StepOption> options = new ArrayList<>();
+
+        // "전체" 옵션 추가
+        options.add(new StepRecommendationResponseDto.StepOption(
+                "ALL",
+                "전체",
+                null
+        ));
 
         for (AlcoholStrength strength : AlcoholStrength.values()) {
             options.add(new StepRecommendationResponseDto.StepOption(
@@ -494,6 +501,13 @@ public class ChatbotService {
     private StepRecommendationResponseDto getAlcoholBaseTypeOptions(AlcoholStrength alcoholStrength) {
         List<StepRecommendationResponseDto.StepOption> options = new ArrayList<>();
 
+        // "전체" 옵션 추가
+        options.add(new StepRecommendationResponseDto.StepOption(
+                "ALL",
+                "전체",
+                null
+        ));
+
         for (AlcoholBaseType baseType : AlcoholBaseType.values()) {
             options.add(new StepRecommendationResponseDto.StepOption(
                     baseType.name(),
@@ -513,6 +527,13 @@ public class ChatbotService {
 
     private StepRecommendationResponseDto getCocktailTypeOptions(AlcoholStrength alcoholStrength, AlcoholBaseType alcoholBaseType) {
         List<StepRecommendationResponseDto.StepOption> options = new ArrayList<>();
+
+        // "전체" 옵션 추가
+        options.add(new StepRecommendationResponseDto.StepOption(
+                "ALL",
+                "전체",
+                null
+        ));
 
         for (CocktailType cocktailType : CocktailType.values()) {
             options.add(new StepRecommendationResponseDto.StepOption(
@@ -536,9 +557,10 @@ public class ChatbotService {
             AlcoholBaseType alcoholBaseType,
             CocktailType cocktailType) {
         // 필터링 조건에 맞는 칵테일 검색
-        List<AlcoholStrength> strengths = List.of(alcoholStrength);
-        List<AlcoholBaseType> baseTypes = List.of(alcoholBaseType);
-        List<CocktailType> cocktailTypes = List.of(cocktailType);
+        // "ALL" 선택 시 해당 필터를 null로 처리하여 전체 검색
+        List<AlcoholStrength> strengths = (alcoholStrength == null) ? null : List.of(alcoholStrength);
+        List<AlcoholBaseType> baseTypes = (alcoholBaseType == null) ? null : List.of(alcoholBaseType);
+        List<CocktailType> cocktailTypes = (cocktailType == null) ? null : List.of(cocktailType);
 
         Page<Cocktail> cocktailPage = cocktailRepository.searchWithFilters(
                 null, // 키워드 없음
