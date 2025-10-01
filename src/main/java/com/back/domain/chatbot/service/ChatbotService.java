@@ -198,21 +198,53 @@ public class ChatbotService {
     /**
      * 기본 인사말 생성 및 저장
      * 채팅 시작 시 호출하여 인사말을 DB에 저장
+     * MessageType.BUTTON_OPTIONS와 options 데이터를 포함한 ChatResponseDto 반환
      */
     @Transactional
-    public ChatConversation createGreetingMessage(Long userId) {
+    public ChatResponseDto createGreetingMessage(Long userId) {
         String greetingMessage = "안녕하세요! 🍹 바텐더 '쑤리'에요.\n" +
                 "취향에 맞는 칵테일을 추천해드릴게요!\n" +
                 "어떤 유형으로 찾아드릴까요?";
 
+        // 선택 옵션 생성
+        List<StepRecommendationResponseDto.StepOption> options = List.of(
+                new StepRecommendationResponseDto.StepOption(
+                        "QA",
+                        "질문형 취향 찾기",
+                        null
+                ),
+                new StepRecommendationResponseDto.StepOption(
+                        "STEP",
+                        "단계별 취향 찾기",
+                        null
+                )
+        );
+
+        // StepRecommendationResponseDto 생성
+        StepRecommendationResponseDto stepData = new StepRecommendationResponseDto(
+                0,  // 인사말은 step 0
+                greetingMessage,
+                options,
+                null,
+                false
+        );
+
+        // DB에 인사말 저장
         ChatConversation greeting = ChatConversation.builder()
                 .userId(userId)
                 .message(greetingMessage)
                 .sender(MessageSender.CHATBOT)
                 .createdAt(LocalDateTime.now())
                 .build();
+        chatConversationRepository.save(greeting);
 
-        return chatConversationRepository.save(greeting);
+        // ChatResponseDto 반환
+        return ChatResponseDto.builder()
+                .message(greetingMessage)
+                .type(MessageType.RADIO_OPTIONS)
+                .stepData(stepData)
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 
     /**
