@@ -12,7 +12,6 @@ import com.back.domain.cocktail.dto.CocktailSummaryResponseDto;
 import com.back.domain.cocktail.entity.Cocktail;
 import com.back.domain.cocktail.enums.AlcoholBaseType;
 import com.back.domain.cocktail.enums.AlcoholStrength;
-import com.back.domain.cocktail.enums.CocktailType;
 import com.back.domain.cocktail.repository.CocktailRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -102,7 +101,7 @@ public class ChatbotService {
                     log.info("질문형 추천 모드 진입 - userId: {}", requestDto.getUserId());
                     return generateAIResponseWithContext(requestDto, "질문형 추천");
                 }
-                else if (currentStep >= 1 && currentStep <= 3) {
+                else if (currentStep >= 1 && currentStep <= 4) {
                     // 단계별 추천
                     log.info("단계별 추천 모드 진입 - Step: {}, userId: {}",
                             currentStep, requestDto.getUserId());
@@ -496,10 +495,16 @@ public class ChatbotService {
                 break;
 
             case 3:
-                stepData = getFinalRecommendations(
+                stepData = null;
+                message = "좋아요! 이제 원하는 칵테일 스타일을 자유롭게 말씀해주세요 💬\n 없으면 'x', 또는 '없음' 과 같이 입력해주세요!";
+                type = MessageType.INPUT;
+                break;
+
+            case 4:
+                stepData = getFinalRecommendationsWithMessage(
                     parseAlcoholStrength(requestDto.getSelectedAlcoholStrength()),
                     parseAlcoholBaseType(requestDto.getSelectedAlcoholBaseType()),
-                    null
+                    requestDto.getMessage()
                 );
                 message = stepData.getStepTitle();
                 type = MessageType.CARD_LIST;  // 최종 추천은 카드 리스트
@@ -532,7 +537,7 @@ public class ChatbotService {
         // 메타데이터 포함
         ChatResponseDto.MetaData metaData = ChatResponseDto.MetaData.builder()
                 .currentStep(currentStep)
-                .totalSteps(3)
+                .totalSteps(4)
                 .isTyping(true)
                 .delay(300)
                 .build();
@@ -632,20 +637,20 @@ public class ChatbotService {
     }
 
 
-    private StepRecommendationResponseDto getFinalRecommendations(
+    private StepRecommendationResponseDto getFinalRecommendationsWithMessage(
             AlcoholStrength alcoholStrength,
             AlcoholBaseType alcoholBaseType,
-            CocktailType cocktailType) {
+            String userMessage) {
         // 필터링 조건에 맞는 칵테일 검색
         // "ALL" 선택 시 해당 필터를 null로 처리하여 전체 검색
         List<AlcoholStrength> strengths = (alcoholStrength == null) ? null : List.of(alcoholStrength);
         List<AlcoholBaseType> baseTypes = (alcoholBaseType == null) ? null : List.of(alcoholBaseType);
-        List<CocktailType> cocktailTypes = (cocktailType == null) ? null : List.of(cocktailType);
 
+        // userMessage를 키워드로 사용하여 검색
         Page<Cocktail> cocktailPage = cocktailRepository.searchWithFilters(
-                null, // 키워드 없음
+                userMessage, // 사용자 입력 메시지를 키워드로 사용
                 strengths,
-                cocktailTypes,
+                null, // cocktailType 사용 안 함
                 baseTypes,
                 PageRequest.of(0, 3) // 최대 3개 추천
         );
@@ -668,7 +673,7 @@ public class ChatbotService {
                 "마음에 드는 칵테일은 '킵' 버튼을 눌러 나만의 Bar에 저장해보세요!";
 
         return new StepRecommendationResponseDto(
-                3,
+                4,
                 stepTitle,
                 null,
                 recommendations,

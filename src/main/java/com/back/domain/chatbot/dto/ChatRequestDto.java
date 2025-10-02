@@ -23,7 +23,8 @@ public class ChatRequestDto {
     private boolean isStepRecommendation = false;
 
     private Integer currentStep;
-    // "ALL" 처리를 위해 스텝 3개 String으로 변경
+    // "ALL" 처리를 위해 스텝 2개 String으로 변경
     private String selectedAlcoholStrength;
     private String selectedAlcoholBaseType;
+    // selectedCocktailType 삭제
 }
