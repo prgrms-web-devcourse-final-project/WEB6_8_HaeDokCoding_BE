@@ -502,7 +502,7 @@ public class ChatbotService {
                     null,
                     false
                 );
-                message = "좋아요! 이제 원하는 칵테일 스타일을 자유롭게 말씀해주세요 💬\n 없으면 'x', 또는 '없음' 과 같이 입력해주세요!";
+                message = "좋아요! 이제 원하는 칵테일 스타일을 자유롭게 말씀해주세요 💬\n 없으면 'x', 또는 '없음' 을 입력해주세요!";
                 type = MessageType.INPUT;
                 break;
 
