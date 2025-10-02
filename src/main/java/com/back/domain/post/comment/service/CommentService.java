@@ -68,15 +68,15 @@ public class CommentService {
   @Transactional(readOnly = true)
   public List<CommentResponseDto> getComments(Long postId, Long lastId) {
     if (lastId == null) {
-      return commentRepository.findTop10ByPostIdOrderByIdDesc(postId)
-          .stream()
-          .map(CommentResponseDto::new)
-          .toList();
+      return commentRepository.findTop10ByPostIdAndStatusNotOrderByIdDesc(postId, CommentStatus.DELETED)
+              .stream()
+              .map(CommentResponseDto::new)
+              .toList();
     } else {
-      return commentRepository.findTop10ByPostIdAndIdLessThanOrderByIdDesc(postId, lastId)
-          .stream()
-          .map(CommentResponseDto::new)
-          .toList();
+      return commentRepository.findTop10ByPostIdAndStatusNotAndIdLessThanOrderByIdDesc(postId, CommentStatus.DELETED, lastId)
+              .stream()
+              .map(CommentResponseDto::new)
+              .toList();
     }
   }
 
@@ -84,6 +84,11 @@ public class CommentService {
   @Transactional(readOnly = true)
   public CommentResponseDto getComment(Long postId, Long commentId) {
     Comment comment = findCommentWithValidation(postId, commentId);
+
+    // 삭제된 댓글 조회 방지
+    if (comment.getStatus() == CommentStatus.DELETED) {
+      throw new IllegalArgumentException("삭제된 댓글입니다.");
+    }
 
     return new CommentResponseDto(comment);
   }
@@ -131,10 +136,15 @@ public class CommentService {
   // 댓글과 게시글의 연관관계 검증
   private Comment findCommentWithValidation(Long postId, Long commentId) {
     Comment comment = commentRepository.findById(commentId)
-        .orElseThrow(() -> new IllegalArgumentException("댓글이 존재하지 않습니다. id=" + commentId));
+            .orElseThrow(() -> new IllegalArgumentException("댓글이 존재하지 않습니다. id=" + commentId));
 
     if (!comment.getPost().getId().equals(postId)) {
       throw new IllegalStateException("댓글이 해당 게시글에 속하지 않습니다.");
+    }
+
+    // 삭제된 댓글 접근 방지 (수정/삭제 시)
+    if (comment.getStatus() == CommentStatus.DELETED) {
+      throw new IllegalStateException("삭제된 댓글은 수정하거나 삭제할 수 없습니다.");
     }
 
     return comment;
