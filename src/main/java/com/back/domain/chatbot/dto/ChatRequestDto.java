@@ -16,7 +16,12 @@ public class ChatRequestDto {
     private Long userId;
 
     // 단계별 추천 관련 필드들
+    /**
+     * @deprecated currentStep 필드를 사용하세요. 이 필드는 하위 호환성을 위해 유지됩니다.
+     */
+    @Deprecated
     private boolean isStepRecommendation = false;
+
     private Integer currentStep;
     // "ALL" 처리를 위해 스텝 3개 String으로 변경
     private String selectedAlcoholStrength;
