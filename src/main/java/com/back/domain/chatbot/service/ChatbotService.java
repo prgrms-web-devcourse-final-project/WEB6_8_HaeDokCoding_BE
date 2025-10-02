@@ -89,18 +89,45 @@ public class ChatbotService {
     @Transactional
     public ChatResponseDto sendMessage(ChatRequestDto requestDto) {
         try {
-            // 단계별 추천 모드 확인 (currentStep이 있으면 무조건 단계별 추천 모드)
-            if (requestDto.isStepRecommendation() ||
-                    requestDto.getCurrentStep() != null ||
-                    isStepRecommendationTrigger(requestDto.getMessage())) {
-                log.info("Recommendation chat mode for userId: {}", requestDto.getUserId());
+            Integer currentStep = requestDto.getCurrentStep();
+
+            // ========== 1순위: currentStep 명시적 제어 ==========
+            if (currentStep != null) {
+                log.info("[EXPLICIT] currentStep={}, userId={}, mode={}",
+                        currentStep, requestDto.getUserId(),
+                        currentStep == 0 ? "QA" : "STEP");
+
+                if (currentStep == 0) {
+                    // 질문형 추천 (일반 AI 대화)
+                    log.info("질문형 추천 모드 진입 - userId: {}", requestDto.getUserId());
+                    return generateAIResponseWithContext(requestDto, "질문형 추천");
+                }
+                else if (currentStep >= 1 && currentStep <= 4) {
+                    // 단계별 추천
+                    log.info("단계별 추천 모드 진입 - Step: {}, userId: {}",
+                            currentStep, requestDto.getUserId());
+                    return handleStepRecommendation(requestDto);
+                }
+                else {
+                    // 유효하지 않은 step 값
+                    log.warn("유효하지 않은 currentStep: {}, userId: {}", currentStep, requestDto.getUserId());
+                    return createErrorResponse("잘못된 단계 정보입니다.");
+                }
+            }
+
+            // ========== 2순위: 키워드 감지 (하위 호환성) ==========
+            if (isStepRecommendationTrigger(requestDto.getMessage())) {
+                log.info("[LEGACY] 키워드 기반 단계별 추천 감지 - userId: {}", requestDto.getUserId());
+
+                // FE에서 currentStep을 보내지 않았을 때 자동 설정
+                requestDto.setCurrentStep(1);
                 return handleStepRecommendation(requestDto);
             }
 
-            // 일반 대화 모드
+            // ========== 3순위: 기본 일반 대화 ==========
+            log.info("[DEFAULT] 일반 대화 모드 - userId: {}", requestDto.getUserId());
             String response = generateAIResponse(requestDto);
 
-            // 일반 텍스트 응답 생성 (type이 자동으로 TEXT로 설정됨)
             return ChatResponseDto.builder()
                     .message(response)
                     .type(MessageType.TEXT)
@@ -109,13 +136,7 @@ public class ChatbotService {
 
         } catch (Exception e) {
             log.error("채팅 응답 생성 중 오류 발생: ", e);
-
-            // 에러 응답
-            return ChatResponseDto.builder()
-                    .message("죄송합니다. 일시적인 오류가 발생했습니다.")
-                    .type(MessageType.ERROR)
-                    .timestamp(LocalDateTime.now())
-                    .build();
+            return createErrorResponse("죄송합니다. 일시적인 오류가 발생했습니다.");
         }
     }
 
@@ -398,10 +419,45 @@ public class ChatbotService {
         return InternalMessageType.CASUAL_CHAT;
     }
 
-    // 단계별 추천 시작 키워드 감지
+    /**
+     * 단계별 추천 시작 키워드 감지 (레거시 지원)
+     * @deprecated currentStep 명시적 전달 방식을 사용하세요. 이 메서드는 하위 호환성을 위해 유지됩니다.
+     */
+    @Deprecated
     private boolean isStepRecommendationTrigger(String message) {
+        log.warn("레거시 키워드 감지 사용됨. currentStep 사용 권장. message: {}", message);
         String lower = message.toLowerCase().trim();
-        return lower.contains("단계별 추천");
+        return lower.contains("단계별 취향 찾기");
+    }
+
+    /**
+     * 질문형 추천 전용 AI 응답 생성
+     * 일반 대화와 구분하여 추천에 특화된 응답 생성
+     */
+    private ChatResponseDto generateAIResponseWithContext(ChatRequestDto requestDto, String mode) {
+        String response = generateAIResponse(requestDto);
+
+        return ChatResponseDto.builder()
+                .message(response)
+                .type(MessageType.TEXT)
+                .timestamp(LocalDateTime.now())
+                .metaData(ChatResponseDto.MetaData.builder()
+                        .actionType(mode)
+                        .currentStep(0)
+                        .totalSteps(0)
+                        .build())
+                .build();
+    }
+
+    /**
+     * 에러 응답 생성
+     */
+    private ChatResponseDto createErrorResponse(String errorMessage) {
+        return ChatResponseDto.builder()
+                .message(errorMessage)
+                .type(MessageType.ERROR)
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 
     private ChatResponseDto handleStepRecommendation(ChatRequestDto requestDto) {
@@ -417,7 +473,7 @@ public class ChatbotService {
         switch (currentStep) {
             case 1:
                 stepData = getAlcoholStrengthOptions();
-                message = "단계별 맞춤 추천을 시작합니다! 🎯\n원하시는 도수를 선택해주세요!";
+                message = "단계별 맞춤 취향 추천을 시작합니다! 🎯\n원하시는 도수를 선택해주세요!";
                 type = MessageType.RADIO_OPTIONS;
                 break;
 
@@ -448,7 +504,7 @@ public class ChatbotService {
 
             default:
                 stepData = getAlcoholStrengthOptions();
-                message = "단계별 맞춤 추천을 시작합니다! 🎯";
+                message = "단계별 맞춤 취향 추천을 시작합니다! 🎯";
                 type = MessageType.RADIO_OPTIONS;
         }
 
