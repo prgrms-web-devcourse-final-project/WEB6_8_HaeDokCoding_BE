@@ -38,7 +38,6 @@ public class SecurityUser extends User implements OAuth2User {
                 authorities
         );
 
-
         this.id = id;
         this.nickname = nickname;
         this.email = email;
