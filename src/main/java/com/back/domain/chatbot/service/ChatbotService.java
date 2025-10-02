@@ -126,14 +126,15 @@ public class ChatbotService {
 
             // ========== 3순위: 기본 일반 대화 ==========
             log.info("[DEFAULT] 일반 대화 모드 - userId: {}", requestDto.getUserId());
-            String response = generateAIResponse(requestDto);
+            ChatConversation savedResponse = generateAIResponse(requestDto);
 
             return ChatResponseDto.builder()
+                    .id(savedResponse.getId())
                     .userId(requestDto.getUserId())
-                    .message(response)
+                    .message(savedResponse.getMessage())
                     .sender(MessageSender.CHATBOT)
                     .type(MessageType.TEXT)
-                    .createdAt(LocalDateTime.now())
+                    .createdAt(savedResponse.getCreatedAt())
                     .build();
 
         } catch (Exception e) {
@@ -172,9 +173,10 @@ public class ChatbotService {
 
     /**
      * 대화 저장 - 변경사항: 사용자 메시지와 봇 응답을 각각 별도로 저장
+     * @return 저장된 봇 응답 엔티티 (id 포함)
      */
     @Transactional
-    public void saveConversation(ChatRequestDto requestDto, String response) {
+    public ChatConversation saveConversation(ChatRequestDto requestDto, String response) {
         // 1. 사용자 메시지 저장
         ChatConversation userMessage = ChatConversation.builder()
                 .userId(requestDto.getUserId())
@@ -191,7 +193,7 @@ public class ChatbotService {
                 .sender(MessageSender.CHATBOT)
                 .createdAt(LocalDateTime.now())
                 .build();
-        chatConversationRepository.save(botResponse);
+        return chatConversationRepository.save(botResponse);
     }
 
     /**
@@ -356,8 +358,9 @@ public class ChatbotService {
 
     /**
      * AI 응답 생성
+     * @return 저장된 봇 응답 엔티티 (id 포함)
      */
-    private String generateAIResponse(ChatRequestDto requestDto) {
+    private ChatConversation generateAIResponse(ChatRequestDto requestDto) {
         log.info("Normal chat mode for userId: {}", requestDto.getUserId());
 
         // 메시지 타입 감지 (내부 enum 사용)
@@ -384,10 +387,8 @@ public class ChatbotService {
         // 응답 후처리
         response = postProcessResponse(response, messageType);
 
-        // 대화 저장 - 사용자 메시지와 봇 응답을 각각 저장
-        saveConversation(requestDto, response);
-
-        return response;
+        // 대화 저장 - 사용자 메시지와 봇 응답을 각각 저장하고 저장된 봇 응답 반환
+        return saveConversation(requestDto, response);
     }
 
     /**
@@ -442,14 +443,15 @@ public class ChatbotService {
      * 일반 대화와 구분하여 추천에 특화된 응답 생성
      */
     private ChatResponseDto generateAIResponseWithContext(ChatRequestDto requestDto, String mode) {
-        String response = generateAIResponse(requestDto);
+        ChatConversation savedResponse = generateAIResponse(requestDto);
 
         return ChatResponseDto.builder()
+                .id(savedResponse.getId())
                 .userId(requestDto.getUserId())
-                .message(response)
+                .message(savedResponse.getMessage())
                 .sender(MessageSender.CHATBOT)
                 .type(MessageType.TEXT)
-                .createdAt(LocalDateTime.now())
+                .createdAt(savedResponse.getCreatedAt())
                 .metaData(ChatResponseDto.MetaData.builder()
                         .actionType(mode)
                         .currentStep(0)
@@ -518,6 +520,24 @@ public class ChatbotService {
                 type = MessageType.RADIO_OPTIONS;
         }
 
+        // 사용자 메시지 저장 (단계별 추천 요청)
+        ChatConversation userMessage = ChatConversation.builder()
+                .userId(requestDto.getUserId())
+                .message(requestDto.getMessage())
+                .sender(MessageSender.USER)
+                .createdAt(LocalDateTime.now())
+                .build();
+        chatConversationRepository.save(userMessage);
+
+        // 봇 응답 저장
+        ChatConversation botResponse = ChatConversation.builder()
+                .userId(requestDto.getUserId())
+                .message(message)
+                .sender(MessageSender.CHATBOT)
+                .createdAt(LocalDateTime.now())
+                .build();
+        ChatConversation savedResponse = chatConversationRepository.save(botResponse);
+
         // 메타데이터 포함
         ChatResponseDto.MetaData metaData = ChatResponseDto.MetaData.builder()
                 .currentStep(currentStep)
@@ -527,13 +547,14 @@ public class ChatbotService {
                 .build();
 
         return ChatResponseDto.builder()
+                .id(savedResponse.getId())
                 .userId(requestDto.getUserId())
                 .message(message)
                 .sender(MessageSender.CHATBOT)
                 .type(type)
                 .stepData(stepData)
                 .metaData(metaData)
-                .createdAt(LocalDateTime.now())
+                .createdAt(savedResponse.getCreatedAt())
                 .build();
     }
 
