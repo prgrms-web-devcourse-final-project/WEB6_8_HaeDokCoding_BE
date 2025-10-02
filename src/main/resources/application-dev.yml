@@ -29,17 +29,6 @@ spring:
       encoding: UTF-8
       data-locations: classpath:data-h2.sql
 
-  cloud:
-    aws:
-      region:
-        static: ap-northeast-2
-      stack:
-        auto: false
-      credentials:
-        access-key: ${AWS_ACCESS_KEY_ID}  # 로컬용 더미값
-        secret-key: ${AWS_SECRET_ACCESS_KEY}
-      s3:
-        bucket: team2-app-s3-bucket
 
 # Swagger 설정
 springdoc:
