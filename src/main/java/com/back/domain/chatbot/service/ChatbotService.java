@@ -102,7 +102,7 @@ public class ChatbotService {
                     log.info("질문형 추천 모드 진입 - userId: {}", requestDto.getUserId());
                     return generateAIResponseWithContext(requestDto, "질문형 추천");
                 }
-                else if (currentStep >= 1 && currentStep <= 4) {
+                else if (currentStep >= 1 && currentStep <= 3) {
                     // 단계별 추천
                     log.info("단계별 추천 모드 진입 - Step: {}, userId: {}",
                             currentStep, requestDto.getUserId());
@@ -496,19 +496,10 @@ public class ChatbotService {
                 break;
 
             case 3:
-                stepData = getCocktailTypeOptions(
-                    parseAlcoholStrength(requestDto.getSelectedAlcoholStrength()),
-                    parseAlcoholBaseType(requestDto.getSelectedAlcoholBaseType())
-                );
-                message = "완벽해요! 마지막으로 어떤 스타일로 즐기실 건가요? 🥃";
-                type = MessageType.RADIO_OPTIONS;
-                break;
-
-            case 4:
                 stepData = getFinalRecommendations(
                     parseAlcoholStrength(requestDto.getSelectedAlcoholStrength()),
                     parseAlcoholBaseType(requestDto.getSelectedAlcoholBaseType()),
-                    parseCocktailType(requestDto.getSelectedCocktailType())
+                    null
                 );
                 message = stepData.getStepTitle();
                 type = MessageType.CARD_LIST;  // 최종 추천은 카드 리스트
@@ -541,7 +532,7 @@ public class ChatbotService {
         // 메타데이터 포함
         ChatResponseDto.MetaData metaData = ChatResponseDto.MetaData.builder()
                 .currentStep(currentStep)
-                .totalSteps(4)
+                .totalSteps(3)
                 .isTyping(true)
                 .delay(300)
                 .build();
@@ -585,17 +576,6 @@ public class ChatbotService {
         }
     }
 
-    private CocktailType parseCocktailType(String value) {
-        if (value == null || value.trim().isEmpty() || "ALL".equalsIgnoreCase(value)) {
-            return null;
-        }
-        try {
-            return CocktailType.valueOf(value);
-        } catch (IllegalArgumentException e) {
-            log.warn("Invalid CocktailType value: {}", value);
-            return null;
-        }
-    }
 
     private StepRecommendationResponseDto getAlcoholStrengthOptions() {
         List<StepRecommendationResponseDto.StepOption> options = new ArrayList<>();
@@ -651,32 +631,6 @@ public class ChatbotService {
         );
     }
 
-    private StepRecommendationResponseDto getCocktailTypeOptions(AlcoholStrength alcoholStrength, AlcoholBaseType alcoholBaseType) {
-        List<StepRecommendationResponseDto.StepOption> options = new ArrayList<>();
-
-        // "전체" 옵션 추가
-        options.add(new StepRecommendationResponseDto.StepOption(
-                "ALL",
-                "전체",
-                null
-        ));
-
-        for (CocktailType cocktailType : CocktailType.values()) {
-            options.add(new StepRecommendationResponseDto.StepOption(
-                    cocktailType.name(),
-                    cocktailType.getDescription(),
-                    null
-            ));
-        }
-
-        return new StepRecommendationResponseDto(
-                3,
-                "어떤 종류의 잔으로 드시겠어요?",
-                options,
-                null,
-                false
-        );
-    }
 
     private StepRecommendationResponseDto getFinalRecommendations(
             AlcoholStrength alcoholStrength,
@@ -714,7 +668,7 @@ public class ChatbotService {
                 "마음에 드는 칵테일은 '킵' 버튼을 눌러 나만의 Bar에 저장해보세요!";
 
         return new StepRecommendationResponseDto(
-                4,
+                3,
                 stepTitle,
                 null,
                 recommendations,
