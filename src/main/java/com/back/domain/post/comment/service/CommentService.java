@@ -95,7 +95,7 @@ public class CommentService {
 
     Comment comment = findCommentWithValidation(postId, commentId);
 
-    if (!comment.getUser().equals(user)) {
+    if (!comment.getUser().getId().equals(user.getId())) {
       throw new IllegalStateException("본인의 댓글만 수정할 수 있습니다.");
     }
 
@@ -113,7 +113,7 @@ public class CommentService {
 
     Comment comment = findCommentWithValidation(postId, commentId);
 
-    if (!comment.getUser().equals(user)) {
+    if (!comment.getUser().getId().equals(user.getId())) {
       throw new IllegalStateException("본인의 댓글만 삭제할 수 있습니다.");
     }
 
