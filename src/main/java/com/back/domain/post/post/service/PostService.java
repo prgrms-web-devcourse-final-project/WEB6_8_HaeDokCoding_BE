@@ -116,7 +116,7 @@ public class PostService {
   }
 
   // 게시글 단건 조회 로직
-  @Transactional(readOnly = true)
+  @Transactional
   public PostResponseDto getPost(Long postId) {
     Post post = postRepository.findById(postId)
         .orElseThrow(() -> new NoSuchElementException("해당 게시글을 찾을 수 없습니다. ID: " + postId));
