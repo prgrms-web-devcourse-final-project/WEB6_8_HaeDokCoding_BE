@@ -12,7 +12,6 @@ import com.back.domain.cocktail.dto.CocktailSummaryResponseDto;
 import com.back.domain.cocktail.entity.Cocktail;
 import com.back.domain.cocktail.enums.AlcoholBaseType;
 import com.back.domain.cocktail.enums.AlcoholStrength;
-import com.back.domain.cocktail.enums.CocktailType;
 import com.back.domain.cocktail.repository.CocktailRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -496,19 +495,16 @@ public class ChatbotService {
                 break;
 
             case 3:
-                stepData = getCocktailTypeOptions(
-                    parseAlcoholStrength(requestDto.getSelectedAlcoholStrength()),
-                    parseAlcoholBaseType(requestDto.getSelectedAlcoholBaseType())
-                );
-                message = "완벽해요! 마지막으로 어떤 스타일로 즐기실 건가요? 🥃";
-                type = MessageType.RADIO_OPTIONS;
+                stepData = null;
+                message = "좋아요! 이제 원하는 칵테일 스타일을 자유롭게 말씀해주세요 💬\n 없으면 'x', 또는 '없음' 과 같이 입력해주세요!";
+                type = MessageType.INPUT;
                 break;
 
             case 4:
-                stepData = getFinalRecommendations(
+                stepData = getFinalRecommendationsWithMessage(
                     parseAlcoholStrength(requestDto.getSelectedAlcoholStrength()),
                     parseAlcoholBaseType(requestDto.getSelectedAlcoholBaseType()),
-                    parseCocktailType(requestDto.getSelectedCocktailType())
+                    requestDto.getMessage()
                 );
                 message = stepData.getStepTitle();
                 type = MessageType.CARD_LIST;  // 최종 추천은 카드 리스트
@@ -585,17 +581,6 @@ public class ChatbotService {
         }
     }
 
-    private CocktailType parseCocktailType(String value) {
-        if (value == null || value.trim().isEmpty() || "ALL".equalsIgnoreCase(value)) {
-            return null;
-        }
-        try {
-            return CocktailType.valueOf(value);
-        } catch (IllegalArgumentException e) {
-            log.warn("Invalid CocktailType value: {}", value);
-            return null;
-        }
-    }
 
     private StepRecommendationResponseDto getAlcoholStrengthOptions() {
         List<StepRecommendationResponseDto.StepOption> options = new ArrayList<>();
@@ -651,47 +636,21 @@ public class ChatbotService {
         );
     }
 
-    private StepRecommendationResponseDto getCocktailTypeOptions(AlcoholStrength alcoholStrength, AlcoholBaseType alcoholBaseType) {
-        List<StepRecommendationResponseDto.StepOption> options = new ArrayList<>();
 
-        // "전체" 옵션 추가
-        options.add(new StepRecommendationResponseDto.StepOption(
-                "ALL",
-                "전체",
-                null
-        ));
-
-        for (CocktailType cocktailType : CocktailType.values()) {
-            options.add(new StepRecommendationResponseDto.StepOption(
-                    cocktailType.name(),
-                    cocktailType.getDescription(),
-                    null
-            ));
-        }
-
-        return new StepRecommendationResponseDto(
-                3,
-                "어떤 종류의 잔으로 드시겠어요?",
-                options,
-                null,
-                false
-        );
-    }
-
-    private StepRecommendationResponseDto getFinalRecommendations(
+    private StepRecommendationResponseDto getFinalRecommendationsWithMessage(
             AlcoholStrength alcoholStrength,
             AlcoholBaseType alcoholBaseType,
-            CocktailType cocktailType) {
+            String userMessage) {
         // 필터링 조건에 맞는 칵테일 검색
         // "ALL" 선택 시 해당 필터를 null로 처리하여 전체 검색
         List<AlcoholStrength> strengths = (alcoholStrength == null) ? null : List.of(alcoholStrength);
         List<AlcoholBaseType> baseTypes = (alcoholBaseType == null) ? null : List.of(alcoholBaseType);
-        List<CocktailType> cocktailTypes = (cocktailType == null) ? null : List.of(cocktailType);
 
+        // userMessage를 키워드로 사용하여 검색
         Page<Cocktail> cocktailPage = cocktailRepository.searchWithFilters(
-                null, // 키워드 없음
+                userMessage, // 사용자 입력 메시지를 키워드로 사용
                 strengths,
-                cocktailTypes,
+                null, // cocktailType 사용 안 함
                 baseTypes,
                 PageRequest.of(0, 3) // 최대 3개 추천
         );
