@@ -15,8 +15,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.back.domain.post.post.dto.request.PostCreateRequestDto;
+import com.back.domain.post.post.dto.request.PostSortScrollRequestDto;
 import com.back.domain.post.post.dto.request.PostUpdateRequestDto;
 import com.back.domain.post.post.dto.response.PostResponseDto;
+import com.back.domain.post.post.enums.PostSortStatus;
 import com.back.domain.post.post.enums.PostStatus;
 import com.back.domain.post.post.service.PostService;
 import com.back.global.jwt.JwtUtil;
@@ -59,7 +61,10 @@ class PostControllerTest {
         PostStatus.PUBLIC,
         "테스트 제목" + id,
         "테스트 내용" + id,
-        "http://example.com/image.jpg",
+        List.of(
+            "http://example.com/image1.jpg",
+            "http://example.com/image2.jpg"
+        ), // 이미지 리스트
         "http://example.com/video.mp4",
         List.of("태그1", "태그2"),
         0, // likeCount
@@ -77,12 +82,11 @@ class PostControllerTest {
         PostStatus.PUBLIC,
         "테스트 제목1",
         "테스트 내용1",
-        "http://example.com/image1.jpg",
         "http://example.com/video1.mp4",
         List.of("태그1", "태그2")
     );
     PostResponseDto responseDto = createSampleResponseDto(1L);
-    given(postService.createPost(any(PostCreateRequestDto.class))).willReturn(responseDto);
+    given(postService.createPost(any(PostCreateRequestDto.class), any(null))).willReturn(responseDto);
 
     // when & then
     mockMvc.perform(post("/posts")
@@ -106,7 +110,7 @@ class PostControllerTest {
 
   @Test
   @DisplayName("게시글 다건 조회 API 테스트")
-  void getAllPosts() throws Exception {
+  void getPosts() throws Exception {
     // given
     List<PostResponseDto> firstPage = new ArrayList<>();
     for (long i = 30; i >= 21; i--) {
@@ -118,8 +122,8 @@ class PostControllerTest {
       secondPage.add(createSampleResponseDto(i));
     }
 
-    given(postService.getAllPosts(null)).willReturn(firstPage); // 첫 호출(lastId 없음)
-    given(postService.getAllPosts(21L)).willReturn(secondPage);
+    given(postService.getPosts(new PostSortScrollRequestDto(1L, null, 0, 0, PostSortStatus.LATEST))).willReturn(firstPage); // 첫 호출(lastId 없음)
+    given(postService.getPosts(new PostSortScrollRequestDto(1L, 21L, 0, 0, PostSortStatus.LATEST))).willReturn(secondPage);
 
     // when & then
     mockMvc.perform(get("/posts"))
@@ -193,7 +197,10 @@ class PostControllerTest {
         PostStatus.PUBLIC,
         "수정된 제목" + postId,
         "수정된 내용" + postId,
-        "http://example.com/image.jpg",
+        List.of(
+            1L,
+            2L
+        ), // 이미지 리스트
         "http://example.com/video.mp4",
         List.of("태그1", "태그2")
     );
@@ -206,14 +213,17 @@ class PostControllerTest {
         PostStatus.PUBLIC,
         requestDto.title(),
         requestDto.content(),
-        "http://example.com/image.jpg",
+        List.of(
+            "http://example.com/image1.jpg",
+            "http://example.com/image2.jpg"
+        ), // 이미지 리스트
         "http://example.com/video.mp4",
         List.of("태그1", "태그2"),
         0, // likeCount
         0,  // commentCount
         0 // viewCount
     );
-    given(postService.updatePost(eq(1L), any(PostUpdateRequestDto.class))).willReturn(responseDto);
+    given(postService.updatePost(eq(1L), any(PostUpdateRequestDto.class), List.of())).willReturn(responseDto);
 
     // when & then
     mockMvc.perform(patch("/posts/{postId}", postId)

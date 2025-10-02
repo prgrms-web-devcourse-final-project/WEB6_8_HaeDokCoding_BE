@@ -1,6 +1,7 @@
 package com.back.domain.post.post.entity;
 
 import com.back.domain.post.category.entity.Category;
+import com.back.domain.post.comment.entity.Comment;
 import com.back.domain.post.post.enums.PostStatus;
 import com.back.domain.user.entity.User;
 import jakarta.persistence.*;
@@ -62,9 +63,14 @@ public class Post {
   @Column(name = "content", nullable = false, columnDefinition = "TEXT")
   private String content;
 
-  // 게시글 이미지 URL
-  @Column(name = "image_url")
-  private String imageUrl;
+  // Post → Comment = 1:N
+  @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<Comment> comments = new ArrayList<>();
+
+  // Post → PostImage = 1:N
+  @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OrderBy("sortOrder ASC") // 조회 시 순서대로 정렬
+  private List<PostImage> images = new ArrayList<>();
 
   // 게시글 동영상 URL
   @Column(name = "video_url")
@@ -81,13 +87,15 @@ public class Post {
   @Column(name = "like_count", nullable = false)
   private Integer likeCount = 0;
 
-  // 게시글 댓글 수
-  @Column(name = "comment_count")
-  private Integer commentCount;
+  // 게시글 댓글 수 (기본값: 0)
+  @Builder.Default
+  @Column(name = "comment_count", nullable = false)
+  private Integer commentCount = 0;
 
-  // 게시글 조회 수
-  @Column(name = "view_count")
-  private Integer viewCount;
+  // 게시글 조회 수 (기본값: 0)
+  @Builder.Default
+  @Column(name = "view_count", nullable = false)
+  private Integer viewCount = 0;
 
   public void updateCategory(Category category) {
     this.category = category;
@@ -105,8 +113,12 @@ public class Post {
     this.content = content;
   }
 
-  public void updateImage(String imageUrl) {
-    this.imageUrl = imageUrl;
+  public void updateImages(List<PostImage> images) {
+    this.images.clear();
+    for (PostImage i : images) {
+      i.updatePost(this);
+      this.images.add(i);
+    }
   }
 
   public void updateVideo(String videoUrl) {
@@ -128,5 +140,19 @@ public class Post {
 
   public void decreaseLikeCount() {
     this.likeCount--;
+  }
+
+  public void increaseCommentCount() {
+    this.commentCount++;
+  }
+
+  public void decreaseCommentCount() {
+    if (this.commentCount > 0) {
+      this.commentCount--;
+    }
+  }
+
+  public void increaseViewCount() {
+    this.viewCount++;
   }
 }

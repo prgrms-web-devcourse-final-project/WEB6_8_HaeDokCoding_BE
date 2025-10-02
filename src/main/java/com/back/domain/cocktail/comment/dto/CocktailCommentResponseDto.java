@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 public record CocktailCommentResponseDto(
         Long commentId,
-        Long postId,
+        Long cocktailId,
         String userNickName,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,

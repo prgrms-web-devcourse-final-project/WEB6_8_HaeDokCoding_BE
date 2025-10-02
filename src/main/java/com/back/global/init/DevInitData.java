@@ -10,8 +10,10 @@ import com.back.domain.post.category.repository.CategoryRepository;
 import com.back.domain.post.comment.entity.Comment;
 import com.back.domain.post.comment.repository.CommentRepository;
 import com.back.domain.post.post.entity.Post;
+import com.back.domain.post.post.entity.PostImage;
 import com.back.domain.post.post.entity.PostLike;
 import com.back.domain.post.post.enums.PostLikeStatus;
+import com.back.domain.post.post.repository.PostImageRepository;
 import com.back.domain.post.post.repository.PostLikeRepository;
 import com.back.domain.post.post.repository.PostRepository;
 import com.back.domain.user.entity.User;
@@ -35,6 +37,7 @@ public class DevInitData {
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
     private final PostLikeRepository postLikeRepository;
+    private final PostImageRepository postImageRepository;
     private final NotificationRepository notificationRepository;
     private final CocktailRepository cocktailRepository;
     private final com.back.domain.mybar.service.MyBarService myBarService;
@@ -89,7 +92,7 @@ public class DevInitData {
                 .user(userA)
                 .title("A의 게시글")
                 .content("내용A")
-                .imageUrl("/img/cocktail/1.jpg")
+                .videoUrl("/img/cocktail/1.jpg")
                 .build());
 
         Post postB = postRepository.save(Post.builder()
@@ -97,7 +100,7 @@ public class DevInitData {
                 .user(userB)
                 .title("B의 게시글")
                 .content("내용B")
-                .imageUrl("/img/cocktail/2.jpg")
+                .videoUrl("/img/cocktail/2.jpg")
                 .build());
 
         // 댓글: C가 A/B 게시글에 작성
@@ -141,6 +144,22 @@ public class DevInitData {
                 .status(PostLikeStatus.LIKE)
                 .build());
         postB.increaseLikeCount();
+
+        postImageRepository.save(PostImage.builder()
+                .post(postA)
+                .fileName("1.jpg")
+                .url("/img/cocktail/1.jpg")
+                .sortOrder(1)
+                .build()
+        );
+
+        postImageRepository.save(PostImage.builder()
+                .post(postB)
+                .fileName("2.jpg")
+                .url("/img/cocktail/2.jpg")
+                .sortOrder(1)
+                .build()
+        );
 
         postRepository.save(postA);
         postRepository.save(postB);

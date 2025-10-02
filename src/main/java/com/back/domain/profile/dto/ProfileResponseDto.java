@@ -23,11 +23,13 @@ public class ProfileResponseDto {
     private Long myPostCount;
     private Long myCommentCount;
     private Long myLikedPostCount;
+    private Long myKeepCount;
 
     public static ProfileResponseDto of(User user,
                                         long myPostCount,
                                         long myCommentCount,
-                                        long myLikedPostCount) {
+                                        long myLikedPostCount,
+                                        long myKeepCount) {
         // 신규 사용자는 기본 5%로 시작하도록 뷰 레벨에서 기본값 적용
         Double percent = user.getAbvDegree();
         if (percent == null) percent = 5.0;
@@ -45,6 +47,7 @@ public class ProfileResponseDto {
                 .myPostCount(myPostCount)
                 .myCommentCount(myCommentCount)
                 .myLikedPostCount(myLikedPostCount)
+                .myKeepCount(myKeepCount)
                 .build();
     }
 }

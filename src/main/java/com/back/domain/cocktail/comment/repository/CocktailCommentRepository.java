@@ -12,4 +12,6 @@ public interface CocktailCommentRepository extends JpaRepository<CocktailComment
     List<CocktailComment> findTop10ByCocktailIdOrderByIdDesc(Long cocktailId);
 
     List<CocktailComment> findTop10ByCocktailIdAndIdLessThanOrderByIdDesc(Long cocktailId, Long lastId);
+
+    boolean existsByCocktailIdAndUserId(Long cocktailId, Long id);
 }

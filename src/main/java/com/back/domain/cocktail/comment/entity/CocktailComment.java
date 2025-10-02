@@ -15,6 +15,10 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(
+        name = "cocktail_comment",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"cocktail_id", "user_id"}) // 사용자 1개 댓글 제한
+)
 @Getter
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)

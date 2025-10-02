@@ -3,20 +3,24 @@ package com.back.domain.mybar.controller;
 import com.back.domain.mybar.dto.MyBarListResponseDto;
 import com.back.domain.mybar.service.MyBarService;
 import com.back.global.rsData.RsData;
+import com.back.global.security.SecurityUser;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.format.annotation.DateTimeFormat;
+
 import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/me/bar")
 @RequiredArgsConstructor
 @Validated
+@PreAuthorize("isAuthenticated()")
 public class MyBarController {
 
     /**
@@ -35,16 +39,17 @@ public class MyBarController {
      * @return 킵 아이템 목록과 다음 페이지 커서
      */
     @GetMapping
-    @Operation(summary = "내 바 목록", description = "내가 킵한 칵테일 목록 조회. 무한스크롤 파라미터 지원")
+    @Operation(summary = "내 바 목록", description = "내가 킵한 칵테일 목록 조회. 무한 스크롤 커서 지원")
     public RsData<MyBarListResponseDto> getMyBarList(
-            @AuthenticationPrincipal(expression = "id") Long userId,
+            @AuthenticationPrincipal SecurityUser principal,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime lastKeptAt,
             @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit
     ) {
+        Long userId = principal.getId();
         MyBarListResponseDto body = myBarService.getMyBar(userId, lastKeptAt, lastId, limit);
-        return RsData.successOf(body);  // code=200, message="success"
+        return RsData.successOf(body);
     }
 
     /**
@@ -54,11 +59,12 @@ public class MyBarController {
      * @return 201 kept
      */
     @PostMapping("/{cocktailId}/keep")
-    @Operation(summary = "킵 추가/복원", description = "해당 칵테일을 내 바에 킵합니다. 이미 삭제된 경우 복원")
+    @Operation(summary = "킵 추가/복원", description = "해당 칵테일을 내 바에 킵합니다. 이미 삭제 상태면 복원")
     public RsData<Void> keep(
-            @AuthenticationPrincipal(expression = "id") Long userId,
+            @AuthenticationPrincipal SecurityUser principal,
             @PathVariable Long cocktailId
     ) {
+        Long userId = principal.getId();
         myBarService.keep(userId, cocktailId);
         return RsData.of(201, "kept"); // Aspect가 HTTP 201로 설정
     }
@@ -70,12 +76,14 @@ public class MyBarController {
      * @return 200 deleted
      */
     @DeleteMapping("/{cocktailId}/keep")
-    @Operation(summary = "킵 해제", description = "내 바에서 해당 칵테일 킵을 해제합니다(소프트 삭제, 멱등)")
+    @Operation(summary = "킵 해제", description = "내 바에서 해당 칵테일을 삭제(소프트 삭제, 멱등)")
     public RsData<Void> unkeep(
-            @AuthenticationPrincipal(expression = "id") Long userId,
+            @AuthenticationPrincipal SecurityUser principal,
             @PathVariable Long cocktailId
     ) {
+        Long userId = principal.getId();
         myBarService.unkeep(userId, cocktailId);
         return RsData.of(200, "deleted");
     }
 }
+

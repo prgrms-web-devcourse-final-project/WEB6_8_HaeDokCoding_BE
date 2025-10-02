@@ -1,6 +1,7 @@
 package com.back.domain.post.post.dto.response;
 
 import com.back.domain.post.post.entity.Post;
+import com.back.domain.post.post.entity.PostImage;
 import com.back.domain.post.post.enums.PostStatus;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,7 +15,7 @@ public record PostResponseDto(
     PostStatus status,
     String title,
     String content,
-    String imageUrl,
+    List<String> imageUrls,
     String videoUrl,
     List<String> tags,
     Integer likeCount,
@@ -32,7 +33,9 @@ public record PostResponseDto(
         post.getStatus(),
         post.getTitle(),
         post.getContent(),
-        post.getImageUrl(),
+        post.getImages().stream()
+            .map(PostImage::getUrl)
+            .toList(),
         post.getVideoUrl(),
         post.getPostTags().stream()
             .map(postTag -> postTag.getTag().getName())
