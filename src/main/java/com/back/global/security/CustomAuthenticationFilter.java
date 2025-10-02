@@ -55,87 +55,120 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
         String uri = request.getRequestURI();
         String method = request.getMethod();
 
-        // 개발 편의성을 위해 모든 요청 통과 (SecurityConfig에서 모든 요청 permitAll)
-        /*
-        if (
-                uri.startsWith("/h2-console") ||
-                uri.startsWith("/login/oauth2/") ||
-                uri.startsWith("/oauth2/") ||
-                uri.startsWith("/actuator/") ||
-                uri.startsWith("/swagger-ui/") ||
-                uri.startsWith("/api-docs/") ||
-                uri.equals("/") ||
-                // 조회 API들 - 권한 불필요
-                (method.equals("GET") && uri.startsWith("/cocktails")) ||
-                (method.equals("POST") && uri.equals("/cocktails/search")) ||
-                (method.equals("GET") && uri.startsWith("/posts")) ||
-                (method.equals("GET") && uri.contains("/comments"))
-        ) {
-            filterChain.doFilter(request, response);
-            return;
+        log.debug("===== Authentication Filter Start =====");
+        log.debug("Request: {} {}", method, uri);
+
+        String accessToken = null;
+
+        // 1. 먼저 Authorization 헤더에서 토큰 가져오기 시도
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            accessToken = authHeader.substring(7);
+            log.debug("Token found in Authorization header");
         }
-        */
 
-        // 쿠키에서 accessToken 가져오기
-        String accessToken = rq.getCookieValue("accessToken", "");
-
-        logger.debug("accessToken : " + accessToken);
+        // 2. Authorization 헤더에 없으면 쿠키에서 가져오기
+        if (accessToken == null || accessToken.isBlank()) {
+            accessToken = rq.getCookieValue("accessToken", "");
+            if (!accessToken.isBlank()) {
+                log.debug("Token found in Cookie");
+            }
+        }
 
         boolean isAccessTokenExists = !accessToken.isBlank();
 
         if (!isAccessTokenExists) {
+            log.debug("No access token found - proceeding without authentication");
             filterChain.doFilter(request, response);
             return;
         }
 
         User user = null;
-        boolean isAccessTokenValid = false;
 
         // accessToken 검증
-        if (isAccessTokenExists) {
-            if (jwtUtil.validateAccessToken(accessToken)) {
+        if (jwtUtil.validateAccessToken(accessToken)) {
+            log.debug("Access token is valid");
+
+            try {
                 Long userId = jwtUtil.getUserIdFromToken(accessToken);
                 String email = jwtUtil.getEmailFromToken(accessToken);
                 String nickname = jwtUtil.getNicknameFromToken(accessToken);
 
-                user = User.builder()
-                        .id(userId)
-                        .email(email)
-                        .nickname(nickname)
-                        .role("USER")
-                        .build();
-                isAccessTokenValid = true;
+                if (userId != null) {
+                    user = User.builder()
+                            .id(userId)
+                            .email(email)
+                            .nickname(nickname)
+                            .role("USER")
+                            .build();
+
+                    log.debug("User extracted - ID: {}, Email: {}, Nickname: {}", userId, email, nickname);
+                } else {
+                    log.warn("User ID is null in token");
+                }
+            } catch (Exception e) {
+                log.error("Error extracting user info from token", e);
+            }
+        } else {
+            log.warn("Access token validation failed");
+
+            // 토큰이 만료된 경우에도 정보 추출 시도 (선택적)
+            try {
+                Long userId = jwtUtil.getUserIdFromToken(accessToken);
+                String email = jwtUtil.getEmailFromToken(accessToken);
+                String nickname = jwtUtil.getNicknameFromToken(accessToken);
+
+                if (userId != null && email != null && nickname != null) {
+                    user = User.builder()
+                            .id(userId)
+                            .email(email)
+                            .nickname(nickname)
+                            .role("USER")
+                            .build();
+
+                    // 새 토큰 발급 (쿠키 방식을 사용하는 경우만)
+                    if (authHeader == null) {
+                        String newAccessToken = jwtUtil.generateAccessToken(userId, email, nickname);
+                        rq.setCrossDomainCookie("accessToken", newAccessToken, accessTokenExpiration);
+                        log.info("New access token issued for user: {}", userId);
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Failed to extract user info from expired token", e);
             }
         }
 
+        // user가 null이면 인증 실패
         if (user == null) {
+            log.warn("Authentication failed - user is null");
             filterChain.doFilter(request, response);
             return;
         }
 
-        // accessToken이 만료됐으면 새로 발급
-        if (isAccessTokenExists && !isAccessTokenValid) {
-            String newAccessToken = jwtUtil.generateAccessToken(user.getId(), user.getEmail(), user.getNickname());
-            rq.setCrossDomainCookie("accessToken", newAccessToken, accessTokenExpiration);
-        }
-
         // SecurityContext에 인증 정보 저장
-        UserDetails userDetails = new SecurityUser(
-                user.getId(),
-                user.getEmail(),
-                user.getNickname(),
-                user.isFirstLogin(),
-                user.getAuthorities(),
-                Map.of() // JWT 인증에서는 빈 attributes
-        );
-        Authentication authentication = new UsernamePasswordAuthenticationToken(
-                userDetails,
-                userDetails.getPassword(),
-                userDetails.getAuthorities()
-        );
-        SecurityContextHolder
-                .getContext()
-                .setAuthentication(authentication);
+        try {
+            UserDetails userDetails = new SecurityUser(
+                    user.getId(),
+                    user.getEmail(),
+                    user.getNickname(),
+                    user.isFirstLogin(),
+                    user.getAuthorities(),
+                    Map.of() // JWT 인증에서는 빈 attributes
+            );
+
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                    userDetails,
+                    userDetails.getPassword(),
+                    userDetails.getAuthorities()
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            log.info("✅ Authentication SUCCESS - User ID: {}, Nickname: {}", user.getId(), user.getNickname());
+            log.debug("===== Authentication Filter End =====");
+        } catch (Exception e) {
+            log.error("Error setting authentication in SecurityContext", e);
+        }
 
         filterChain.doFilter(request, response);
     }
