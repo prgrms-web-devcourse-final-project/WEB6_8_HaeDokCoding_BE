@@ -1,5 +1,9 @@
 package com.back.domain.cocktail.dto;
 
+import com.back.domain.cocktail.service.CocktailService;
+
+import java.util.List;
+
 public record CocktailDetailResponseDto(
         Long cocktailId,
         String cocktailName,
@@ -9,7 +13,7 @@ public record CocktailDetailResponseDto(
         String alcoholBaseType,
         String cocktailImgUrl,
         String cocktailStory,
-        String ingredient,
+        List<CocktailService.IngredientDto> ingredient,
         String recipe
 ) {
 }
