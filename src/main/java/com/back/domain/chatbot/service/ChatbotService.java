@@ -129,9 +129,11 @@ public class ChatbotService {
             String response = generateAIResponse(requestDto);
 
             return ChatResponseDto.builder()
+                    .userId(requestDto.getUserId())
                     .message(response)
+                    .sender(MessageSender.CHATBOT)
                     .type(MessageType.TEXT)
-                    .timestamp(LocalDateTime.now())
+                    .createdAt(LocalDateTime.now())
                     .build();
 
         } catch (Exception e) {
@@ -254,6 +256,7 @@ public class ChatbotService {
         // 중복 확인: 동일한 인사말이 이미 존재하는지 확인
         boolean greetingExists = chatConversationRepository.existsByUserIdAndMessage(userId, greetingMessage);
 
+        ChatConversation savedGreeting = null;
         // 중복되지 않을 경우에만 DB에 저장
         if (!greetingExists) {
             ChatConversation greeting = ChatConversation.builder()
@@ -262,18 +265,21 @@ public class ChatbotService {
                     .sender(MessageSender.CHATBOT)
                     .createdAt(LocalDateTime.now())
                     .build();
-            chatConversationRepository.save(greeting);
+            savedGreeting = chatConversationRepository.save(greeting);
             log.info("인사말 저장 완료 - userId: {}", userId);
         } else {
             log.info("이미 인사말이 존재하여 저장 생략 - userId: {}", userId);
         }
 
-        // ChatResponseDto 반환
+        // ChatResponseDto 반환 (요청된 형식에 맞춰 id, userId, sender, type, createdAt 포함)
         return ChatResponseDto.builder()
+                .id(savedGreeting != null ? savedGreeting.getId() : null)
+                .userId(userId)
                 .message(greetingMessage)
+                .sender(MessageSender.CHATBOT)
                 .type(MessageType.RADIO_OPTIONS)
                 .stepData(stepData)
-                .timestamp(LocalDateTime.now())
+                .createdAt(LocalDateTime.now())
                 .build();
     }
 
@@ -390,8 +396,9 @@ public class ChatbotService {
     public ChatResponseDto createLoadingMessage() {
         return ChatResponseDto.builder()
                 .message("응답을 생성하는 중...")
+                .sender(MessageSender.CHATBOT)
                 .type(MessageType.LOADING)
-                .timestamp(LocalDateTime.now())
+                .createdAt(LocalDateTime.now())
                 .metaData(ChatResponseDto.MetaData.builder()
                         .isTyping(true)
                         .build())
@@ -438,9 +445,11 @@ public class ChatbotService {
         String response = generateAIResponse(requestDto);
 
         return ChatResponseDto.builder()
+                .userId(requestDto.getUserId())
                 .message(response)
+                .sender(MessageSender.CHATBOT)
                 .type(MessageType.TEXT)
-                .timestamp(LocalDateTime.now())
+                .createdAt(LocalDateTime.now())
                 .metaData(ChatResponseDto.MetaData.builder()
                         .actionType(mode)
                         .currentStep(0)
@@ -455,8 +464,9 @@ public class ChatbotService {
     private ChatResponseDto createErrorResponse(String errorMessage) {
         return ChatResponseDto.builder()
                 .message(errorMessage)
+                .sender(MessageSender.CHATBOT)
                 .type(MessageType.ERROR)
-                .timestamp(LocalDateTime.now())
+                .createdAt(LocalDateTime.now())
                 .build();
     }
 
@@ -517,11 +527,13 @@ public class ChatbotService {
                 .build();
 
         return ChatResponseDto.builder()
+                .userId(requestDto.getUserId())
                 .message(message)
+                .sender(MessageSender.CHATBOT)
                 .type(type)
                 .stepData(stepData)
                 .metaData(metaData)
-                .timestamp(LocalDateTime.now())
+                .createdAt(LocalDateTime.now())
                 .build();
     }
 
