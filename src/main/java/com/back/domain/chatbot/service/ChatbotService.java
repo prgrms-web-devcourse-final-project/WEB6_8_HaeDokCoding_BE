@@ -495,8 +495,14 @@ public class ChatbotService {
                 break;
 
             case 3:
-                stepData = null;
-                message = "좋아요! 이제 원하는 칵테일 스타일을 자유롭게 말씀해주세요 💬\n 없으면 'x', 또는 '없음' 과 같이 입력해주세요!";
+                stepData = new StepRecommendationResponseDto(
+                    3,
+                    null,
+                    null,
+                    null,
+                    false
+                );
+                message = "좋아요! 이제 원하는 칵테일 스타일을 자유롭게 말씀해주세요 💬\n 없으면 'x', 또는 '없음' 을 입력해주세요!";
                 type = MessageType.INPUT;
                 break;
 
@@ -646,9 +652,18 @@ public class ChatbotService {
         List<AlcoholStrength> strengths = (alcoholStrength == null) ? null : List.of(alcoholStrength);
         List<AlcoholBaseType> baseTypes = (alcoholBaseType == null) ? null : List.of(alcoholBaseType);
 
+        // 'x', '없음' 입력 시 키워드 조건 무시
+        String keyword = null;
+        if (userMessage != null && !userMessage.trim().isEmpty()) {
+            String trimmed = userMessage.trim().toLowerCase();
+            if (!trimmed.equals("x") && !trimmed.equals("없음")) {
+                keyword = userMessage;
+            }
+        }
+
         // userMessage를 키워드로 사용하여 검색
         Page<Cocktail> cocktailPage = cocktailRepository.searchWithFilters(
-                userMessage, // 사용자 입력 메시지를 키워드로 사용
+                keyword, // 'x', '없음'이면 null, 아니면 사용자 입력 메시지
                 strengths,
                 null, // cocktailType 사용 안 함
                 baseTypes,
