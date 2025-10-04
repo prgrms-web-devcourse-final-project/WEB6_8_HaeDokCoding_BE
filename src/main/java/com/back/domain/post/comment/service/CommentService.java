@@ -68,12 +68,12 @@ public class CommentService {
   @Transactional(readOnly = true)
   public List<CommentResponseDto> getComments(Long postId, Long lastId) {
     if (lastId == null) {
-      return commentRepository.findTop10ByPostIdOrderByIdDesc(postId)
+      return commentRepository.findTop10ByPostIdAndStatusNotOrderByIdDesc(postId, CommentStatus.DELETED)
           .stream()
           .map(CommentResponseDto::new)
           .toList();
     } else {
-      return commentRepository.findTop10ByPostIdAndIdLessThanOrderByIdDesc(postId, lastId)
+      return commentRepository.findTop10ByPostIdAndIdLessThanAndStatusNotOrderByIdDesc(postId, lastId, CommentStatus.DELETED)
           .stream()
           .map(CommentResponseDto::new)
           .toList();
