@@ -105,24 +105,11 @@ public class CocktailService {
 
         //Cocktail 엔티티 → CocktailResponseDto 응답 DTO로 바꿔주는 과정
         List<CocktailSearchResponseDto> resultDtos = pageResult.stream()
-                .map(c -> new CocktailSearchResponseDto(
-                        c.getId(),
-                        c.getCocktailName(),
-                        c.getCocktailNameKo(),
-                        c.getAlcoholStrength().getDescription(),
-                        c.getCocktailType().getDescription(),
-                        c.getAlcoholBaseType().getDescription(),
-                        c.getCocktailImgUrl(),
-                        c.getCocktailStory()
-                ))
+                .map(CocktailSearchResponseDto::from)
                 .collect(Collectors.toList());
 
         return resultDtos;
     }
-
-//    private <T> List<T> nullIfEmpty(List<T> list) {
-//        return CollectionUtils.isEmpty(list) ? null : list;
-//    }
 
     // 칵테일 상세조회
     @Transactional(readOnly = true)
