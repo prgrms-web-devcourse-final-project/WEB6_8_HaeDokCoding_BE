@@ -562,7 +562,6 @@ public class ChatbotService {
                 .createdAt(LocalDateTime.now())
                 .build();
     }
-
     private ChatResponseDto handleStepRecommendation(ChatRequestDto requestDto) {
         Integer currentStep = requestDto.getCurrentStep();
 
@@ -581,6 +580,7 @@ public class ChatbotService {
         if (currentStep == null || currentStep <= 0) {
             currentStep = 1;
         }
+
         StepRecommendationResponseDto stepData;
         String message;
         MessageType type;
@@ -600,15 +600,16 @@ public class ChatbotService {
 
             case 3:
                 stepData = new StepRecommendationResponseDto(
-                    3,
-                    null,
-                    null,
-                    null,
-                    false
+                        3,
+                        null,
+                        null,
+                        null,
+                        false
                 );
-                message = "좋아요! 이제 원하는 칵테일 스타일을 자유롭게 말씀해주세요 💬\n 없으면 'x', 또는 '없음' 을 입력해주세요!";
+                message = "좋아요! 이제 원하는 칵테일 스타일을 자유롭게 말씀해주세요 💬\n없으면 'x', 또는 '없음'을 입력해주세요!";
                 type = MessageType.INPUT;
                 break;
+
             case 4:
                 // Step 4에서 로딩 메시지 처리
                 if (!"PROCESS_STEP_RECOMMENDATION".equals(requestDto.getMessage())) {
@@ -623,8 +624,8 @@ public class ChatbotService {
                         chatConversationRepository.save(userInput);
                     }
 
-                    // 로딩 메시지 생성 - userstyle 삭제
-                    String loadingMessage =  "당신의 취향에 맞는 칵테일은?\n 두구❤️두구💛두구💚두구💙두구💜두구🖤두구🤍두구🤎";
+                    // 고정 로딩 메시지
+                    String loadingMessage = "당신에게 어울리는 칵테일은?\n 두구❤️두구💛두구💚두구💙두구💜두구🖤두구🤍두구🤎";
 
                     ChatConversation loadingBot = ChatConversation.builder()
                             .userId(requestDto.getUserId())
@@ -674,7 +675,8 @@ public class ChatbotService {
                 message = "단계별 맞춤 취향 추천을 시작합니다! 🎯";
                 type = MessageType.RADIO_OPTIONS;
         }
-        // 봇 응답 저장 (사용자 메시지는 이미 위에서 저장)
+
+        // 봇 응답 저장
         ChatConversation botResponse = ChatConversation.builder()
                 .userId(requestDto.getUserId())
                 .message(message)
@@ -687,7 +689,7 @@ public class ChatbotService {
         ChatResponseDto.MetaData metaData = ChatResponseDto.MetaData.builder()
                 .currentStep(currentStep)
                 .totalSteps(4)
-                .isTyping(true)
+                .isTyping(type != MessageType.CARD_LIST) // 카드리스트는 타이핑 애니메이션 불필요
                 .delay(300)
                 .build();
 
@@ -702,7 +704,6 @@ public class ChatbotService {
                 .createdAt(savedResponse.getCreatedAt())
                 .build();
     }
-
     // ============ 단계별 추천 관련 메서드들 ============
     // "ALL" 또는 null/빈값은 null로 처리하여 전체 선택 의미
 
