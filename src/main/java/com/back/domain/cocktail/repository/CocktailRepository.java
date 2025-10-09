@@ -16,14 +16,54 @@ import java.util.List;
 @Repository
 public interface CocktailRepository extends JpaRepository<Cocktail, Long> {
 
-    // 첫 요청 → 최신순(내림차순)으로 정렬해서 가져오기
+    // 전체조회 : 최신순
     List<Cocktail> findAllByOrderByIdDesc(Pageable pageable);
-
-    // 무한스크롤 → lastId보다 작은 ID들 가져오기
     List<Cocktail> findByIdLessThanOrderByIdDesc(Long lastId, Pageable pageable);
 
-    List<Cocktail> findByCocktailNameContainingIgnoreCaseOrIngredientContainingIgnoreCase(String cocktailName, String ingredient);
+    // 전체 조회: keepsCount 기준 내림차순
+    @Query("""
+        SELECT c FROM Cocktail c
+        LEFT JOIN MyBar m ON m.cocktail = c AND m.status = 'ACTIVE'
+        GROUP BY c.id
+        ORDER BY COUNT(m) DESC, c.id DESC
+    """)
+    List<Cocktail> findAllOrderByKeepCountDesc(Pageable pageable);
 
+    // 무한스크롤 조회: lastKeepCount 이하
+    @Query("""
+    SELECT c FROM Cocktail c
+    LEFT JOIN MyBar m ON m.cocktail = c AND m.status = 'ACTIVE'
+    GROUP BY c.id
+    HAVING COUNT(m) < :lastKeepCount OR (COUNT(m) = :lastKeepCount AND c.id < :lastId)
+    ORDER BY COUNT(m) DESC, c.id DESC
+""")
+    List<Cocktail> findByKeepCountLessThanOrderByKeepCountDesc(
+            @Param("lastKeepCount") Long lastKeepCount,
+            @Param("lastId") Long lastId,
+            Pageable pageable
+    );
+
+    // 댓글순
+    @Query("SELECT c FROM Cocktail c " +
+        "LEFT JOIN CocktailComment cm ON cm.cocktail = c " +
+        "GROUP BY c.id " +
+        "ORDER BY COUNT(cm) DESC, c.id DESC")
+    List<Cocktail> findAllOrderByCommentsCountDesc(Pageable pageable);
+
+    @Query("""
+        SELECT c FROM Cocktail c
+        LEFT JOIN CocktailComment cm ON cm.cocktail = c
+        GROUP BY c.id
+        HAVING COUNT(cm) < :lastCommentsCount OR (COUNT(cm) = :lastCommentsCount AND c.id < :lastId)
+        ORDER BY COUNT(cm) DESC, c.id DESC
+    """)
+    List<Cocktail> findByCommentsCountLessThanOrderByCommentsCountDesc(
+            @Param("lastCommentsCount") Long lastCommentsCount,
+            @Param("lastId") Long lastId,
+            Pageable pageable
+    );
+
+    //검색, 필터
     @Query("SELECT c FROM Cocktail c " +
             "WHERE (:keyword IS NULL OR :keyword = '' OR " +
             "       LOWER(c.cocktailName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +

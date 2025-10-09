@@ -1,34 +1,34 @@
 package com.back.domain.cocktail.dto;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.back.domain.cocktail.entity.Cocktail;
 
-@Getter
-@Setter
-@NoArgsConstructor
-public class CocktailSearchResponseDto {
+public record CocktailSearchResponseDto (
 
-    private long cocktailId;
-    private String cocktailName;
-    private String cocktailNameKo;
-    private String alcoholStrength;
-    private String cocktailType;
-    private String alcoholBaseType;
-    private String cocktailImgUrl;
-    private String cocktailStory;
+    Long cocktailId,
+    String cocktailName,
+    String cocktailNameKo,
+    String alcoholStrength,
+    String cocktailType,
+    String alcoholBaseType,
+    String cocktailImgUrl,
+    String cocktailStory,
+    String cocktailPreview
+){
+    public static CocktailSearchResponseDto from(Cocktail cocktail){
+        String preview =cocktail.getCocktailStory().length() >80 ?
+                cocktail.getCocktailStory().substring(0,80)+"..."
+                : cocktail.getCocktailStory();
 
-    public CocktailSearchResponseDto(long cocktailId, String cocktailName, String cocktailNameKo,
-                                     String alcoholStrength, String cocktailType,
-                                     String alcoholBaseType, String cocktailImgUrl,
-                                     String cocktailStory) {
-        this.cocktailId = cocktailId;
-        this.cocktailName = cocktailName;
-        this.cocktailNameKo = cocktailNameKo;
-        this.alcoholStrength = alcoholStrength;
-        this.cocktailType = cocktailType;
-        this.alcoholBaseType = alcoholBaseType;
-        this.cocktailImgUrl = cocktailImgUrl;
-        this.cocktailStory = cocktailStory;
+        return new CocktailSearchResponseDto(
+                cocktail.getId(),
+                cocktail.getCocktailName(),
+                cocktail.getCocktailNameKo(),
+                cocktail.getAlcoholStrength().getDescription(),
+                cocktail.getCocktailType().getDescription(),
+                cocktail.getAlcoholBaseType().getDescription(),
+                cocktail.getCocktailImgUrl(),
+                cocktail.getCocktailStory(),
+                preview
+        );
     }
 }
