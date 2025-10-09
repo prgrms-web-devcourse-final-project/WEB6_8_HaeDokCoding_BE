@@ -1,5 +1,6 @@
 package com.back.domain.mybar.controller;
 
+import com.back.domain.cocktail.enums.AlcoholStrength;
 import com.back.domain.mybar.dto.MyBarItemResponseDto;
 import com.back.domain.mybar.dto.MyBarListResponseDto;
 import com.back.domain.mybar.service.MyBarService;
@@ -105,6 +106,8 @@ class MyBarControllerTest {
                 .id(3L)
                 .cocktailId(10L)
                 .cocktailName("Margarita")
+                .cocktailNameKo("留덇?由ы?")
+                .alcoholStrength(AlcoholStrength.LIGHT)
                 .imageUrl("https://example.com/margarita.jpg")
                 .createdAt(createdAt)
                 .keptAt(keptAt)
@@ -133,6 +136,8 @@ class MyBarControllerTest {
                 .andExpect(jsonPath("$.data.items[0].id").value(3L))
                 .andExpect(jsonPath("$.data.items[0].cocktailId").value(10L))
                 .andExpect(jsonPath("$.data.items[0].cocktailName").value("Margarita"))
+                .andExpect(jsonPath("$.data.items[0].cocktailNameKo").value("留덇?由ы?"))
+                .andExpect(jsonPath("$.data.items[0].alcoholStrength").value("LIGHT"))
                 .andExpect(jsonPath("$.data.items[0].imageUrl").value("https://example.com/margarita.jpg"))
                 .andExpect(jsonPath("$.data.items[0].createdAt").value(ISO_WITH_SECONDS.format(createdAt)))
                 .andExpect(jsonPath("$.data.items[0].keptAt").value(ISO_WITH_SECONDS.format(keptAt)))
@@ -160,6 +165,8 @@ class MyBarControllerTest {
                 .id(20L)
                 .cocktailId(33L)
                 .cocktailName("Negroni")
+                .cocktailNameKo("?ㅺ렇濡쒕땲")
+                .alcoholStrength(AlcoholStrength.STRONG)
                 .imageUrl("https://example.com/negroni.jpg")
                 .createdAt(itemCreatedAt)
                 .keptAt(itemKeptAt)
@@ -190,6 +197,8 @@ class MyBarControllerTest {
                 .andExpect(jsonPath("$.message").value("success"))
                 .andExpect(jsonPath("$.data.items[0].id").value(20L))
                 .andExpect(jsonPath("$.data.items[0].cocktailName").value("Negroni"))
+                .andExpect(jsonPath("$.data.items[0].cocktailNameKo").value("?ㅺ렇濡쒕땲"))
+                .andExpect(jsonPath("$.data.items[0].alcoholStrength").value("STRONG"))
                 .andExpect(jsonPath("$.data.hasNext").value(false))
                 .andExpect(jsonPath("$.data.nextKeptAt").doesNotExist());
 
