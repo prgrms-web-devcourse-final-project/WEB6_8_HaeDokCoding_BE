@@ -95,9 +95,55 @@ public class ChatbotService {
                 log.info("[EXPLICIT] currentStep={}, userId={}, mode={}",
                         currentStep, requestDto.getUserId(),
                         currentStep == 0 ? "QA" : "STEP");
-
                 if (currentStep == 0) {
-                    // 질문형 추천 (일반 AI 대화)
+                    // 질문형 추천 선택 시 안내 메시지와 INPUT 타입 반환
+                    if ("QA".equalsIgnoreCase(requestDto.getMessage()) ||
+                            requestDto.getMessage().contains("질문형")) {
+
+                        log.info("질문형 추천 시작 - userId: {}", requestDto.getUserId());
+
+                        // 사용자 선택 메시지 저장
+                        ChatConversation userChoice = ChatConversation.builder()
+                                .userId(requestDto.getUserId())
+                                .message("질문형 취향 찾기")
+                                .sender(MessageSender.USER)
+                                .createdAt(LocalDateTime.now())
+                                .build();
+                        chatConversationRepository.save(userChoice);
+
+                        String guideMessage = "칵테일에 관련된 질문을 입력해주세요!";
+
+                        /*
+
+                        String guideMessage = "좋아요! 질문형 추천을 시작할게요 🎯\n" +
+                                "칵테일에 관련된 질문을 자유롭게 입력해주세요!\n" +
+                                "예시: 달콤한 칵테일 추천해줘, 파티용 칵테일이 필요해, 초보자용 칵테일 알려줘";
+                         */
+
+                        ChatConversation botGuide = ChatConversation.builder()
+                                .userId(requestDto.getUserId())
+                                .message(guideMessage)
+                                .sender(MessageSender.CHATBOT)
+                                .createdAt(LocalDateTime.now())
+                                .build();
+                        ChatConversation savedGuide = chatConversationRepository.save(botGuide);
+
+                        // INPUT 타입으로 반환하여 사용자 입력 유도
+                        return ChatResponseDto.builder()
+                                .id(savedGuide.getId())
+                                .userId(requestDto.getUserId())
+                                .message(guideMessage)
+                                .sender(MessageSender.CHATBOT)
+                                .type(MessageType.INPUT)
+                                .createdAt(savedGuide.getCreatedAt())
+                                .metaData(ChatResponseDto.MetaData.builder()
+                                        .currentStep(0)
+                                        .actionType("질문형 추천")
+                                        .build())
+                                .build();
+                    }
+
+                    // 실제 질문이 들어온 경우 AI 응답 생성
                     log.info("질문형 추천 모드 진입 - userId: {}", requestDto.getUserId());
                     return generateAIResponseWithContext(requestDto, "질문형 추천");
                 }
@@ -473,10 +519,22 @@ public class ChatbotService {
 
     private ChatResponseDto handleStepRecommendation(ChatRequestDto requestDto) {
         Integer currentStep = requestDto.getCurrentStep();
+
+        // 단계별 추천 선택 시 처리
+        if (currentStep == 1 && "STEP".equalsIgnoreCase(requestDto.getMessage())) {
+            // 사용자 선택 메시지 저장
+            ChatConversation userChoice = ChatConversation.builder()
+                    .userId(requestDto.getUserId())
+                    .message("단계별 취향 찾기")
+                    .sender(MessageSender.USER)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            chatConversationRepository.save(userChoice);
+        }
+
         if (currentStep == null || currentStep <= 0) {
             currentStep = 1;
         }
-
         StepRecommendationResponseDto stepData;
         String message;
         MessageType type;
@@ -521,17 +579,7 @@ public class ChatbotService {
                 message = "단계별 맞춤 취향 추천을 시작합니다! 🎯";
                 type = MessageType.RADIO_OPTIONS;
         }
-
-        // 사용자 메시지 저장 (단계별 추천 요청)
-        ChatConversation userMessage = ChatConversation.builder()
-                .userId(requestDto.getUserId())
-                .message(requestDto.getMessage())
-                .sender(MessageSender.USER)
-                .createdAt(LocalDateTime.now())
-                .build();
-        chatConversationRepository.save(userMessage);
-
-        // 봇 응답 저장
+        // 봇 응답 저장 (사용자 메시지는 이미 위에서 저장)
         ChatConversation botResponse = ChatConversation.builder()
                 .userId(requestDto.getUserId())
                 .message(message)
