@@ -613,8 +613,9 @@ public class ChatbotService {
             case 4:
                 // Step 4에서 로딩 메시지 처리
                 if (!"PROCESS_STEP_RECOMMENDATION".equals(requestDto.getMessage())) {
-                    // 사용자 입력 저장 (Step 3의 답변)
+                    // 사용자 입력 저장 (Step 3의 답변) 및 userStyleInput에 저장
                     if (requestDto.getMessage() != null && !requestDto.getMessage().trim().isEmpty()) {
+                        // DB에 저장
                         ChatConversation userInput = ChatConversation.builder()
                                 .userId(requestDto.getUserId())
                                 .message(requestDto.getMessage())
@@ -622,6 +623,10 @@ public class ChatbotService {
                                 .createdAt(LocalDateTime.now())
                                 .build();
                         chatConversationRepository.save(userInput);
+
+                        // userStyleInput에 저장 (다음 요청에서 사용)
+                        requestDto.setUserStyleInput(requestDto.getMessage());
+                        log.info("Step 3 사용자 입력 저장: {}", requestDto.getMessage());
                     }
 
                     // 고정 로딩 메시지
@@ -660,11 +665,11 @@ public class ChatbotService {
                             .build();
                 }
 
-                // 실제 추천 처리
+                // 실제 추천 처리 - userStyleInput 사용 (PROCESS_STEP_RECOMMENDATION 키워드 아님)
                 stepData = getFinalRecommendationsWithMessage(
                         parseAlcoholStrength(requestDto.getSelectedAlcoholStrength()),
                         parseAlcoholBaseType(requestDto.getSelectedAlcoholBaseType()),
-                        requestDto.getMessage()
+                        requestDto.getUserStyleInput() // message 대신 userStyleInput 사용
                 );
                 message = stepData.getStepTitle();
                 type = MessageType.CARD_LIST;
