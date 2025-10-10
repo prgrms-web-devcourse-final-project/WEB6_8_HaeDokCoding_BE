@@ -15,6 +15,7 @@ public class ChatRequestDto {
 
     private Long userId;
 
+    private String selectedValue; // 예: "NON_ALCOHOLIC"
     // 단계별 추천 관련 필드들
     /**
      * @deprecated currentStep 필드를 사용하세요. 이 필드는 하위 호환성을 위해 유지됩니다.
