@@ -68,6 +68,7 @@ public class Post {
   private List<Comment> comments = new ArrayList<>();
 
   // Post → PostImage = 1:N
+  @Builder.Default
   @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
   @OrderBy("sortOrder ASC") // 조회 시 순서대로 정렬
   private List<PostImage> images = new ArrayList<>();
@@ -76,6 +77,7 @@ public class Post {
   @Column(name = "video_url")
   private String videoUrl;
 
+  @Builder.Default
   @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<PostTag> postTags = new ArrayList<>();
 
