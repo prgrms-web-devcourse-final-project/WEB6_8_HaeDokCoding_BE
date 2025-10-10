@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -31,15 +32,18 @@ public class SecurityConfig {
     private final CustomOAuth2LoginSuccessHandler oauth2SuccessHandler;
     private final CustomOAuth2LoginFailureHandler oauth2FailureHandler;
     private final CustomOAuth2AuthorizationRequestResolver customOAuth2AuthorizationRequestResolver;
+    private final CustomAuthenticationFilter customAuthenticationFilter;
 
     public SecurityConfig(CustomOAuth2UserService customOAuth2UserService,
                          CustomOAuth2LoginSuccessHandler oauth2SuccessHandler,
                           CustomOAuth2LoginFailureHandler oauth2FailureHandler,
-                          CustomOAuth2AuthorizationRequestResolver customOAuth2AuthorizationRequestResolver) {
+                          CustomOAuth2AuthorizationRequestResolver customOAuth2AuthorizationRequestResolver,
+                          CustomAuthenticationFilter customAuthenticationFilter) {
         this.customOAuth2UserService = customOAuth2UserService;
         this.oauth2SuccessHandler = oauth2SuccessHandler;
         this.oauth2FailureHandler = oauth2FailureHandler;
         this.customOAuth2AuthorizationRequestResolver = customOAuth2AuthorizationRequestResolver;
+        this.customAuthenticationFilter = customAuthenticationFilter;
     }
 
     @Bean
@@ -52,6 +56,7 @@ public class SecurityConfig {
                         .maximumSessions(1)
                 ) // OAuth 인증시 필요할때만 세션 사용
 
+                .addFilterBefore(customAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
 
 
