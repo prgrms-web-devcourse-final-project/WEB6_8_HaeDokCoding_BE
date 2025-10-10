@@ -34,4 +34,8 @@ public class ChatConversation {
 
     @CreatedDate
     private LocalDateTime createdAt;
+
+    // refactor#256 - metadata 필드 추가
+    @Column(columnDefinition = "TEXT")
+    private String metadata;
 }
