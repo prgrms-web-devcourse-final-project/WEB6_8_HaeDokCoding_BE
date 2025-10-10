@@ -548,7 +548,7 @@ public class ChatbotService {
 
             case 2:
                 stepData = getAlcoholBaseTypeOptions(parseAlcoholStrength(requestDto.getSelectedAlcoholStrength()));
-                message = "좋은 선택이네요! 이제 베이스가 될 술을 선택해주세요 🍸";
+                message = "좋은 선택이네요!\n 이제 베이스가 될 술을 선택해주세요 🍸";
                 type = MessageType.RADIO_OPTIONS;
                 break;
 
