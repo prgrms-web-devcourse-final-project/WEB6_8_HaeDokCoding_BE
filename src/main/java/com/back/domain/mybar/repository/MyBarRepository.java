@@ -15,8 +15,10 @@ import java.time.LocalDateTime;
 
 @Repository
 public interface MyBarRepository extends JpaRepository<MyBar, Long> {
-    /** 나만의 bar(킵) 목록: ACTIVE만, id desc */
+    /** 나만의 bar(킵) 목록: ACTIVE만, keptAt desc + id desc */
     Page<MyBar> findByUser_IdAndStatusOrderByKeptAtDescIdDesc(Long userId, KeepStatus status, Pageable pageable);
+
+    List<MyBar> findByUser_IdAndStatusOrderByKeptAtDescIdDesc(Long userId, KeepStatus status);
 
     @Query("""
         select m from MyBar m
