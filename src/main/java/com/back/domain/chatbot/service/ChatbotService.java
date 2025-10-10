@@ -13,6 +13,7 @@ import com.back.domain.cocktail.entity.Cocktail;
 import com.back.domain.cocktail.enums.AlcoholBaseType;
 import com.back.domain.cocktail.enums.AlcoholStrength;
 import com.back.domain.cocktail.repository.CocktailRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,6 +44,8 @@ public class ChatbotService {
     private final ChatModel chatModel;
     private final ChatConversationRepository chatConversationRepository;
     private final CocktailRepository cocktailRepository;
+
+    private final ObjectMapper objectMapper = new ObjectMapper(); // JSON 변환용
 
     @Value("classpath:prompts/chatbot-system-prompt.txt")
     private Resource systemPromptResource;
@@ -87,6 +91,8 @@ public class ChatbotService {
 
     @Transactional
     public ChatResponseDto sendMessage(ChatRequestDto requestDto) {
+        saveUserMessage(requestDto);
+
         try {
             Integer currentStep = requestDto.getCurrentStep();
 
@@ -185,8 +191,47 @@ public class ChatbotService {
         }
     }
 
-    // ============ 수정된 메서드들 ============
+    private void saveUserMessage(ChatRequestDto requestDto) {
+        String metadata = null;
+        if (requestDto.getSelectedValue() != null) {
+            try {
+                // 사용자가 선택한 실제 값(value)을 JSON으로 저장
+                metadata = objectMapper.writeValueAsString(Map.of("selectedValue", requestDto.getSelectedValue()));
+            } catch (JsonProcessingException e) {
+                log.error("사용자 선택 값 JSON 직렬화 실패", e);
+            }
+        }
 
+        ChatConversation userMessage = ChatConversation.builder()
+                .userId(requestDto.getUserId())
+                .message(requestDto.getMessage()) // 사용자가 본 텍스트(label)
+                .sender(MessageSender.USER)
+                .createdAt(LocalDateTime.now())
+                .metadata(metadata) // 선택한 실제 값(value)
+                .build();
+        chatConversationRepository.save(userMessage);
+    }
+
+    private ChatConversation saveBotResponse(Long userId, String message, Object stepData) {
+        String metadata = null;
+        if (stepData != null) {
+            try {
+                // 봇이 보낸 옵션, 카드 등 구조화된 데이터를 JSON으로 저장
+                metadata = objectMapper.writeValueAsString(stepData);
+            } catch (JsonProcessingException e) {
+                log.error("봇 응답 메타데이터 JSON 직렬화 실패", e);
+            }
+        }
+
+        ChatConversation botResponse = ChatConversation.builder()
+                .userId(userId)
+                .message(message)
+                .sender(MessageSender.CHATBOT)
+                .createdAt(LocalDateTime.now())
+                .metadata(metadata)
+                .build();
+        return chatConversationRepository.save(botResponse);
+    }
     /**
      * 대화 컨텍스트 빌드 - 변경사항: sender로 구분하여 대화 재구성
      */
@@ -242,8 +287,44 @@ public class ChatbotService {
      * 사용자 채팅 기록 조회 - 변경사항: sender 구분 없이 모든 메시지 시간순으로 조회
      */
     @Transactional(readOnly = true)
-    public List<ChatConversation> getUserChatHistory(Long userId) {
-        return chatConversationRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    public List<ChatResponseDto> getUserChatHistory(Long userId) {
+        List<ChatConversation> history = chatConversationRepository.findByUserIdOrderByCreatedAtAsc(userId); // 시간순으로 변경
+
+        return history.stream().map(conversation -> {
+            ChatResponseDto.ChatResponseDtoBuilder builder = ChatResponseDto.builder()
+                    .id(conversation.getId())
+                    .userId(conversation.getUserId())
+                    .message(conversation.getMessage())
+                    .sender(conversation.getSender())
+                    .createdAt(conversation.getCreatedAt());
+
+            String metadata = conversation.getMetadata();
+            if (metadata != null && !metadata.isEmpty()) {
+                try {
+                    if (conversation.getSender() == MessageSender.CHATBOT) {
+                        StepRecommendationResponseDto stepData = objectMapper.readValue(metadata, StepRecommendationResponseDto.class);
+                        builder.stepData(stepData);
+
+                        if (stepData.getOptions() != null && !stepData.getOptions().isEmpty()) {
+                            builder.type(MessageType.RADIO_OPTIONS);
+                        } else if (stepData.getRecommendations() != null && !stepData.getRecommendations().isEmpty()) {
+                            builder.type(MessageType.CARD_LIST);
+                        } else {
+                            builder.type(MessageType.TEXT);
+                        }
+                    } else { // sender == USER
+                        // 사용자 메시지의 메타데이터는 FE에서 선택 처리 등에 활용 가능
+                        builder.type(MessageType.TEXT);
+                    }
+                } catch (JsonProcessingException e) {
+                    log.error("대화 기록 metadata 역직렬화 실패 [ID: {}]: {}", conversation.getId(), e.getMessage());
+                    builder.type(MessageType.TEXT);
+                }
+            } else {
+                builder.type(MessageType.TEXT);
+            }
+            return builder.build();
+        }).collect(Collectors.toList());
     }
 
     /**
@@ -429,8 +510,8 @@ public class ChatbotService {
         // 응답 후처리
         response = postProcessResponse(response, messageType);
 
-        // 대화 저장 - 사용자 메시지와 봇 응답을 각각 저장하고 저장된 봇 응답 반환
-        return saveConversation(requestDto, response);
+        // 봇 응답만 저장 -> 사용자 메시지는 sendmessage()에서 이미 저장됨
+        return saveBotResponse(requestDto.getUserId(), response, null);
     }
 
     /**
@@ -584,7 +665,7 @@ public class ChatbotService {
                 .sender(MessageSender.CHATBOT)
                 .createdAt(LocalDateTime.now())
                 .build();
-        ChatConversation savedResponse = chatConversationRepository.save(botResponse);
+        ChatConversation savedResponse = saveBotResponse(requestDto.getUserId(), message, stepData);
 
         // 메타데이터 포함
         ChatResponseDto.MetaData metaData = ChatResponseDto.MetaData.builder()
