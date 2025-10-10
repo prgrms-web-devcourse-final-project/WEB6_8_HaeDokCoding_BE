@@ -1,6 +1,7 @@
 package com.back.domain.mybar.service;
 
 import com.back.domain.cocktail.repository.CocktailRepository;
+import com.back.domain.mybar.dto.MyBarIdResponseDto;
 import com.back.domain.mybar.dto.MyBarItemResponseDto;
 import com.back.domain.mybar.dto.MyBarListResponseDto;
 import com.back.domain.mybar.entity.MyBar;
@@ -8,17 +9,16 @@ import com.back.domain.mybar.enums.KeepStatus;
 import com.back.domain.mybar.repository.MyBarRepository;
 import com.back.domain.user.repository.UserRepository;
 import com.back.domain.user.service.AbvScoreService;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +33,15 @@ public class MyBarService {
     // - 커서: lastKeptAt + lastId 조합으로 안정적인 정렬/페이지네이션
     // - 첫 페이지: 가장 최근 keptAt 기준으로 최신순
     @Transactional(readOnly = true)
-    public MyBarListResponseDto getMyBar(Long userId, LocalDateTime lastKeptAt, Long lastId, int limit) {
+    public List<MyBarIdResponseDto> getMyBarIds(Long userId) {
+        List<MyBar> rows = myBarRepository.findByUser_IdAndStatusOrderByKeptAtDescIdDesc(userId, KeepStatus.ACTIVE);
+        return rows.stream()
+                .map(MyBarIdResponseDto::from)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public MyBarListResponseDto getMyBarDetail(Long userId, LocalDateTime lastKeptAt, Long lastId, int limit) {
         int safeLimit = Math.max(1, Math.min(limit, 100));
         int fetchSize = safeLimit + 1; // 다음 페이지 여부 판단용으로 1개 더 조회
 
@@ -50,10 +58,13 @@ public class MyBarService {
 
         // +1 로우가 있으면 다음 페이지가 존재
         boolean hasNext = rows.size() > safeLimit;
-        if (hasNext) rows = rows.subList(0, safeLimit);
+        if (hasNext) {
+            rows = rows.subList(0, safeLimit);
+        }
 
-        List<MyBarItemResponseDto> items = new ArrayList<>();
-        for (MyBar myBar : rows) items.add(MyBarItemResponseDto.from(myBar));
+        List<MyBarItemResponseDto> items = rows.stream()
+                .map(MyBarItemResponseDto::from)
+                .collect(Collectors.toList());
 
         LocalDateTime nextKeptAt = null;
         Long nextId = null;

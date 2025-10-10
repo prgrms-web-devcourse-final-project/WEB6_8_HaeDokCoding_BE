@@ -43,21 +43,23 @@ public class CocktailService {
         Pageable pageable = PageRequest.of(0, fetchSize);
         List<Cocktail> cocktails;
 
+        Long cursor = (lastValue != null) ? lastValue : lastId;
+
         switch (sortBy != null ? sortBy.toLowerCase() : "") {
             case "keeps":
-                cocktails = (lastValue == null)
+                cocktails = (cursor == null)
                         ? cocktailRepository.findAllOrderByKeepCountDesc(pageable)
-                        : cocktailRepository.findByKeepCountLessThanOrderByKeepCountDesc(lastValue, lastId, pageable);
+                        : cocktailRepository.findByKeepCountLessThanOrderByKeepCountDesc(cursor, lastId, pageable);
                 break;
             case "comments":
-                cocktails = (lastValue == null)
+                cocktails = (cursor == null)
                         ? cocktailRepository.findAllOrderByCommentsCountDesc(pageable)
-                        : cocktailRepository.findByCommentsCountLessThanOrderByCommentsCountDesc(lastValue, lastId, pageable);
+                        : cocktailRepository.findByCommentsCountLessThanOrderByCommentsCountDesc(cursor, lastId, pageable);
                 break;
             default:
-                cocktails = (lastValue == null)
+                cocktails = (cursor == null)
                         ? cocktailRepository.findAllByOrderByIdDesc(pageable)
-                        : cocktailRepository.findByIdLessThanOrderByIdDesc(lastValue, pageable);
+                        : cocktailRepository.findByIdLessThanOrderByIdDesc(cursor, pageable);
                 break;
         }
 
@@ -124,18 +126,7 @@ public class CocktailService {
         // ingredient 분수 변환
         List<IngredientDto> formattedIngredient = parseIngredients(convertFractions(cocktail.getIngredient()));
 
-        return new CocktailDetailResponseDto(
-                cocktail.getId(),
-                cocktail.getCocktailName(),
-                cocktail.getCocktailNameKo(),
-                cocktail.getAlcoholStrength().getDescription(),
-                cocktail.getCocktailType().getDescription(),
-                cocktail.getAlcoholBaseType().getDescription(),
-                cocktail.getCocktailImgUrl(),
-                cocktail.getCocktailStory(),
-                formattedIngredient,
-                cocktail.getRecipe()
-        );
+        return CocktailDetailResponseDto.from(cocktail, formattedIngredient);
     }
 
     private String convertFractions(String ingredient) {
