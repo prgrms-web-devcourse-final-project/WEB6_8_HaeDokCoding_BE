@@ -124,18 +124,7 @@ public class CocktailService {
         // ingredient 분수 변환
         List<IngredientDto> formattedIngredient = parseIngredients(convertFractions(cocktail.getIngredient()));
 
-        return new CocktailDetailResponseDto(
-                cocktail.getId(),
-                cocktail.getCocktailName(),
-                cocktail.getCocktailNameKo(),
-                cocktail.getAlcoholStrength().getDescription(),
-                cocktail.getCocktailType().getDescription(),
-                cocktail.getAlcoholBaseType().getDescription(),
-                cocktail.getCocktailImgUrl(),
-                cocktail.getCocktailStory(),
-                formattedIngredient,
-                cocktail.getRecipe()
-        );
+        return CocktailDetailResponseDto.from(cocktail, formattedIngredient);
     }
 
     private String convertFractions(String ingredient) {
