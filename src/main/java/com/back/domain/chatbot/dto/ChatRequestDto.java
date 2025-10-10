@@ -27,4 +27,7 @@ public class ChatRequestDto {
     private String selectedAlcoholStrength;
     private String selectedAlcoholBaseType;
     // selectedCocktailType 삭제
+
+    // Step 3에서 사용자가 입력한 칵테일 스타일 (검색 키워드로 사용)
+    private String userStyleInput;
 }
