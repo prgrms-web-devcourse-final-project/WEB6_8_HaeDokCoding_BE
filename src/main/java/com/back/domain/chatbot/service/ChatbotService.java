@@ -62,14 +62,6 @@ public class ChatbotService {
     private String responseRules;
     private ChatClient chatClient;
 
-    // 로딩 메시지 상수
-    private static final String RECOMMENDATION_LOADING_MESSAGE =
-            "당신에게 어울리는 칵테일은? 두구❤️두구💛두구💚두구💙두구💜두구🖤두구🤍두구🤎";
-
-    // 처리 완료 플래그 키워드
-    private static final String PROCESS_STEP_RECOMMENDATION = "PROCESS_STEP_RECOMMENDATION";
-    private static final String PROCESS_QA_RECOMMENDATION = "PROCESS_QA_RECOMMENDATION";
-
     @PostConstruct
     public void init() throws IOException {
         this.systemPrompt = StreamUtils.copyToString(
@@ -150,50 +142,9 @@ public class ChatbotService {
                                 .build();
                     }
 
-                    // 실제 질문이 들어온 경우 - 먼저 로딩 메시지 반환
-                    if (requestDto.getMessage() != null && !requestDto.getMessage().trim().isEmpty()) {
-                        // 로딩 메시지인지 확인 (두구두구 메시지 이후의 실제 처리 요청)
-                        if (requestDto.getMessage().contains("PROCESS_RECOMMENDATION")) {
-                            log.info("질문형 추천 실제 처리 - userId: {}", requestDto.getUserId());
-                            return generateAIResponseWithContext(requestDto, "질문형 추천");
-                        }
-
-                        // 사용자 질문 저장
-                        ChatConversation userQuestion = ChatConversation.builder()
-                                .userId(requestDto.getUserId())
-                                .message(requestDto.getMessage())
-                                .sender(MessageSender.USER)
-                                .createdAt(LocalDateTime.now())
-                                .build();
-                        chatConversationRepository.save(userQuestion);
-
-                        // 고정 로딩 메시지
-                        String loadingMessage = "당신에게 어울리는 칵테일은?\n 두구❤️두구💛두구💚두구💙두구💜두구🖤두구🤍두구🤎";
-
-                        ChatConversation loadingBot = ChatConversation.builder()
-                                .userId(requestDto.getUserId())
-                                .message(loadingMessage)
-                                .sender(MessageSender.CHATBOT)
-                                .createdAt(LocalDateTime.now())
-                                .build();
-                        ChatConversation savedLoading = chatConversationRepository.save(loadingBot);
-
-                        // 로딩 메시지 반환 (FE에서 이후 자동으로 실제 추천 요청)
-                        return ChatResponseDto.builder()
-                                .id(savedLoading.getId())
-                                .userId(requestDto.getUserId())
-                                .message(loadingMessage)
-                                .sender(MessageSender.CHATBOT)
-                                .type(MessageType.LOADING)
-                                .createdAt(savedLoading.getCreatedAt())
-                                .metaData(ChatResponseDto.MetaData.builder()
-                                        .currentStep(0)
-                                        .actionType("LOADING_QA")
-                                        .isTyping(true)
-                                        .delay(2000) // 2초 후 자동 요청
-                                        .build())
-                                .build();
-                    }
+                    // 실제 질문이 들어온 경우 AI 응답 생성
+                    log.info("질문형 추천 모드 진입 - userId: {}", requestDto.getUserId());
+                    return generateAIResponseWithContext(requestDto, "질문형 추천");
                 }
                 else if (currentStep >= 1 && currentStep <= 4) {
                     // 단계별 추천
@@ -594,7 +545,7 @@ public class ChatbotService {
 
             case 2:
                 stepData = getAlcoholBaseTypeOptions(parseAlcoholStrength(requestDto.getSelectedAlcoholStrength()));
-                message = "좋은 선택이네요!\n 이제 베이스가 될 술을 선택해주세요 🍸";
+                message = "좋은 선택이네요! \n이제 베이스가 될 술을 선택해주세요 🍸";
                 type = MessageType.RADIO_OPTIONS;
                 break;
 
@@ -611,65 +562,10 @@ public class ChatbotService {
                 break;
 
             case 4:
-                // Step 4에서 로딩 메시지 처리
-                if (!"PROCESS_STEP_RECOMMENDATION".equals(requestDto.getMessage())) {
-                    // 사용자 입력 저장 (Step 3의 답변) 및 userStyleInput에 저장
-                    if (requestDto.getMessage() != null && !requestDto.getMessage().trim().isEmpty()) {
-                        // DB에 저장
-                        ChatConversation userInput = ChatConversation.builder()
-                                .userId(requestDto.getUserId())
-                                .message(requestDto.getMessage())
-                                .sender(MessageSender.USER)
-                                .createdAt(LocalDateTime.now())
-                                .build();
-                        chatConversationRepository.save(userInput);
-
-                        // userStyleInput에 저장 (다음 요청에서 사용)
-                        requestDto.setUserStyleInput(requestDto.getMessage());
-                        log.info("Step 3 사용자 입력 저장: {}", requestDto.getMessage());
-                    }
-
-                    // 고정 로딩 메시지
-                    String loadingMessage = "당신에게 어울리는 칵테일은?\n 두구❤️두구💛두구💚두구💙두구💜두구🖤두구🤍두구🤎";
-
-                    ChatConversation loadingBot = ChatConversation.builder()
-                            .userId(requestDto.getUserId())
-                            .message(loadingMessage)
-                            .sender(MessageSender.CHATBOT)
-                            .createdAt(LocalDateTime.now())
-                            .build();
-                    ChatConversation savedLoading = chatConversationRepository.save(loadingBot);
-
-                    // 로딩 메시지 반환
-                    return ChatResponseDto.builder()
-                            .id(savedLoading.getId())
-                            .userId(requestDto.getUserId())
-                            .message(loadingMessage)
-                            .sender(MessageSender.CHATBOT)
-                            .type(MessageType.LOADING)
-                            .createdAt(savedLoading.getCreatedAt())
-                            .metaData(ChatResponseDto.MetaData.builder()
-                                    .currentStep(4)
-                                    .totalSteps(4)
-                                    .actionType("LOADING_STEP")
-                                    .isTyping(true)
-                                    .delay(2000) // 2초 후 자동 요청
-                                    .build())
-                            .stepData(new StepRecommendationResponseDto(
-                                    4,
-                                    null,
-                                    null,
-                                    null,
-                                    false
-                            ))
-                            .build();
-                }
-
-                // 실제 추천 처리 - userStyleInput 사용 (PROCESS_STEP_RECOMMENDATION 키워드 아님)
                 stepData = getFinalRecommendationsWithMessage(
-                        parseAlcoholStrength(requestDto.getSelectedAlcoholStrength()),
-                        parseAlcoholBaseType(requestDto.getSelectedAlcoholBaseType()),
-                        requestDto.getUserStyleInput() // message 대신 userStyleInput 사용
+                    parseAlcoholStrength(requestDto.getSelectedAlcoholStrength()),
+                    parseAlcoholBaseType(requestDto.getSelectedAlcoholBaseType()),
+                    requestDto.getMessage()
                 );
                 message = stepData.getStepTitle();
                 type = MessageType.CARD_LIST;
