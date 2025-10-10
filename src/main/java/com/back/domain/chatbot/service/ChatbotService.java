@@ -62,6 +62,14 @@ public class ChatbotService {
     private String responseRules;
     private ChatClient chatClient;
 
+    // 로딩 메시지 상수
+    private static final String RECOMMENDATION_LOADING_MESSAGE =
+            "당신에게 어울리는 칵테일은? 두구❤️두구💛두구💚두구💙두구💜두구🖤두구🤍두구🤎";
+
+    // 처리 완료 플래그 키워드
+    private static final String PROCESS_STEP_RECOMMENDATION = "PROCESS_STEP_RECOMMENDATION";
+    private static final String PROCESS_QA_RECOMMENDATION = "PROCESS_QA_RECOMMENDATION";
+
     @PostConstruct
     public void init() throws IOException {
         this.systemPrompt = StreamUtils.copyToString(
@@ -97,9 +105,95 @@ public class ChatbotService {
                         currentStep == 0 ? "QA" : "STEP");
 
                 if (currentStep == 0) {
-                    // 질문형 추천 (일반 AI 대화)
-                    log.info("질문형 추천 모드 진입 - userId: {}", requestDto.getUserId());
-                    return generateAIResponseWithContext(requestDto, "질문형 추천");
+                    // 질문형 추천 선택 시 안내 메시지와 INPUT 타입 반환
+                    if ("QA".equalsIgnoreCase(requestDto.getMessage()) ||
+                            requestDto.getMessage().contains("질문형")) {
+
+                        log.info("질문형 추천 시작 - userId: {}", requestDto.getUserId());
+
+                        // 사용자 선택 메시지 저장
+                        ChatConversation userChoice = ChatConversation.builder()
+                                .userId(requestDto.getUserId())
+                                .message("질문형 취향 찾기")
+                                .sender(MessageSender.USER)
+                                .createdAt(LocalDateTime.now())
+                                .build();
+                        chatConversationRepository.save(userChoice);
+
+                        String guideMessage = "칵테일에 관련된 질문을 입력해주세요!";
+                        /*
+                        String guideMessage = "좋아요! 질문형 추천을 시작할게요 🎯\n" +
+                                "칵테일에 관련된 질문을 자유롭게 입력해주세요!\n" +
+                                "예시: 달콤한 칵테일 추천해줘, 파티용 칵테일이 필요해, 초보자용 칵테일 알려줘";
+                         */
+
+                        ChatConversation botGuide = ChatConversation.builder()
+                                .userId(requestDto.getUserId())
+                                .message(guideMessage)
+                                .sender(MessageSender.CHATBOT)
+                                .createdAt(LocalDateTime.now())
+                                .build();
+                        ChatConversation savedGuide = chatConversationRepository.save(botGuide);
+
+                        // INPUT 타입으로 반환하여 사용자 입력 유도
+                        return ChatResponseDto.builder()
+                                .id(savedGuide.getId())
+                                .userId(requestDto.getUserId())
+                                .message(guideMessage)
+                                .sender(MessageSender.CHATBOT)
+                                .type(MessageType.INPUT)
+                                .createdAt(savedGuide.getCreatedAt())
+                                .metaData(ChatResponseDto.MetaData.builder()
+                                        .currentStep(0)
+                                        .actionType("질문형 추천")
+                                        .build())
+                                .build();
+                    }
+
+                    // 실제 질문이 들어온 경우 - 먼저 로딩 메시지 반환
+                    if (requestDto.getMessage() != null && !requestDto.getMessage().trim().isEmpty()) {
+                        // 로딩 메시지인지 확인 (두구두구 메시지 이후의 실제 처리 요청)
+                        if (requestDto.getMessage().contains("PROCESS_RECOMMENDATION")) {
+                            log.info("질문형 추천 실제 처리 - userId: {}", requestDto.getUserId());
+                            return generateAIResponseWithContext(requestDto, "질문형 추천");
+                        }
+
+                        // 사용자 질문 저장
+                        ChatConversation userQuestion = ChatConversation.builder()
+                                .userId(requestDto.getUserId())
+                                .message(requestDto.getMessage())
+                                .sender(MessageSender.USER)
+                                .createdAt(LocalDateTime.now())
+                                .build();
+                        chatConversationRepository.save(userQuestion);
+
+                        // 고정 로딩 메시지
+                        String loadingMessage = "당신에게 어울리는 칵테일은?\n 두구❤️두구💛두구💚두구💙두구💜두구🖤두구🤍두구🤎";
+
+                        ChatConversation loadingBot = ChatConversation.builder()
+                                .userId(requestDto.getUserId())
+                                .message(loadingMessage)
+                                .sender(MessageSender.CHATBOT)
+                                .createdAt(LocalDateTime.now())
+                                .build();
+                        ChatConversation savedLoading = chatConversationRepository.save(loadingBot);
+
+                        // 로딩 메시지 반환 (FE에서 이후 자동으로 실제 추천 요청)
+                        return ChatResponseDto.builder()
+                                .id(savedLoading.getId())
+                                .userId(requestDto.getUserId())
+                                .message(loadingMessage)
+                                .sender(MessageSender.CHATBOT)
+                                .type(MessageType.LOADING)
+                                .createdAt(savedLoading.getCreatedAt())
+                                .metaData(ChatResponseDto.MetaData.builder()
+                                        .currentStep(0)
+                                        .actionType("LOADING_QA")
+                                        .isTyping(true)
+                                        .delay(2000) // 2초 후 자동 요청
+                                        .build())
+                                .build();
+                    }
                 }
                 else if (currentStep >= 1 && currentStep <= 4) {
                     // 단계별 추천
@@ -117,8 +211,6 @@ public class ChatbotService {
             // ========== 2순위: 키워드 감지 (하위 호환성) ==========
             if (isStepRecommendationTrigger(requestDto.getMessage())) {
                 log.info("[LEGACY] 키워드 기반 단계별 추천 감지 - userId: {}", requestDto.getUserId());
-
-                // FE에서 currentStep을 보내지 않았을 때 자동 설정
                 requestDto.setCurrentStep(1);
                 return handleStepRecommendation(requestDto);
             }
@@ -470,9 +562,21 @@ public class ChatbotService {
                 .createdAt(LocalDateTime.now())
                 .build();
     }
-
     private ChatResponseDto handleStepRecommendation(ChatRequestDto requestDto) {
         Integer currentStep = requestDto.getCurrentStep();
+
+        // 단계별 추천 선택 시 처리
+        if (currentStep == 1 && "STEP".equalsIgnoreCase(requestDto.getMessage())) {
+            // 사용자 선택 메시지 저장
+            ChatConversation userChoice = ChatConversation.builder()
+                    .userId(requestDto.getUserId())
+                    .message("단계별 취향 찾기")
+                    .sender(MessageSender.USER)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            chatConversationRepository.save(userChoice);
+        }
+
         if (currentStep == null || currentStep <= 0) {
             currentStep = 1;
         }
@@ -496,24 +600,79 @@ public class ChatbotService {
 
             case 3:
                 stepData = new StepRecommendationResponseDto(
-                    3,
-                    null,
-                    null,
-                    null,
-                    false
+                        3,
+                        null,
+                        null,
+                        null,
+                        false
                 );
-                message = "좋아요! 이제 원하는 칵테일 스타일을 자유롭게 말씀해주세요 💬\n 없으면 'x', 또는 '없음' 을 입력해주세요!";
+                message = "좋아요! 이제 원하는 칵테일 스타일을 자유롭게 말씀해주세요 💬\n없으면 'x', 또는 '없음'을 입력해주세요!";
                 type = MessageType.INPUT;
                 break;
 
             case 4:
+                // Step 4에서 로딩 메시지 처리
+                if (!"PROCESS_STEP_RECOMMENDATION".equals(requestDto.getMessage())) {
+                    // 사용자 입력 저장 (Step 3의 답변) 및 userStyleInput에 저장
+                    if (requestDto.getMessage() != null && !requestDto.getMessage().trim().isEmpty()) {
+                        // DB에 저장
+                        ChatConversation userInput = ChatConversation.builder()
+                                .userId(requestDto.getUserId())
+                                .message(requestDto.getMessage())
+                                .sender(MessageSender.USER)
+                                .createdAt(LocalDateTime.now())
+                                .build();
+                        chatConversationRepository.save(userInput);
+
+                        // userStyleInput에 저장 (다음 요청에서 사용)
+                        requestDto.setUserStyleInput(requestDto.getMessage());
+                        log.info("Step 3 사용자 입력 저장: {}", requestDto.getMessage());
+                    }
+
+                    // 고정 로딩 메시지
+                    String loadingMessage = "당신에게 어울리는 칵테일은?\n 두구❤️두구💛두구💚두구💙두구💜두구🖤두구🤍두구🤎";
+
+                    ChatConversation loadingBot = ChatConversation.builder()
+                            .userId(requestDto.getUserId())
+                            .message(loadingMessage)
+                            .sender(MessageSender.CHATBOT)
+                            .createdAt(LocalDateTime.now())
+                            .build();
+                    ChatConversation savedLoading = chatConversationRepository.save(loadingBot);
+
+                    // 로딩 메시지 반환
+                    return ChatResponseDto.builder()
+                            .id(savedLoading.getId())
+                            .userId(requestDto.getUserId())
+                            .message(loadingMessage)
+                            .sender(MessageSender.CHATBOT)
+                            .type(MessageType.LOADING)
+                            .createdAt(savedLoading.getCreatedAt())
+                            .metaData(ChatResponseDto.MetaData.builder()
+                                    .currentStep(4)
+                                    .totalSteps(4)
+                                    .actionType("LOADING_STEP")
+                                    .isTyping(true)
+                                    .delay(2000) // 2초 후 자동 요청
+                                    .build())
+                            .stepData(new StepRecommendationResponseDto(
+                                    4,
+                                    null,
+                                    null,
+                                    null,
+                                    false
+                            ))
+                            .build();
+                }
+
+                // 실제 추천 처리 - userStyleInput 사용 (PROCESS_STEP_RECOMMENDATION 키워드 아님)
                 stepData = getFinalRecommendationsWithMessage(
-                    parseAlcoholStrength(requestDto.getSelectedAlcoholStrength()),
-                    parseAlcoholBaseType(requestDto.getSelectedAlcoholBaseType()),
-                    requestDto.getMessage()
+                        parseAlcoholStrength(requestDto.getSelectedAlcoholStrength()),
+                        parseAlcoholBaseType(requestDto.getSelectedAlcoholBaseType()),
+                        requestDto.getUserStyleInput() // message 대신 userStyleInput 사용
                 );
                 message = stepData.getStepTitle();
-                type = MessageType.CARD_LIST;  // 최종 추천은 카드 리스트
+                type = MessageType.CARD_LIST;
                 break;
 
             default:
@@ -521,15 +680,6 @@ public class ChatbotService {
                 message = "단계별 맞춤 취향 추천을 시작합니다! 🎯";
                 type = MessageType.RADIO_OPTIONS;
         }
-
-        // 사용자 메시지 저장 (단계별 추천 요청)
-        ChatConversation userMessage = ChatConversation.builder()
-                .userId(requestDto.getUserId())
-                .message(requestDto.getMessage())
-                .sender(MessageSender.USER)
-                .createdAt(LocalDateTime.now())
-                .build();
-        chatConversationRepository.save(userMessage);
 
         // 봇 응답 저장
         ChatConversation botResponse = ChatConversation.builder()
@@ -544,7 +694,7 @@ public class ChatbotService {
         ChatResponseDto.MetaData metaData = ChatResponseDto.MetaData.builder()
                 .currentStep(currentStep)
                 .totalSteps(4)
-                .isTyping(true)
+                .isTyping(type != MessageType.CARD_LIST) // 카드리스트는 타이핑 애니메이션 불필요
                 .delay(300)
                 .build();
 
@@ -559,7 +709,6 @@ public class ChatbotService {
                 .createdAt(savedResponse.getCreatedAt())
                 .build();
     }
-
     // ============ 단계별 추천 관련 메서드들 ============
     // "ALL" 또는 null/빈값은 null로 처리하여 전체 선택 의미
 
