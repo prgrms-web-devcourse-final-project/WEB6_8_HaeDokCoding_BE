@@ -53,9 +53,9 @@ public class SecurityConfig {
                 ) // OAuth 인증시 필요할때만 세션 사용
 
                 .authorizeHttpRequests(auth -> auth
-                        // 개발 편의성을 위해 모든 요청 허용
-                        .anyRequest().permitAll()
 
+
+                        .requestMatchers("/user/auth/logout").authenticated()
                         /*
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
@@ -63,6 +63,7 @@ public class SecurityConfig {
                         .requestMatchers("/oauth2/**").permitAll()
                         .requestMatchers("/login/oauth2/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
+                        .requestMatchers("/user/auth/refresh").permitAll()
 
                         // 권한 불필요 - 조회 API
                         .requestMatchers(GET, "/cocktails/**").permitAll()
@@ -80,6 +81,8 @@ public class SecurityConfig {
                         // 나머지 모든 API는 인증 필요
                         .anyRequest().authenticated()
                         */
+                        // 개발 편의성을 위해 모든 요청 허용
+                        .anyRequest().permitAll()
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
