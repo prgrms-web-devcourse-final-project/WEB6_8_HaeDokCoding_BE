@@ -231,23 +231,32 @@ public class ChatbotService {
         // 4. AI를 통해 추천 메시지 생성
         String recommendationMessage = generateRecommendationMessage(userQuestion, recommendations);
 
-        // 5. StepRecommendationResponseDto 생성
+        // 5. RESTART 옵션 추가
+        List<StepRecommendationResponseDto.StepOption> restartOption = List.of(
+                new StepRecommendationResponseDto.StepOption(
+                        "RESTART",
+                        "다시 시작하기",
+                        null
+                )
+        );
+
+        // 6. StepRecommendationResponseDto 생성
         StepRecommendationResponseDto stepData = new StepRecommendationResponseDto(
                 0,  // 질문형은 step 0
                 recommendationMessage,
-                null,
+                restartOption,  // RESTART 옵션 추가
                 recommendations,
                 true
         );
 
-        // 6. 봇 응답 저장
+        // 7. 봇 응답 저장
         ChatConversation savedResponse = saveBotResponse(
                 requestDto.getUserId(),
                 recommendationMessage,
                 stepData
         );
 
-        // 7. ChatResponseDto 반환
+        // 8. ChatResponseDto 반환
         return ChatResponseDto.builder()
                 .id(savedResponse.getId())
                 .userId(requestDto.getUserId())
@@ -953,10 +962,19 @@ public class ChatbotService {
                 "칵테일의 자세한 정보는 '상세보기'를 클릭해서 확인할 수 있어요.\n" +
                 "마음에 드는 칵테일은 '킵' 버튼을 눌러 나만의 Bar에 저장해보세요!";
 
+        // RESTART 옵션 추가
+        List<StepRecommendationResponseDto.StepOption> restartOption = List.of(
+                new StepRecommendationResponseDto.StepOption(
+                        "RESTART",
+                        "다시 시작하기",
+                        null
+                )
+        );
+
         return new StepRecommendationResponseDto(
                 4,
                 stepTitle,
-                null,
+                restartOption,  // RESTART 옵션 추가
                 recommendations,
                 true
         );
@@ -1001,10 +1019,19 @@ public class ChatbotService {
                 "칵테일의 자세한 정보는 '상세보기'를 클릭해서 확인할 수 있어요.\n" +
                 "마음에 드는 칵테일은 '킵' 버튼을 눌러 나만의 Bar에 저장해보세요!";
 
+        // RESTART 옵션 추가
+        List<StepRecommendationResponseDto.StepOption> restartOption = List.of(
+                new StepRecommendationResponseDto.StepOption(
+                        "RESTART",
+                        "다시 시작하기",
+                        null
+                )
+        );
+
         return new StepRecommendationResponseDto(
                 4,
                 stepTitle,
-                null,
+                restartOption,  // RESTART 옵션 추가
                 recommendations,
                 true
         );
