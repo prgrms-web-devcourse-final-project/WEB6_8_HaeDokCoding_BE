@@ -27,6 +27,6 @@ public class ChatRequestDto {
     // "ALL" 처리를 위해 스텝 2개 String으로 변경
     private String selectedAlcoholStrength;
     private String selectedAlcoholBaseType;
-    // selectedCocktailType 삭제
+    private String selectedCocktailType;
 
 }
