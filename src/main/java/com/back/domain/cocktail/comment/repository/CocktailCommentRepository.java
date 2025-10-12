@@ -1,6 +1,7 @@
 package com.back.domain.cocktail.comment.repository;
 
 import com.back.domain.cocktail.comment.entity.CocktailComment;
+import com.back.domain.post.comment.enums.CommentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,5 +14,5 @@ public interface CocktailCommentRepository extends JpaRepository<CocktailComment
 
     List<CocktailComment> findTop10ByCocktailIdAndIdLessThanOrderByIdDesc(Long cocktailId, Long lastId);
 
-    boolean existsByCocktailIdAndUserId(Long cocktailId, Long id);
+    boolean existsByCocktailIdAndUserIdAndStatusNot(Long cocktailId, Long id, CommentStatus status);
 }
