@@ -12,7 +12,9 @@ import com.back.domain.cocktail.dto.CocktailSummaryResponseDto;
 import com.back.domain.cocktail.entity.Cocktail;
 import com.back.domain.cocktail.enums.AlcoholBaseType;
 import com.back.domain.cocktail.enums.AlcoholStrength;
+import com.back.domain.cocktail.enums.CocktailType;
 import com.back.domain.cocktail.repository.CocktailRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +29,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StreamUtils;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -722,8 +723,18 @@ public class ChatbotService {
                 break;
 
             case 2:
-                stepData = getAlcoholBaseTypeOptions(parseAlcoholStrength(requestDto.getSelectedAlcoholStrength()));
-                message = "좋은 선택이네요! \n이제 베이스가 될 술을 선택해주세요 🍸";
+                // 논알콜 선택 여부에 따라 다른 옵션 제공
+                boolean isNonAlcoholic = "NON_ALCOHOLIC".equals(requestDto.getSelectedAlcoholStrength());
+
+                if (isNonAlcoholic) {
+                    // 논알콜인 경우: 글라스 타입 선택
+                    stepData = getCocktailTypeOptions();
+                    message = "논알콜 칵테일이네요! 🥤\n어떤 스타일의 칵테일을 원하시나요?";
+                } else {
+                    // 알콜인 경우: 베이스 타입 선택
+                    stepData = getAlcoholBaseTypeOptions(parseAlcoholStrength(requestDto.getSelectedAlcoholStrength()));
+                    message = "좋은 선택이네요! \n이제 베이스가 될 술을 선택해주세요 🍸";
+                }
                 type = MessageType.RADIO_OPTIONS;
                 break;
 
@@ -740,11 +751,23 @@ public class ChatbotService {
                 break;
 
             case 4:
-                stepData = getFinalRecommendationsWithMessage(
-                        parseAlcoholStrength(requestDto.getSelectedAlcoholStrength()),
-                        parseAlcoholBaseType(requestDto.getSelectedAlcoholBaseType()),
-                        requestDto.getMessage()
-                );
+                // 논알콜 여부 다시 확인
+                boolean isNonAlcoholicFinal = "NON_ALCOHOLIC".equals(requestDto.getSelectedAlcoholStrength());
+
+                if (isNonAlcoholicFinal) {
+                    // 논알콜: 도수와 칵테일 타입으로 검색
+                    stepData = getFinalRecommendationsForNonAlcoholic(
+                            parseCocktailType(requestDto.getSelectedCocktailType()),
+                            requestDto.getMessage()
+                    );
+                } else {
+                    // 알콜: 도수와 베이스 타입으로 검색
+                    stepData = getFinalRecommendationsWithMessage(
+                            parseAlcoholStrength(requestDto.getSelectedAlcoholStrength()),
+                            parseAlcoholBaseType(requestDto.getSelectedAlcoholBaseType()),
+                            requestDto.getMessage()
+                    );
+                }
                 message = stepData.getStepTitle();
                 type = MessageType.CARD_LIST;
                 break;
@@ -774,6 +797,44 @@ public class ChatbotService {
                 .metaData(metaData)
                 .createdAt(savedResponse.getCreatedAt())
                 .build();
+    }
+
+    private StepRecommendationResponseDto getCocktailTypeOptions() {
+        List<StepRecommendationResponseDto.StepOption> options = new ArrayList<>();
+
+        options.add(new StepRecommendationResponseDto.StepOption(
+                "ALL",
+                "전체",
+                null
+        ));
+
+        for (CocktailType type : CocktailType.values()) {
+            options.add(new StepRecommendationResponseDto.StepOption(
+                    type.name(),
+                    type.getDescription(),
+                    null
+            ));
+        }
+
+        return new StepRecommendationResponseDto(
+                2,
+                "어떤 스타일의 칵테일을 원하시나요?",
+                options,
+                null,
+                false
+        );
+    }
+
+    private CocktailType parseCocktailType(String value) {
+        if (value == null || value.trim().isEmpty() || "ALL".equalsIgnoreCase(value)) {
+            return null;
+        }
+        try {
+            return CocktailType.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid CocktailType value: {}", value);
+            return null;
+        }
     }
 
     private AlcoholStrength parseAlcoholStrength(String value) {
@@ -889,6 +950,54 @@ public class ChatbotService {
         String stepTitle = recommendations.isEmpty()
                 ? "조건에 맞는 칵테일을 찾을 수 없습니다 😢"
                 : "짠🎉🎉\n" +
+                "칵테일의 자세한 정보는 '상세보기'를 클릭해서 확인할 수 있어요.\n" +
+                "마음에 드는 칵테일은 '킵' 버튼을 눌러 나만의 Bar에 저장해보세요!";
+
+        return new StepRecommendationResponseDto(
+                4,
+                stepTitle,
+                null,
+                recommendations,
+                true
+        );
+    }
+    private StepRecommendationResponseDto getFinalRecommendationsForNonAlcoholic(
+            CocktailType cocktailType,
+            String userMessage) {
+
+        // 논알콜 도수만 필터링
+        List<AlcoholStrength> strengths = List.of(AlcoholStrength.NON_ALCOHOLIC);
+        List<CocktailType> types = (cocktailType == null) ? null : List.of(cocktailType);
+
+        String keyword = null;
+        if (userMessage != null && !userMessage.trim().isEmpty()) {
+            String trimmed = userMessage.trim().toLowerCase();
+            if (!trimmed.equals("x") && !trimmed.equals("없음")) {
+                keyword = userMessage;
+            }
+        }
+
+        Page<Cocktail> cocktailPage = cocktailRepository.searchWithFilters(
+                keyword,
+                strengths,
+                types,  // 칵테일 타입 필터 적용
+                null,   // 베이스 타입은 null
+                PageRequest.of(0, 3)
+        );
+
+        List<CocktailSummaryResponseDto> recommendations = cocktailPage.getContent().stream()
+                .map(cocktail -> new CocktailSummaryResponseDto(
+                        cocktail.getId(),
+                        cocktail.getCocktailName(),
+                        cocktail.getCocktailNameKo(),
+                        cocktail.getCocktailImgUrl(),
+                        cocktail.getAlcoholStrength().getDescription()
+                ))
+                .collect(Collectors.toList());
+
+        String stepTitle = recommendations.isEmpty()
+                ? "조건에 맞는 논알콜 칵테일을 찾을 수 없습니다 😢"
+                : "짠🎉🎉 논알콜 칵테일 추천!\n" +
                 "칵테일의 자세한 정보는 '상세보기'를 클릭해서 확인할 수 있어요.\n" +
                 "마음에 드는 칵테일은 '킵' 버튼을 눌러 나만의 Bar에 저장해보세요!";
 
