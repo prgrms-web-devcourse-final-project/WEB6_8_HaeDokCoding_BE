@@ -59,6 +59,7 @@ public class UserAuthController {
             @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
             @ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
+
     @GetMapping("/me")
     public RsData<UserMeResDto> getCurrentUser() {
         UserMeResDto userInfo = userAuthService.getCurrentUser();
