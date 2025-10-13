@@ -77,5 +77,15 @@ public class MyBarController {
         myBarService.unkeep(userId, cocktailId);
         return RsData.of(200, "deleted");
     }
+
+    @DeleteMapping
+    @Operation(summary = "내 바 전체 삭제", description = "내 바에 담긴 모든 칵테일을 소프트 삭제합니다")
+    public RsData<Void> clearAll(
+            @AuthenticationPrincipal SecurityUser principal
+    ) {
+        Long userId = principal.getId();
+        myBarService.clearAll(userId);
+        return RsData.of(200, "cleared");
+    }
 }
 

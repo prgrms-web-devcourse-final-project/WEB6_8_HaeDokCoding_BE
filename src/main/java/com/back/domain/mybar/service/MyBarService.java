@@ -123,5 +123,13 @@ public class MyBarService {
             abvScoreService.revokeForKeep(userId);
         }
     }
+
+    @Transactional
+    public void clearAll(Long userId) {
+        int changed = myBarRepository.softDeleteAllByUser(userId);
+        if (changed > 0) {
+            abvScoreService.revokeForKeep(userId, changed);
+        }
+    }
 }
 
