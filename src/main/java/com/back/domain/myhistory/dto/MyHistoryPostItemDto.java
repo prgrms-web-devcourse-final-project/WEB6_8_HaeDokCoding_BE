@@ -1,4 +1,4 @@
-﻿package com.back.domain.myhistory.dto;
+package com.back.domain.myhistory.dto;
 
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.entity.PostImage;
