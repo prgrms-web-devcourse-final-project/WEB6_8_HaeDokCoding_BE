@@ -37,8 +37,10 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -248,5 +250,22 @@ class NotificationControllerTest {
                 .andExpect(jsonPath("$.data.postApiUrl").value("/posts/321"));
 
         verify(notificationService).markAsReadAndGetPostLink(principal.getId(), 999L);
+    }
+    @Test
+    @DisplayName("Delete notifications")
+    void deleteNotifications() throws Exception {
+        SecurityUser principal = createPrincipal(17L);
+
+        willDoNothing().given(notificationService).deleteAll(principal.getId());
+
+        mockMvc.perform(delete("/me/notifications")
+                        .with(withPrincipal(principal))
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.message").value("cleared"))
+                .andExpect(jsonPath("$.data").doesNotExist());
+
+        verify(notificationService).deleteAll(principal.getId());
     }
 }
