@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,8 +20,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-
-import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/me")
@@ -120,7 +119,17 @@ public class NotificationController {
             @PathVariable("id") Long notificationId
     ) {
         Long userId = principal.getId();
-        var body = notificationService.markAsReadAndGetPostLink(userId, notificationId);
+        NotificationGoResponseDto body = notificationService.markAsReadAndGetPostLink(userId, notificationId);
         return RsData.successOf(body);
+    }
+
+    @DeleteMapping("/notifications")
+    @Operation(summary = "Delete all notifications", description = "Remove every notification belonging to the authenticated user")
+    public RsData<Void> deleteNotifications(
+            @AuthenticationPrincipal SecurityUser principal
+    ) {
+        Long userId = principal.getId();
+        notificationService.deleteAll(userId);
+        return RsData.of(200, "cleared");
     }
 }
