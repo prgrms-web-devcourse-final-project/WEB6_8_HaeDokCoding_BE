@@ -24,6 +24,9 @@ public class RefreshTokenService {
     @Value("${custom.refreshToken.expirationSeconds}")
     private long refreshTokenExpiration;
 
+    @Value("${custom.refreshToken.idleTimeoutHours}")
+    private long idleTimeoutHours;
+
     // 기존 리프레시 토큰 삭제하고 생성
     @Transactional
     public String generateRefreshToken(Long userId) {
@@ -37,7 +40,8 @@ public class RefreshTokenService {
         return token;
     }
 
-    //검증 (만료 체크 포함)
+    //검증 (만료 체크 및 Idle Timeout 체크 포함)
+    @Transactional
     public boolean validateToken(String token) {
         Optional<RefreshToken> tokenOpt = refreshTokenRepository.findByToken(token);
         if (tokenOpt.isEmpty()) {
@@ -45,10 +49,22 @@ public class RefreshTokenService {
         }
 
         RefreshToken refreshToken = tokenOpt.get();
+
+        // 1. 만료 체크 (30일)
         if (refreshToken.isExpired()) {
             revokeToken(token); // 만료된 토큰 삭제
             return false;
         }
+
+        // 2. Idle Timeout 체크 (4시간)
+        if (refreshToken.isIdleExpired(idleTimeoutHours)) {
+            revokeToken(token); // Idle 초과 토큰 삭제
+            return false;
+        }
+
+        // 3. lastUsedAt 갱신 (사용 시간 업데이트)
+        refreshToken.setLastUsedAt(LocalDateTime.now());
+        refreshTokenRepository.save(refreshToken);
 
         return true;
     }

@@ -1,6 +1,7 @@
 package com.back.domain.user.controller;
 
 import com.back.domain.user.dto.RefreshTokenResDto;
+import com.back.domain.user.dto.UserMeResDto;
 import com.back.domain.user.service.UserAuthService;
 import com.back.global.rsData.RsData;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -49,5 +51,17 @@ public class UserAuthController {
     public RsData<Void> logout(HttpServletRequest request, HttpServletResponse response) {
         userAuthService.logout(request, response);
         return RsData.of(200, "로그아웃되었습니다.");
+    }
+
+    @Operation(summary = "현재 로그인한 유저 정보 조회", description = "세션 유효성 검증 및 사용자 정보 반환")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "인증된 유저 정보 반환 성공"),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
+            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
+    })
+    @GetMapping("/me")
+    public RsData<UserMeResDto> getCurrentUser() {
+        UserMeResDto userInfo = userAuthService.getCurrentUser();
+        return RsData.of(200, "인증된 유저 정보 반환 성공", userInfo);
     }
 }

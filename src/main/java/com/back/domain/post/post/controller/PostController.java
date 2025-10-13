@@ -3,6 +3,7 @@ package com.back.domain.post.post.controller;
 import com.back.domain.post.post.dto.request.PostCreateRequestDto;
 import com.back.domain.post.post.dto.request.PostSortScrollRequestDto;
 import com.back.domain.post.post.dto.request.PostUpdateRequestDto;
+import com.back.domain.post.post.dto.response.PostLikeResponseDto;
 import com.back.domain.post.post.dto.response.PostResponseDto;
 import com.back.domain.post.post.service.PostService;
 import com.back.global.rsData.RsData;
@@ -114,10 +115,9 @@ public class PostController {
    */
   @PostMapping("/{postId}/like")
   @Operation(summary = "게시글 추천")
-  public RsData<Void> toggleLike(
+  public RsData<PostLikeResponseDto> toggleLike(
       @PathVariable Long postId
   ) {
-    postService.toggleLike(postId);
-    return RsData.successOf(null); // code=200, message="success"
+    return RsData.successOf(postService.toggleLike(postId)); // code=200, message="success"
   }
 }
