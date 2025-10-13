@@ -115,6 +115,15 @@ public class Post {
     this.content = content;
   }
 
+  public void addImage(PostImage image) {
+    if (this.images == null) {
+      this.images = new ArrayList<>();
+    }
+    this.images.add(image);
+    image.updatePost(this); // 양방향 관계 유지
+  }
+
+
   public void updateImages(List<PostImage> images) {
     this.images.clear();
     for (PostImage i : images) {

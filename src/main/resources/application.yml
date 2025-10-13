@@ -99,11 +99,10 @@ custom:
   jwt:
     secretKey: ${JWT_SECRET_KEY}
   accessToken:
-    expirationSeconds: "#{60}" # 15분 곱하기
+    expirationSeconds: "#{60*15}"
   refreshToken:
     expirationSeconds: "#{60*60*24*30}"
-    idleTimeoutHours: "#{1}"
-#    "#{60*6*4}"
+    idleTimeoutHours: "#{60*6*4}"
 
 
 management:

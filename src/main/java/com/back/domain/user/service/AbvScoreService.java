@@ -58,6 +58,14 @@ public class AbvScoreService {
         addScore(userId, -KEEP_SCORE);
     }
 
+    @Transactional
+    public void revokeForKeep(Long userId, int count) {
+        if (count <= 0) {
+            return;
+        }
+        addScore(userId, -KEEP_SCORE * count);
+    }
+
     private void addScore(Long userId, double delta) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ServiceException(404, "사용자를 찾을 수 없습니다."));

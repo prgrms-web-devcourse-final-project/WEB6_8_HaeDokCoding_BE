@@ -24,19 +24,16 @@ import com.back.domain.user.service.AbvScoreService;
 import com.back.global.file.dto.UploadedFileDto;
 import com.back.global.file.service.FileService;
 import com.back.global.rq.Rq;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -82,13 +79,12 @@ public class PostService {
         String url = fileService.uploadFile(image);
 
         PostImage postImage = PostImage.builder()
-            .post(post)
             .fileName(image.getOriginalFilename())
             .url(url)
             .sortOrder(order++)
             .build();
 
-        postImageRepository.save(postImage);
+        post.addImage(postImage);
       }
     }
 
@@ -264,11 +260,12 @@ public class PostService {
       abvScoreService.awardForLike(user.getId());
 
       // 게시글 작성자에게 알림 전송
+      String likeMessage = String.format("%s 님이 '%s' 게시글에 추천을 남겼습니다.", user.getNickname(), post.getTitle());
       notificationService.sendNotification(
           post.getUser(),
           post,
           NotificationType.LIKE,
-          user.getNickname() + " 님이 추천을 남겼습니다."
+          likeMessage
       );
 
       return new PostLikeResponseDto(postLike.getStatus());
@@ -294,23 +291,23 @@ public class PostService {
     return switch (reqBody.postSortStatus()) {
       case POPULAR -> {
         if (reqBody.lastId() == null || reqBody.lastLikeCount() == null) {
-          yield postRepository.findTop10ByOrderByLikeCountDescIdDesc();
+          yield postRepository.findTop10ByStatusNotOrderByLikeCountDescIdDesc(PostStatus.DELETED);
         } else {
-          yield postRepository.findTop10ByLikeCountLessThanOrLikeCountEqualsAndIdLessThanOrderByLikeCountDescIdDesc(reqBody.lastLikeCount(), reqBody.lastLikeCount(), reqBody.lastId());
+          yield postRepository.findTop10ByStatusNotAndLikeCountLessThanOrLikeCountEqualsAndIdLessThanOrderByLikeCountDescIdDesc(PostStatus.DELETED, reqBody.lastLikeCount(), reqBody.lastLikeCount(), reqBody.lastId());
         }
       }
       case COMMENTS -> {
         if (reqBody.lastId() == null || reqBody.lastCommentCount() == null) {
-          yield postRepository.findTop10ByOrderByCommentCountDescIdDesc();
+          yield postRepository.findTop10ByStatusNotOrderByCommentCountDescIdDesc(PostStatus.DELETED);
         } else {
-          yield postRepository.findTop10ByCommentCountLessThanOrCommentCountEqualsAndIdLessThanOrderByCommentCountDescIdDesc(reqBody.lastCommentCount(), reqBody.lastCommentCount(), reqBody.lastId());
+          yield postRepository.findTop10ByStatusNotAndCommentCountLessThanOrCommentCountEqualsAndIdLessThanOrderByCommentCountDescIdDesc(PostStatus.DELETED, reqBody.lastCommentCount(), reqBody.lastCommentCount(), reqBody.lastId());
         }
       }
       case LATEST -> {
         if (reqBody.lastId() == null) {
-          yield postRepository.findTop10ByOrderByIdDesc();
+          yield postRepository.findTop10ByStatusNotOrderByIdDesc(PostStatus.DELETED);
         } else {
-          yield postRepository.findTop10ByIdLessThanOrderByIdDesc(reqBody.lastId());
+          yield postRepository.findTop10ByStatusNotAndIdLessThanOrderByIdDesc(PostStatus.DELETED, reqBody.lastId());
         }
       }
       default -> throw new IllegalArgumentException("지원하지 않는 정렬 기준: " + reqBody.postSortStatus());
@@ -322,29 +319,29 @@ public class PostService {
     return switch (reqBody.postSortStatus()) {
       case POPULAR -> {
         if (reqBody.lastId() == null || reqBody.lastLikeCount() == null) {
-          yield postRepository.findTop10ByCategoryIdOrderByLikeCountDescIdDesc(
-              reqBody.categoryId());
+          yield postRepository.findTop10ByCategoryIdAndStatusNotOrderByLikeCountDescIdDesc(
+              reqBody.categoryId(), PostStatus.DELETED);
         } else {
-          yield postRepository.findTop10ByCategoryIdAndLikeCountLessThanOrLikeCountEqualsAndIdLessThanOrderByLikeCountDescIdDesc(
-              reqBody.categoryId(), reqBody.lastLikeCount(), reqBody.lastLikeCount(),
+          yield postRepository.findTop10ByCategoryIdAndStatusNotAndLikeCountLessThanOrLikeCountEqualsAndIdLessThanOrderByLikeCountDescIdDesc(
+              reqBody.categoryId(), PostStatus.DELETED, reqBody.lastLikeCount(), reqBody.lastLikeCount(),
               reqBody.lastId());
         }
       }
       case COMMENTS -> {
         if (reqBody.lastId() == null || reqBody.lastCommentCount() == null) {
-          yield postRepository.findTop10ByCategoryIdOrderByCommentCountDescIdDesc(
-              reqBody.categoryId());
+          yield postRepository.findTop10ByCategoryIdAndStatusNotOrderByCommentCountDescIdDesc(
+              reqBody.categoryId(), PostStatus.DELETED);
         } else {
-          yield postRepository.findTop10ByCategoryIdAndCommentCountLessThanOrCommentCountEqualsAndIdLessThanOrderByCommentCountDescIdDesc(
-              reqBody.categoryId(), reqBody.lastCommentCount(), reqBody.lastCommentCount(),
+          yield postRepository.findTop10ByCategoryIdAndStatusNotAndCommentCountLessThanOrCommentCountEqualsAndIdLessThanOrderByCommentCountDescIdDesc(
+              reqBody.categoryId(), PostStatus.DELETED, reqBody.lastCommentCount(), reqBody.lastCommentCount(),
               reqBody.lastId());
         }
       }
       case LATEST -> {
         if (reqBody.lastId() == null) {
-          yield postRepository.findTop10ByCategoryIdOrderByIdDesc(reqBody.categoryId());
+          yield postRepository.findTop10ByCategoryIdAndStatusNotOrderByIdDesc(reqBody.categoryId(), PostStatus.DELETED);
         } else {
-          yield postRepository.findTop10ByCategoryIdAndIdLessThanOrderByIdDesc(reqBody.categoryId(),
+          yield postRepository.findTop10ByCategoryIdAndStatusNotAndIdLessThanOrderByIdDesc(reqBody.categoryId(), PostStatus.DELETED,
               reqBody.lastId());
         }
       }
