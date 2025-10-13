@@ -129,6 +129,9 @@ class NotificationControllerTest {
                 .type(NotificationType.COMMENT)
                 .postId(55L)
                 .postTitle("새 댓글")
+                .postCategoryName("공지")
+                .postThumbnailUrl("https://example.com/thumb.png")
+                .message("새 댓글이 달렸습니다.")
                 .read(false)
                 .createdAt(LocalDateTime.of(2025, 1, 2, 12, 0))
                 .build();
@@ -154,6 +157,9 @@ class NotificationControllerTest {
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.message").value("success"))
                 .andExpect(jsonPath("$.data.items[0].id").value(101))
+                .andExpect(jsonPath("$.data.items[0].postCategoryName").value("공지"))
+                .andExpect(jsonPath("$.data.items[0].postThumbnailUrl").value("https://example.com/thumb.png"))
+                .andExpect(jsonPath("$.data.items[0].message").value("새 댓글이 달렸습니다."))
                 .andExpect(jsonPath("$.data.hasNext").value(false))
                 .andExpect(jsonPath("$.data.nextCreatedAt").doesNotExist());
 
