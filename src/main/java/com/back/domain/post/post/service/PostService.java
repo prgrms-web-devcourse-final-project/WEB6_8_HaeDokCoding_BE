@@ -1,4 +1,4 @@
-package com.back.domain.post.post.service;
+﻿package com.back.domain.post.post.service;
 
 import com.back.domain.notification.enums.NotificationType;
 import com.back.domain.notification.service.NotificationService;
@@ -24,19 +24,16 @@ import com.back.domain.user.service.AbvScoreService;
 import com.back.global.file.dto.UploadedFileDto;
 import com.back.global.file.service.FileService;
 import com.back.global.rq.Rq;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -264,11 +261,12 @@ public class PostService {
       abvScoreService.awardForLike(user.getId());
 
       // 게시글 작성자에게 알림 전송
+      String likeMessage = String.format("%s 님이 '%s' 게시글에 추천을 남겼습니다.", user.getNickname(), post.getTitle());
       notificationService.sendNotification(
           post.getUser(),
           post,
           NotificationType.LIKE,
-          user.getNickname() + " 님이 추천을 남겼습니다."
+          likeMessage
       );
 
       return new PostLikeResponseDto(postLike.getStatus());
