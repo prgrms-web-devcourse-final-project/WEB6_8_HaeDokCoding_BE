@@ -1,6 +1,7 @@
 package com.back.domain.user.service;
 
 import com.back.domain.user.dto.RefreshTokenResDto;
+import com.back.domain.user.dto.UserMeResDto;
 import com.back.domain.user.entity.User;
 import com.back.domain.user.repository.UserRepository;
 import com.back.global.exception.ServiceException;
@@ -8,6 +9,7 @@ import com.back.global.jwt.JwtUtil;
 import com.back.global.jwt.refreshToken.entity.RefreshToken;
 import com.back.global.jwt.refreshToken.repository.RefreshTokenRepository;
 import com.back.global.jwt.refreshToken.service.RefreshTokenService;
+import com.back.global.rq.Rq;
 import com.back.global.rsData.RsData;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -76,6 +78,7 @@ public class UserAuthService {
     private final UserRepository userRepository;
     private final RefreshTokenService refreshTokenService;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final Rq rq;
 
     //OAuth 관련
 
@@ -210,5 +213,51 @@ public class UserAuthService {
     public void setFirstLoginFalse(Long id) {
         Optional<User> userOpt = userRepository.findById(id);
         userOpt.ifPresent(user -> user.setFirstLogin(false));
+    }
+
+    // 현재 로그인한 사용자 정보 조회 (세션 검증용)
+    public UserMeResDto getCurrentUser() {
+        try {
+            User actor = rq.getActor();
+
+            if (actor == null) {
+                log.debug("인증되지 않은 사용자");
+                throw new ServiceException(401, "인증되지 않은 사용자");
+            }
+
+            Optional<User> userOpt = userRepository.findById(actor.getId());
+            if (userOpt.isEmpty()) {
+                log.warn("사용자 ID {}를 DB에서 찾을 수 없음 (토큰은 유효하나 사용자 삭제됨)", actor.getId());
+                throw new ServiceException(401, "인증되지 않은 사용자");
+            }
+
+            User user = userOpt.get();
+            String provider = extractProvider(user.getOauthId());
+
+            return UserMeResDto.builder()
+                    .user(UserMeResDto.UserInfo.builder()
+                            .id(user.getId().toString())
+                            .email(user.getEmail())
+                            .nickname(user.getNickname())
+                            .isFirstLogin(user.isFirstLogin())
+                            .abvDegree(user.getAbvDegree())
+                            .provider(provider)
+                            .build())
+                    .build();
+
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("사용자 정보 조회 중 서버 오류 발생: {}", e.getMessage(), e);
+            throw new ServiceException(500, "서버 내부 오류");
+        }
+    }
+
+    private String extractProvider(String oauthId) {
+        if (oauthId == null || oauthId.isBlank()) {
+            return "unknown";
+        }
+        String[] parts = oauthId.split("_", 2);
+        return parts.length > 0 ? parts[0] : "unknown";
     }
 }
