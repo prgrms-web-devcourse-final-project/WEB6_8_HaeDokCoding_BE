@@ -7,6 +7,7 @@ import com.back.domain.post.category.repository.CategoryRepository;
 import com.back.domain.post.post.dto.request.PostCreateRequestDto;
 import com.back.domain.post.post.dto.request.PostSortScrollRequestDto;
 import com.back.domain.post.post.dto.request.PostUpdateRequestDto;
+import com.back.domain.post.post.dto.response.PostLikeResponseDto;
 import com.back.domain.post.post.dto.response.PostResponseDto;
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.entity.PostImage;
@@ -233,7 +234,7 @@ public class PostService {
 
   // 게시글 추천(좋아요) 토글 로직
   @Transactional
-  public void toggleLike(Long postId) {
+  public PostLikeResponseDto toggleLike(Long postId) {
     User user = rq.getActor(); // 현재 로그인한 사용자
 
     Post post = postRepository.findById(postId)
@@ -248,6 +249,8 @@ public class PostService {
       post.decreaseLikeCount();
       // 활동 점수: 추천 취소 시 -0.1
       abvScoreService.revokeForLike(user.getId());
+
+      return new PostLikeResponseDto(existingLike.get().getStatus());
     } else {
       // 추천 추가
       PostLike postLike = PostLike.builder()
@@ -259,15 +262,17 @@ public class PostService {
       post.increaseLikeCount();
       // 활동 점수: 추천 추가 시 +0.1
       abvScoreService.awardForLike(user.getId());
-    }
 
-    // 게시글 작성자에게 알림 전송
-    notificationService.sendNotification(
-        post.getUser(),
-        post,
-        NotificationType.LIKE,
-        user.getNickname() + " 님이 추천을 남겼습니다."
-    );
+      // 게시글 작성자에게 알림 전송
+      notificationService.sendNotification(
+          post.getUser(),
+          post,
+          NotificationType.LIKE,
+          user.getNickname() + " 님이 추천을 남겼습니다."
+      );
+
+      return new PostLikeResponseDto(postLike.getStatus());
+    }
   }
 
   // 태그 추가 메서드
