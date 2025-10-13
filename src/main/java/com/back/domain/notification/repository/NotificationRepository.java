@@ -3,6 +3,7 @@ package com.back.domain.notification.repository;
 import com.back.domain.notification.entity.Notification;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -37,4 +38,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
          where n.id = :id and n.user.id = :userId
     """)
     Notification findByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    long deleteByUser_Id(Long userId);
+
 }

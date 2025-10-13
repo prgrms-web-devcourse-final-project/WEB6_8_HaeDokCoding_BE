@@ -9,6 +9,7 @@ import com.back.domain.cocktail.entity.Cocktail;
 import com.back.domain.cocktail.repository.CocktailRepository;
 import com.back.domain.post.comment.enums.CommentStatus;
 import com.back.domain.user.entity.User;
+import com.back.global.exception.UnauthorizedException;
 import com.back.global.rq.Rq;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -46,6 +47,7 @@ public class CocktailCommentService {
                 .cocktail(cocktail)
                 .user(user)
                 .content(reqBody.content())
+                .status(reqBody.status())
                 .build();
 
         return new CocktailCommentResponseDto(cocktailCommentRepository.save(cocktailComment));
@@ -54,17 +56,34 @@ public class CocktailCommentService {
     // 칵테일 댓글 다건 조회 로직 (무한스크롤)
     @Transactional(readOnly = true)
     public List<CocktailCommentResponseDto> getCocktailComments(Long cocktailId, Long lastId) {
-        if (lastId == null) {
-            return cocktailCommentRepository.findTop10ByCocktailIdOrderByIdDesc(cocktailId)
-                    .stream()
-                    .map(CocktailCommentResponseDto::new)
-                    .toList();
-        } else {
-            return cocktailCommentRepository.findTop10ByCocktailIdAndIdLessThanOrderByIdDesc(cocktailId, lastId)
-                    .stream()
-                    .map(CocktailCommentResponseDto::new)
-                    .toList();
+        User actor = rq.getActor(); // 서비스에서 호출 가능
+
+        if (actor == null) {
+            throw new UnauthorizedException("로그인이 필요합니다.");
         }
+        Long currentUserId = actor.getId();
+        List<CocktailComment> comments;
+
+        if (lastId == null) {
+            comments = cocktailCommentRepository
+                    .findTop10ByCocktailIdAndStatusInOrderByIdDesc(cocktailId, List.of(CommentStatus.PUBLIC, CommentStatus.PRIVATE)
+                    );
+        } else {
+            comments = cocktailCommentRepository
+                    .findTop10ByCocktailIdAndStatusInAndIdLessThanOrderByIdDesc(cocktailId, List.of(CommentStatus.PUBLIC, CommentStatus.PRIVATE),
+                            lastId);
+        }
+
+        return comments.stream()
+                .filter(comment ->{
+                    if(comment.getStatus() == CommentStatus.PUBLIC) return true;
+                    if(comment.getStatus() == CommentStatus.PRIVATE) {
+                        return comment.getUser().getId().equals(currentUserId);
+                    }
+                    return false;
+                })
+                .map(CocktailCommentResponseDto::new)
+                .toList();
     }
 
     // 칵테일 댓글 단건 조회 로직
