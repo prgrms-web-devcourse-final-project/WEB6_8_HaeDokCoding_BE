@@ -47,11 +47,12 @@ public class CommentService {
         .build();
 
     // 게시글 작성자에게 알림 전송
+    String commentMessage = String.format("%s 님이 '%s' 게시글에 댓글을 남겼습니다.", user.getNickname(), post.getTitle());
     notificationService.sendNotification(
         post.getUser(),
         post,
         NotificationType.COMMENT,
-        user.getNickname() + " 님이 댓글을 남겼습니다."
+        commentMessage
     );
 
     Comment saved = commentRepository.save(comment);
