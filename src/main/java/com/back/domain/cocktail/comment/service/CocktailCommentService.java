@@ -47,7 +47,7 @@ public class CocktailCommentService {
                 .cocktail(cocktail)
                 .user(user)
                 .content(reqBody.content())
-                .status(reqBody.status())
+                .status(reqBody.status() != null ? reqBody.status() : CommentStatus.PUBLIC)
                 .build();
 
         return new CocktailCommentResponseDto(cocktailCommentRepository.save(cocktailComment));
