@@ -22,6 +22,8 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.springframework.security.core.context.SecurityContextHolder.*;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -199,14 +201,30 @@ public class UserAuthService {
 
     //토큰 끊기면서 OAuth 자동 로그아웃
     public void logout(HttpServletRequest request, HttpServletResponse response) {
+        // 1. RefreshToken DB에서 삭제
         String refreshToken = jwtUtil.getRefreshTokenFromCookie(request);
-
         if (refreshToken != null) {
             refreshTokenService.revokeToken(refreshToken);
         }
 
+        // 2. JWT 쿠키 삭제
         jwtUtil.removeAccessTokenCookie(response);
         jwtUtil.removeRefreshTokenCookie(response);
+
+        // 3. Spring Security 세션 무효화 (Redis 포함)
+        try {
+            if (request.getSession(false) != null) {
+                request.getSession().invalidate();
+                log.debug("세션 무효화");
+            }
+        } catch (IllegalStateException e) {
+            log.debug("세션이 이미 무효화되어 있음");
+        }
+
+        // 4. SecurityContext 클리어
+        clearContext();
+
+        log.info("로그아웃 완료 - JWT, 세션, SecurityContext 모두 정리됨");
     }
 
     @Transactional
