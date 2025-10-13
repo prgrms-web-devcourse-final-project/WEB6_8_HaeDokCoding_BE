@@ -79,13 +79,12 @@ public class PostService {
         String url = fileService.uploadFile(image);
 
         PostImage postImage = PostImage.builder()
-            .post(post)
             .fileName(image.getOriginalFilename())
             .url(url)
             .sortOrder(order++)
             .build();
 
-        postImageRepository.save(postImage);
+        post.addImage(postImage);
       }
     }
 
