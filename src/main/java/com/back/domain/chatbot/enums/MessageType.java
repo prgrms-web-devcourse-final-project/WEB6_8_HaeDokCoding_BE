@@ -5,7 +5,8 @@ public enum MessageType {
     RADIO_OPTIONS("라디오옵션"), // 라디오 버튼 선택지
     CARD_LIST("카드리스트"),    // 칵테일 추천 카드 리스트
     LOADING("로딩중"),         // 로딩 메시지
-    ERROR("에러");            // 에러 메시지
+    ERROR("에러"),            // 에러 메시지
+    INPUT("입력");   // 텍스트 입력 요청
     
     private final String description;
     

@@ -113,17 +113,35 @@ resource "aws_route_table_association" "association_4" {
 resource "aws_security_group" "sg_1" {
   name = "${var.prefix}-sg-1"
 
+  # HTTP 허용
   ingress {
-    from_port = 0
-    to_port   = 0
-    protocol  = "all"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # HTTPS 허용
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Nginx Proxy Manager 관리자 페이지
+  ingress {
+    from_port   = 81
+    to_port     = 81
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Egress - 외부로 나가는 트래픽은 허용 (패키지 다운로드, API 호출 등)
   egress {
-    from_port = 0
-    to_port   = 0
-    protocol  = "all"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 

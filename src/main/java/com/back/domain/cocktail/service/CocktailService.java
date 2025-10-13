@@ -37,35 +37,41 @@ public class CocktailService {
                 .orElseThrow(() -> new IllegalArgumentException("Cocktail not found. id=" + id));
     }
 
-    // 칵테일 무한스크롤 조회
     @Transactional(readOnly = true)
-    public List<CocktailSummaryResponseDto> getCocktails(Long lastId, Integer size) { // 무한스크롤 조회, 클라이언트 쪽에서 lastId와 size 정보를 받음.(스크롤 이벤트)
+    public List<CocktailSummaryResponseDto> getCocktails(Long lastValue, Long lastId, Integer size, String sortBy) {
         int fetchSize = (size != null) ? size : DEFAULT_SIZE;
-
+        Pageable pageable = PageRequest.of(0, fetchSize);
         List<Cocktail> cocktails;
-        if (lastId == null) {
-            // 첫 요청 → 최신 데이터부터
-            cocktails = cocktailRepository.findAllByOrderByIdDesc(PageRequest.of(0, fetchSize));
-        } else {
-            // 무한스크롤 → 마지막 ID보다 작은 데이터 조회
-            cocktails = cocktailRepository.findByIdLessThanOrderByIdDesc(lastId, PageRequest.of(0, fetchSize));
-        }
-        return cocktails.stream()
-                .map(c -> new CocktailSummaryResponseDto(c.getId(), c.getCocktailName(), c.getCocktailNameKo(), c.getCocktailImgUrl(), c.getAlcoholStrength().getDescription()))
-                .collect(Collectors.toList());
-    }
 
-    // 칵테일 검색기능
-    @Transactional(readOnly = true)
-    public List<Cocktail> cocktailSearch(String keyword) {
-        // cockTailName, ingredient이 하나만 있을 수도 있고 둘 다 있을 수도 있음
-        if (keyword == null || keyword.trim().isEmpty()) {
-            // 아무 검색어 없으면 전체 반환 처리
-            return cocktailRepository.findAll();
-        } else {
-            // 이름 또는 재료 둘 중 하나라도 매칭되면 결과 반환
-            return cocktailRepository.findByCocktailNameContainingIgnoreCaseOrIngredientContainingIgnoreCase(keyword, keyword);
+        Long cursor = (lastValue != null) ? lastValue : lastId;
+
+        switch (sortBy != null ? sortBy.toLowerCase() : "") {
+            case "keeps":
+                cocktails = (cursor == null)
+                        ? cocktailRepository.findAllOrderByKeepCountDesc(pageable)
+                        : cocktailRepository.findByKeepCountLessThanOrderByKeepCountDesc(cursor, lastId, pageable);
+                break;
+            case "comments":
+                cocktails = (cursor == null)
+                        ? cocktailRepository.findAllOrderByCommentsCountDesc(pageable)
+                        : cocktailRepository.findByCommentsCountLessThanOrderByCommentsCountDesc(cursor, lastId, pageable);
+                break;
+            default:
+                cocktails = (cursor == null)
+                        ? cocktailRepository.findAllByOrderByIdDesc(pageable)
+                        : cocktailRepository.findByIdLessThanOrderByIdDesc(cursor, pageable);
+                break;
         }
+
+        return cocktails.stream()
+                .map(c -> new CocktailSummaryResponseDto(
+                        c.getId(),
+                        c.getCocktailName(),
+                        c.getCocktailNameKo(),
+                        c.getCocktailImgUrl(),
+                        c.getAlcoholStrength().getDescription()
+                ))
+                .collect(Collectors.toList());
     }
 
     // 칵테일 검색,필터기능
@@ -105,24 +111,11 @@ public class CocktailService {
 
         //Cocktail 엔티티 → CocktailResponseDto 응답 DTO로 바꿔주는 과정
         List<CocktailSearchResponseDto> resultDtos = pageResult.stream()
-                .map(c -> new CocktailSearchResponseDto(
-                        c.getId(),
-                        c.getCocktailName(),
-                        c.getCocktailNameKo(),
-                        c.getAlcoholStrength().getDescription(),
-                        c.getCocktailType().getDescription(),
-                        c.getAlcoholBaseType().getDescription(),
-                        c.getCocktailImgUrl(),
-                        c.getCocktailStory()
-                ))
+                .map(CocktailSearchResponseDto::from)
                 .collect(Collectors.toList());
 
         return resultDtos;
     }
-
-//    private <T> List<T> nullIfEmpty(List<T> list) {
-//        return CollectionUtils.isEmpty(list) ? null : list;
-//    }
 
     // 칵테일 상세조회
     @Transactional(readOnly = true)
@@ -133,18 +126,7 @@ public class CocktailService {
         // ingredient 분수 변환
         List<IngredientDto> formattedIngredient = parseIngredients(convertFractions(cocktail.getIngredient()));
 
-        return new CocktailDetailResponseDto(
-                cocktail.getId(),
-                cocktail.getCocktailName(),
-                cocktail.getCocktailNameKo(),
-                cocktail.getAlcoholStrength().getDescription(),
-                cocktail.getCocktailType().getDescription(),
-                cocktail.getAlcoholBaseType().getDescription(),
-                cocktail.getCocktailImgUrl(),
-                cocktail.getCocktailStory(),
-                formattedIngredient,
-                cocktail.getRecipe()
-        );
+        return CocktailDetailResponseDto.from(cocktail, formattedIngredient);
     }
 
     private String convertFractions(String ingredient) {

@@ -38,9 +38,9 @@ public class ChatbotController {
 
     @GetMapping("/history/user/{userId}")
     @Operation(summary = "유저 대화 히스토리", description = "사용자 채팅 기록 조회")
-    public ResponseEntity<RsData<List<ChatConversation>>> getUserChatHistory(@PathVariable Long userId) {
+    public ResponseEntity<RsData<List<ChatResponseDto>>> getUserChatHistory(@PathVariable Long userId) {
         try {
-            List<ChatConversation> history = chatbotService.getUserChatHistory(userId);
+            List<ChatResponseDto> history = chatbotService.getUserChatHistory(userId);
             return ResponseEntity.ok(RsData.successOf(history));
         } catch (Exception e) {
             log.error("사용자 채팅 기록 조회 중 오류 발생: ", e);

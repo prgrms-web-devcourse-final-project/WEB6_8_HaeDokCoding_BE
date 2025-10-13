@@ -32,7 +32,12 @@ public class CocktailCommentService {
                 .orElseThrow(() -> new IllegalArgumentException("칵테일이 존재하지 않습니다. id=" + cocktailId));
 
         // 사용자당 댓글 1개 제한 체크
-        boolean exists = cocktailCommentRepository.existsByCocktailIdAndUserId(cocktailId, user.getId());
+        boolean exists = cocktailCommentRepository.existsByCocktailIdAndUserIdAndStatusNot(
+                cocktailId,
+                user.getId(),
+                CommentStatus.DELETED // DELETED 상태는 제외하고 검사
+        );
+
         if (exists) {
             throw new IllegalArgumentException("이미 댓글을 작성하셨습니다.");
         }

@@ -1,5 +1,7 @@
 package com.back.domain.mybar.controller;
 
+import com.back.domain.cocktail.enums.AlcoholStrength;
+import com.back.domain.mybar.dto.MyBarIdResponseDto;
 import com.back.domain.mybar.dto.MyBarItemResponseDto;
 import com.back.domain.mybar.dto.MyBarListResponseDto;
 import com.back.domain.mybar.service.MyBarService;
@@ -95,34 +97,24 @@ class MyBarControllerTest {
     }
 
     @Test
-    @DisplayName("Get my bar list - first page")
-    void getMyBarList_withoutCursor() throws Exception {
-        SecurityUser principal = createPrincipal(1L);
-        LocalDateTime keptAt = LocalDateTime.of(2025, 1, 1, 10, 0);
-        LocalDateTime createdAt = keptAt.minusDays(1);
+    @DisplayName("경량 내 바 목록을 조회한다")
+    void getMyBarIds() throws Exception {
+        SecurityUser principal = createPrincipal(5L);
 
-        MyBarItemResponseDto item = MyBarItemResponseDto.builder()
-                .id(3L)
-                .cocktailId(10L)
-                .cocktailName("Margarita")
-                .imageUrl("https://example.com/margarita.jpg")
-                .createdAt(createdAt)
-                .keptAt(keptAt)
-                .build();
-
-        MyBarListResponseDto responseDto = new MyBarListResponseDto(
-                List.of(item),
-                true,
-                keptAt.minusMinutes(5),
-                2L
+        List<MyBarIdResponseDto> response = List.of(
+                MyBarIdResponseDto.builder()
+                        .id(123L)
+                        .cocktailId(1L)
+                        .keptAt(LocalDateTime.of(2025, 10, 10, 12, 0))
+                        .build(),
+                MyBarIdResponseDto.builder()
+                        .id(124L)
+                        .cocktailId(5L)
+                        .keptAt(LocalDateTime.of(2025, 10, 9, 15, 30))
+                        .build()
         );
 
-        given(myBarService.getMyBar(
-                eq(principal.getId()),
-                isNull(LocalDateTime.class),
-                isNull(Long.class),
-                eq(20)
-        )).willReturn(responseDto);
+        given(myBarService.getMyBarIds(principal.getId())).willReturn(response);
 
         mockMvc.perform(get("/me/bar")
                         .with(withPrincipal(principal))
@@ -130,79 +122,69 @@ class MyBarControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.message").value("success"))
-                .andExpect(jsonPath("$.data.items[0].id").value(3L))
-                .andExpect(jsonPath("$.data.items[0].cocktailId").value(10L))
-                .andExpect(jsonPath("$.data.items[0].cocktailName").value("Margarita"))
-                .andExpect(jsonPath("$.data.items[0].imageUrl").value("https://example.com/margarita.jpg"))
-                .andExpect(jsonPath("$.data.items[0].createdAt").value(ISO_WITH_SECONDS.format(createdAt)))
-                .andExpect(jsonPath("$.data.items[0].keptAt").value(ISO_WITH_SECONDS.format(keptAt)))
-                .andExpect(jsonPath("$.data.hasNext").value(true))
-                .andExpect(jsonPath("$.data.nextKeptAt").value(ISO_WITH_SECONDS.format(keptAt.minusMinutes(5))))
-                .andExpect(jsonPath("$.data.nextId").value(2L));
+                .andExpect(jsonPath("$.data[0].id").value(123L))
+                .andExpect(jsonPath("$.data[0].cocktailId").value(1L))
+                .andExpect(jsonPath("$.data[0].keptAt").value("2025-10-10T12:00:00"))
+                .andExpect(jsonPath("$.data[1].cocktailId").value(5L));
 
-        verify(myBarService).getMyBar(
-                eq(principal.getId()),
-                isNull(LocalDateTime.class),
-                isNull(Long.class),
-                eq(20)
-        );
+        verify(myBarService).getMyBarIds(principal.getId());
     }
 
     @Test
-    @DisplayName("Get my bar list - next page")
-    void getMyBarList_withCursor() throws Exception {
-        SecurityUser principal = createPrincipal(7L);
-        LocalDateTime cursorKeptAt = LocalDateTime.of(2025, 2, 10, 9, 30, 15);
-        LocalDateTime itemKeptAt = cursorKeptAt.minusMinutes(1);
-        LocalDateTime itemCreatedAt = itemKeptAt.minusDays(2);
+    @DisplayName("상세 내 바 목록을 조회한다")
+    void getMyBarDetail() throws Exception {
+        SecurityUser principal = createPrincipal(9L);
+        LocalDateTime keptAt = LocalDateTime.of(2025, 10, 1, 10, 0);
+        LocalDateTime createdAt = keptAt.minusDays(1);
 
         MyBarItemResponseDto item = MyBarItemResponseDto.builder()
-                .id(20L)
-                .cocktailId(33L)
-                .cocktailName("Negroni")
-                .imageUrl("https://example.com/negroni.jpg")
-                .createdAt(itemCreatedAt)
-                .keptAt(itemKeptAt)
+                .id(123L)
+                .cocktailId(1L)
+                .cocktailName("Mojito")
+                .cocktailNameKo("모히또")
+                .alcoholStrength(AlcoholStrength.MEDIUM)
+                .imageUrl("https://example.com/mojito.jpg")
+                .createdAt(createdAt)
+                .keptAt(keptAt)
                 .build();
 
-        MyBarListResponseDto responseDto = new MyBarListResponseDto(
+        MyBarListResponseDto response = new MyBarListResponseDto(
                 List.of(item),
                 false,
                 null,
                 null
         );
 
-        given(myBarService.getMyBar(
+        given(myBarService.getMyBarDetail(
                 eq(principal.getId()),
-                eq(cursorKeptAt),
-                eq(99L),
-                eq(5)
-        )).willReturn(responseDto);
+                isNull(LocalDateTime.class),
+                isNull(Long.class),
+                eq(50)
+        )).willReturn(response);
 
-        mockMvc.perform(get("/me/bar")
+        mockMvc.perform(get("/me/bar/detail")
                         .with(withPrincipal(principal))
-                        .param("lastKeptAt", cursorKeptAt.toString())
-                        .param("lastId", "99")
-                        .param("limit", "5")
+                        .param("limit", "50")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.message").value("success"))
-                .andExpect(jsonPath("$.data.items[0].id").value(20L))
-                .andExpect(jsonPath("$.data.items[0].cocktailName").value("Negroni"))
+                .andExpect(jsonPath("$.data.items[0].cocktailName").value("Mojito"))
+                .andExpect(jsonPath("$.data.items[0].cocktailNameKo").value("모히또"))
+                .andExpect(jsonPath("$.data.items[0].keptAt").value(ISO_WITH_SECONDS.format(keptAt)))
                 .andExpect(jsonPath("$.data.hasNext").value(false))
                 .andExpect(jsonPath("$.data.nextKeptAt").doesNotExist());
 
-        verify(myBarService).getMyBar(
+        verify(myBarService).getMyBarDetail(
                 eq(principal.getId()),
-                eq(cursorKeptAt),
-                eq(99L),
-                eq(5)
+                isNull(LocalDateTime.class),
+                isNull(Long.class),
+                eq(50)
         );
     }
 
     @Test
-    @DisplayName("Keep cocktail")
+    @DisplayName("킵 추가")
     void keepCocktail() throws Exception {
         SecurityUser principal = createPrincipal(11L);
         Long cocktailId = 42L;
@@ -221,7 +203,7 @@ class MyBarControllerTest {
     }
 
     @Test
-    @DisplayName("Unkeep cocktail")
+    @DisplayName("킵 해제")
     void unkeepCocktail() throws Exception {
         SecurityUser principal = createPrincipal(12L);
         Long cocktailId = 77L;
