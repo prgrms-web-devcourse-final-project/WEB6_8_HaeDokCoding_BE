@@ -350,6 +350,9 @@ public class ChatbotService {
                     .call()
                     .content();
 
+            message += "\n칵테일의 자세한 정보는 '상세보기'를 클릭해서 확인할 수 있어요.\n" +
+                    "마음에 드는 칵테일은 '킵' 버튼을 눌러 나만의 Bar에 저장해보세요!";
+
             return message.trim();
 
         } catch (Exception e) {

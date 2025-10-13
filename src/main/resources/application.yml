@@ -61,7 +61,7 @@ spring:
 
   ai:
     openai:
-      api-key: ${GEMINI_API_KEY}
+      api-key: ${OPEN_API_KEY}
       chat:
         base-url: "https://generativelanguage.googleapis.com/v1beta/openai/"
         options:
@@ -81,14 +81,6 @@ server:
       charset: UTF-8
       enabled: true
       force: true
-
-# 추후 삭제 예정
-gemini:
-  api:
-    key: ${GEMINI_API_KEY}
-    model-name: "gemini-2.5-flash"
-    url: "https://generativelanguage.googleapis.com/v1beta/models"
-
 
 custom:
   dev:
