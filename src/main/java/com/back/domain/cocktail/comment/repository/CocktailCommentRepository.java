@@ -10,9 +10,16 @@ import java.util.List;
 @Repository
 public interface CocktailCommentRepository extends JpaRepository<CocktailComment, Long> {
 
-    List<CocktailComment> findTop10ByCocktailIdOrderByIdDesc(Long cocktailId);
+    List<CocktailComment> findTop10ByCocktailIdAndStatusOrderByIdDesc(
+            Long cocktailId,
+            CommentStatus status
+    );
 
-    List<CocktailComment> findTop10ByCocktailIdAndIdLessThanOrderByIdDesc(Long cocktailId, Long lastId);
+    List<CocktailComment> findTop10ByCocktailIdAndStatusAndIdLessThanOrderByIdDesc(
+            Long cocktailId,
+            CommentStatus status,
+            Long lastId
+    );
 
     boolean existsByCocktailIdAndUserIdAndStatusNot(Long cocktailId, Long id, CommentStatus status);
 }

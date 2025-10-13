@@ -55,12 +55,12 @@ public class CocktailCommentService {
     @Transactional(readOnly = true)
     public List<CocktailCommentResponseDto> getCocktailComments(Long cocktailId, Long lastId) {
         if (lastId == null) {
-            return cocktailCommentRepository.findTop10ByCocktailIdOrderByIdDesc(cocktailId)
+            return cocktailCommentRepository.findTop10ByCocktailIdAndStatusOrderByIdDesc(cocktailId, CommentStatus.PUBLIC)
                     .stream()
                     .map(CocktailCommentResponseDto::new)
                     .toList();
         } else {
-            return cocktailCommentRepository.findTop10ByCocktailIdAndIdLessThanOrderByIdDesc(cocktailId, lastId)
+            return cocktailCommentRepository.findTop10ByCocktailIdAndStatusAndIdLessThanOrderByIdDesc(cocktailId, CommentStatus.PUBLIC, lastId)
                     .stream()
                     .map(CocktailCommentResponseDto::new)
                     .toList();
