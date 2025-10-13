@@ -220,4 +220,22 @@ class MyBarControllerTest {
 
         verify(myBarService).unkeep(principal.getId(), cocktailId);
     }
+
+    @Test
+    @DisplayName("Clear entire my bar")
+    void clearAllMyBar() throws Exception {
+        SecurityUser principal = createPrincipal(21L);
+
+        willDoNothing().given(myBarService).clearAll(principal.getId());
+
+        mockMvc.perform(delete("/me/bar")
+                        .with(withPrincipal(principal))
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.message").value("cleared"))
+                .andExpect(jsonPath("$.data").doesNotExist());
+
+        verify(myBarService).clearAll(principal.getId());
+    }
 }
