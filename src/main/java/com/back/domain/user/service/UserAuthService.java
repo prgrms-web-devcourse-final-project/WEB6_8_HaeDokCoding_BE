@@ -1,6 +1,7 @@
 package com.back.domain.user.service;
 
 import com.back.domain.user.dto.RefreshTokenResDto;
+import com.back.domain.user.dto.UserMeResDto;
 import com.back.domain.user.entity.User;
 import com.back.domain.user.repository.UserRepository;
 import com.back.global.exception.ServiceException;
@@ -8,6 +9,7 @@ import com.back.global.jwt.JwtUtil;
 import com.back.global.jwt.refreshToken.entity.RefreshToken;
 import com.back.global.jwt.refreshToken.repository.RefreshTokenRepository;
 import com.back.global.jwt.refreshToken.service.RefreshTokenService;
+import com.back.global.rq.Rq;
 import com.back.global.rsData.RsData;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
+
+import static org.springframework.security.core.context.SecurityContextHolder.*;
 
 @Slf4j
 @Service
@@ -76,6 +80,7 @@ public class UserAuthService {
     private final UserRepository userRepository;
     private final RefreshTokenService refreshTokenService;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final Rq rq;
 
     //OAuth 관련
 
@@ -196,19 +201,81 @@ public class UserAuthService {
 
     //토큰 끊기면서 OAuth 자동 로그아웃
     public void logout(HttpServletRequest request, HttpServletResponse response) {
+        // 1. RefreshToken DB에서 삭제
         String refreshToken = jwtUtil.getRefreshTokenFromCookie(request);
-
         if (refreshToken != null) {
             refreshTokenService.revokeToken(refreshToken);
         }
 
+        // 2. JWT 쿠키 삭제
         jwtUtil.removeAccessTokenCookie(response);
         jwtUtil.removeRefreshTokenCookie(response);
+
+        // 3. Spring Security 세션 무효화 (Redis 포함)
+        try {
+            if (request.getSession(false) != null) {
+                request.getSession().invalidate();
+                log.debug("세션 무효화");
+            }
+        } catch (IllegalStateException e) {
+            log.debug("세션이 이미 무효화되어 있음");
+        }
+
+        // 4. SecurityContext 클리어
+        clearContext();
+
+        log.info("로그아웃 완료 - JWT, 세션, SecurityContext 모두 정리됨");
     }
 
     @Transactional
     public void setFirstLoginFalse(Long id) {
         Optional<User> userOpt = userRepository.findById(id);
         userOpt.ifPresent(user -> user.setFirstLogin(false));
+    }
+
+    // 현재 로그인한 사용자 정보 조회 (세션 검증용)
+    public UserMeResDto getCurrentUser() {
+        try {
+            User actor = rq.getActor();
+
+            if (actor == null) {
+                log.debug("인증되지 않은 사용자");
+                throw new ServiceException(401, "인증되지 않은 사용자");
+            }
+
+            Optional<User> userOpt = userRepository.findById(actor.getId());
+            if (userOpt.isEmpty()) {
+                log.warn("사용자 ID {}를 DB에서 찾을 수 없음 (토큰은 유효하나 사용자 삭제됨)", actor.getId());
+                throw new ServiceException(401, "인증되지 않은 사용자");
+            }
+
+            User user = userOpt.get();
+            String provider = extractProvider(user.getOauthId());
+
+            return UserMeResDto.builder()
+                    .user(UserMeResDto.UserInfo.builder()
+                            .id(user.getId().toString())
+                            .email(user.getEmail())
+                            .nickname(user.getNickname())
+                            .isFirstLogin(user.isFirstLogin())
+                            .abvDegree(user.getAbvDegree())
+                            .provider(provider)
+                            .build())
+                    .build();
+
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("사용자 정보 조회 중 서버 오류 발생: {}", e.getMessage(), e);
+            throw new ServiceException(500, "서버 내부 오류");
+        }
+    }
+
+    private String extractProvider(String oauthId) {
+        if (oauthId == null || oauthId.isBlank()) {
+            return "unknown";
+        }
+        String[] parts = oauthId.split("_", 2);
+        return parts.length > 0 ? parts[0] : "unknown";
     }
 }

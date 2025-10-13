@@ -110,32 +110,8 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
                 log.error("Error extracting user info from token", e);
             }
         } else {
-            log.warn("Access token validation failed");
-
-            // 토큰이 만료된 경우에도 정보 추출 시도 (선택적)
-            try {
-                Long userId = jwtUtil.getUserIdFromToken(accessToken);
-                String email = jwtUtil.getEmailFromToken(accessToken);
-                String nickname = jwtUtil.getNicknameFromToken(accessToken);
-
-                if (userId != null && email != null && nickname != null) {
-                    user = User.builder()
-                            .id(userId)
-                            .email(email)
-                            .nickname(nickname)
-                            .role("USER")
-                            .build();
-
-                    // 새 토큰 발급 (쿠키 방식을 사용하는 경우만)
-                    if (authHeader == null) {
-                        String newAccessToken = jwtUtil.generateAccessToken(userId, email, nickname);
-                        rq.setCrossDomainCookie("accessToken", newAccessToken, accessTokenExpiration);
-                        log.info("New access token issued for user: {}", userId);
-                    }
-                }
-            } catch (Exception e) {
-                log.error("Failed to extract user info from expired token", e);
-            }
+            log.warn("Access token validation failed - token is expired or invalid");
+            // 만료된 토큰은 인증 실패 처리 (user는 null로 유지)
         }
 
         // user가 null이면 인증 실패
