@@ -133,16 +133,19 @@ public class CocktailService {
         if (ingredient == null) return null;
 
         // 치환 테이블 생성
-        Map<String, String> fractionMap = Map.of(
-                "1/2", "½",
-                "1/3", "⅓",
-                "2/3", "⅔",
-                "1/4", "¼",
-                "3/4", "¾",
-                "1/8", "⅛",
-                "3/8", "⅜",
-                "5/8", "⅝",
-                "7/8", "⅞"
+        Map<String, String> fractionMap = Map.ofEntries(
+                Map.entry("1/2", "½"),
+                Map.entry("1/3", "⅓"),
+                Map.entry("2/3", "⅔"),
+                Map.entry("1/4", "¼"),
+                Map.entry("3/4", "¾"),
+                Map.entry("1/8", "⅛"),
+                Map.entry("3/8", "⅜"),
+                Map.entry("5/8", "⅝"),
+                Map.entry("7/8", "⅞"),
+                Map.entry("1/5", "⅕"),
+                Map.entry("2/5", "⅖"),
+                Map.entry("1/6", "⅙")
         );
 
         // 테이블 기반 치환
@@ -176,7 +179,7 @@ public class CocktailService {
 
             // (숫자 + 선택적 분수) + (공백) + (단위)
             Pattern pattern = Pattern.compile(
-                    "^([0-9]*\\s*[½⅓⅔¼¾⅛⅜⅝⅞]?)\\s*(.*)$",
+                    "^([0-9]*\\s*[½⅓⅔¼¾⅛⅜⅝⅞⅕⅖⅙]?)\\s*(.*)$",
                     Pattern.UNICODE_CHARACTER_CLASS
             );
             Matcher matcher = pattern.matcher(amountUnit);

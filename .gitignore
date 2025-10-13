@@ -55,3 +55,7 @@ terraform/secrets.tf
 ### Claude AI ###
 CLAUDE.md
 .claude/
+
+## dataSet ##
+cocktails_ver00.csv
+cocktails_ver01.csv
