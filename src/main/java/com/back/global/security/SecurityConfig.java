@@ -69,6 +69,7 @@ public class SecurityConfig {
                         .requestMatchers("/login/oauth2/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
                         .requestMatchers("/user/auth/refresh").permitAll()
+                        .requestMatchers("/user/auth/me").permitAll()
 
                         // 권한 불필요 - 조회 API
                         .requestMatchers(GET, "/cocktails/**").permitAll()

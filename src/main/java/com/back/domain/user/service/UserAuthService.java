@@ -22,6 +22,8 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.springframework.security.core.context.SecurityContextHolder.*;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -199,14 +201,30 @@ public class UserAuthService {
 
     //토큰 끊기면서 OAuth 자동 로그아웃
     public void logout(HttpServletRequest request, HttpServletResponse response) {
+        // 1. RefreshToken DB에서 삭제
         String refreshToken = jwtUtil.getRefreshTokenFromCookie(request);
-
         if (refreshToken != null) {
             refreshTokenService.revokeToken(refreshToken);
         }
 
+        // 2. JWT 쿠키 삭제
         jwtUtil.removeAccessTokenCookie(response);
         jwtUtil.removeRefreshTokenCookie(response);
+
+        // 3. Spring Security 세션 무효화 (Redis 포함)
+        try {
+            if (request.getSession(false) != null) {
+                request.getSession().invalidate();
+                log.debug("세션 무효화");
+            }
+        } catch (IllegalStateException e) {
+            log.debug("세션이 이미 무효화되어 있음");
+        }
+
+        // 4. SecurityContext 클리어
+        clearContext();
+
+        log.info("로그아웃 완료 - JWT, 세션, SecurityContext 모두 정리됨");
     }
 
     @Transactional
@@ -216,21 +234,28 @@ public class UserAuthService {
     }
 
     // 현재 로그인한 사용자 정보 조회 (세션 검증용)
+    // 변경: 항상 200 응답, 비로그인 시 user: null 반환
     public UserMeResDto getCurrentUser() {
         try {
             User actor = rq.getActor();
 
+            // 비로그인 상태: user null 반환
             if (actor == null) {
-                log.debug("인증되지 않은 사용자");
-                throw new ServiceException(401, "인증되지 않은 사용자");
+                log.debug("인증되지 않은 사용자 - user: null 반환");
+                return UserMeResDto.builder()
+                        .user(null)
+                        .build();
             }
 
             Optional<User> userOpt = userRepository.findById(actor.getId());
             if (userOpt.isEmpty()) {
                 log.warn("사용자 ID {}를 DB에서 찾을 수 없음 (토큰은 유효하나 사용자 삭제됨)", actor.getId());
-                throw new ServiceException(401, "인증되지 않은 사용자");
+                return UserMeResDto.builder()
+                        .user(null)
+                        .build();
             }
 
+            // 로그인 상태: user 정보 반환
             User user = userOpt.get();
             String provider = extractProvider(user.getOauthId());
 
@@ -245,11 +270,12 @@ public class UserAuthService {
                             .build())
                     .build();
 
-        } catch (ServiceException e) {
-            throw e;
         } catch (Exception e) {
             log.error("사용자 정보 조회 중 서버 오류 발생: {}", e.getMessage(), e);
-            throw new ServiceException(500, "서버 내부 오류");
+            // 예외 발생 시에도 user: null 반환
+            return UserMeResDto.builder()
+                    .user(null)
+                    .build();
         }
     }
 
