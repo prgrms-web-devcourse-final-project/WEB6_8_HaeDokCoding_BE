@@ -120,4 +120,17 @@ public class PostController {
   ) {
     return RsData.successOf(postService.toggleLike(postId)); // code=200, message="success"
   }
+
+  /**
+   * 사용자가 해당 게시글을 추천(좋아요)했는지 여부 확인 API
+   * @param postId 확인할 게시글 ID
+   * @return 사용자의 추천 여부 (true/false)
+   */
+  @GetMapping("/{postId}/like")
+  @Operation(summary = "사용자가 해당 게시글 추천 여부 확인")
+  public RsData<Boolean> getLike(
+      @PathVariable Long postId
+  ) {
+    return RsData.successOf(postService.getLike(postId)); // code=200, message="success"
+  }
 }
