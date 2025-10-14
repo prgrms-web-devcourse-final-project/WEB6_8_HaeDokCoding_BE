@@ -1,5 +1,7 @@
 package com.back.global.security;
 
+import com.back.global.rsData.RsData;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +18,9 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
 
 @Configuration
 @EnableWebSecurity
@@ -60,15 +65,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
 
 
-                        .requestMatchers("/user/auth/logout").authenticated()
-                        /*
                         .requestMatchers("/").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/oauth2/**").permitAll()
                         .requestMatchers("/login/oauth2/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
                         .requestMatchers("/user/auth/refresh").permitAll()
+
+                        // share은 인증 필요
+                        .requestMatchers(GET, "/cocktails/{id}/share").authenticated()
 
                         // 권한 불필요 - 조회 API
                         .requestMatchers(GET, "/cocktails/**").permitAll()
@@ -79,14 +83,15 @@ public class SecurityConfig {
                         .requestMatchers(GET, "/posts/{postId}/comments/{commentId}").permitAll()
                         .requestMatchers(GET, "/cocktails/{cocktailId}/comments").permitAll()
                         .requestMatchers(GET, "/cocktails/{cocktailId}/comments/{cocktailCommentId}").permitAll()
+                        .requestMatchers(GET, "/category").permitAll()
 
-                        // 회원 or 인증된 사용자만 가능
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         // 나머지 모든 API는 인증 필요
                         .anyRequest().authenticated()
-                        */
-                        // 개발 편의성을 위해 모든 요청 허용
-                        .anyRequest().permitAll()
+
+
+//                         회원 or 인증된 사용자만 가능
+//                        .requestMatchers("/admin/**").hasRole("ADMIN")
+
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
@@ -104,12 +109,19 @@ public class SecurityConfig {
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setContentType("application/json;charset=UTF-8");
                             response.setStatus(401);
-                            response.getWriter().write("{\"code\":401,\"message\":\"로그인 후 이용해주세요.\"}");
+
+                            RsData<Void> rsData = RsData.of(401, "로그인 후 이용해주세요.");
+
+                            ObjectMapper mapper = new ObjectMapper();
+                            response.getWriter().write(mapper.writeValueAsString(rsData));
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setContentType("application/json;charset=UTF-8");
                             response.setStatus(403);
-                            response.getWriter().write("{\"code\":403,\"message\":\"권한이 없습니다.\"}");
+                            RsData<Void> rsData = RsData.of(403, "권한이 없습니다.");
+
+                            ObjectMapper mapper = new ObjectMapper();
+                            response.getWriter().write(mapper.writeValueAsString(rsData));
                         })
                 )
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
