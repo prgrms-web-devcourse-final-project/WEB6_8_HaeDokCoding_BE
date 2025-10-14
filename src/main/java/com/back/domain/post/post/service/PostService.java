@@ -153,8 +153,17 @@ public class PostService {
       List<UploadedFileDto> uploaded = fileService.uploadFiles(images);
       List<String> uploadedFileNames = uploaded.stream().map(UploadedFileDto::fileName).toList();
 
+      // 요청 DTO에서 "유지할 이미지 URL 목록" 꺼내기
+      List<String> keepImageUrls = Optional.ofNullable(reqBody.keepImageUrls()).orElse(List.of());
+
+      // URL → ID 매핑
+      List<Long> keepIds = post.getImages().stream()
+          .filter(img -> keepImageUrls.contains(img.getUrl()))
+          .map(PostImage::getId)
+          .toList();
+
       // 요청 DTO에서 "유지할 이미지 ID 목록" 꺼내기
-      List<Long> keepIds = Optional.ofNullable(reqBody.keepImageIds()).orElse(List.of());
+//      List<Long> keepIds = Optional.ofNullable(reqBody.keepImageIds()).orElse(List.of());
 
       // 현재 게시글의 이미지들을 (id -> 객체) 매핑으로 변환
       Map<Long, PostImage> existingById = post.getImages().stream()
