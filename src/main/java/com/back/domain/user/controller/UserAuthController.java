@@ -57,6 +57,7 @@ public class UserAuthController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "사용자 정보 조회"),
     })
+
     @GetMapping("/me")
     public RsData<UserMeResDto> getCurrentUser() {
         UserMeResDto userInfo = userAuthService.getCurrentUser();
