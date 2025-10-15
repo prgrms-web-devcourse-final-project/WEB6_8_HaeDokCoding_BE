@@ -1,6 +1,7 @@
 package com.back.domain.cocktail.comment.repository;
 
 import com.back.domain.cocktail.comment.entity.CocktailComment;
+import com.back.domain.cocktail.entity.Cocktail;
 import com.back.domain.post.comment.enums.CommentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -19,4 +20,6 @@ public interface CocktailCommentRepository extends JpaRepository<CocktailComment
     );
 
     boolean existsByCocktailIdAndUserIdAndStatusNot(Long cocktailId, Long id, CommentStatus status);
+
+    Long countByCocktail(Cocktail cocktail);
 }

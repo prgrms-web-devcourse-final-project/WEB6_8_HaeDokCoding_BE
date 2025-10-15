@@ -9,7 +9,6 @@ import com.back.domain.cocktail.entity.Cocktail;
 import com.back.domain.cocktail.repository.CocktailRepository;
 import com.back.domain.post.comment.enums.CommentStatus;
 import com.back.domain.user.entity.User;
-import com.back.global.exception.UnauthorizedException;
 import com.back.global.rq.Rq;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -56,31 +55,29 @@ public class CocktailCommentService {
     // 칵테일 댓글 다건 조회 로직 (무한스크롤)
     @Transactional(readOnly = true)
     public List<CocktailCommentResponseDto> getCocktailComments(Long cocktailId, Long lastId) {
-        User actor = rq.getActor(); // 서비스에서 호출 가능
+        User actor = rq.getActor(); // 로그인 사용자 (null일 수 있음)
+        Long currentUserId = (actor != null) ? actor.getId() : null;
 
-        if (actor == null) {
-            throw new UnauthorizedException("로그인이 필요합니다.");
-        }
-        Long currentUserId = actor.getId();
         List<CocktailComment> comments;
 
         if (lastId == null) {
-            comments = cocktailCommentRepository
-                    .findTop10ByCocktailIdAndStatusInOrderByIdDesc(cocktailId, List.of(CommentStatus.PUBLIC, CommentStatus.PRIVATE)
-                    );
+            comments = cocktailCommentRepository.findTop10ByCocktailIdAndStatusInOrderByIdDesc(
+                    cocktailId,
+                    List.of(CommentStatus.PUBLIC, CommentStatus.PRIVATE)
+            );
         } else {
-            comments = cocktailCommentRepository
-                    .findTop10ByCocktailIdAndStatusInAndIdLessThanOrderByIdDesc(cocktailId, List.of(CommentStatus.PUBLIC, CommentStatus.PRIVATE),
-                            lastId);
+            comments = cocktailCommentRepository.findTop10ByCocktailIdAndStatusInAndIdLessThanOrderByIdDesc(
+                    cocktailId,
+                    List.of(CommentStatus.PUBLIC, CommentStatus.PRIVATE),
+                    lastId
+            );
         }
 
         return comments.stream()
-                .filter(comment ->{
-                    if(comment.getStatus() == CommentStatus.PUBLIC) return true;
-                    if(comment.getStatus() == CommentStatus.PRIVATE) {
-                        return comment.getUser().getId().equals(currentUserId);
-                    }
-                    return false;
+                .filter(comment -> {
+                    if (comment.getStatus() == CommentStatus.PUBLIC) return true;
+                    // PRIVATE 댓글은 로그인한 본인만
+                    return currentUserId != null && comment.getUser().getId().equals(currentUserId);
                 })
                 .map(CocktailCommentResponseDto::new)
                 .toList();

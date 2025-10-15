@@ -1,5 +1,6 @@
 package com.back.domain.cocktail.service;
 
+import com.back.domain.cocktail.comment.repository.CocktailCommentRepository;
 import com.back.domain.cocktail.dto.CocktailDetailResponseDto;
 import com.back.domain.cocktail.dto.CocktailSearchRequestDto;
 import com.back.domain.cocktail.dto.CocktailSearchResponseDto;
@@ -9,6 +10,8 @@ import com.back.domain.cocktail.enums.AlcoholBaseType;
 import com.back.domain.cocktail.enums.AlcoholStrength;
 import com.back.domain.cocktail.enums.CocktailType;
 import com.back.domain.cocktail.repository.CocktailRepository;
+import com.back.domain.mybar.enums.KeepStatus;
+import com.back.domain.mybar.repository.MyBarRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,6 +30,9 @@ import java.util.stream.Collectors;
 public class CocktailService {
 
     private final CocktailRepository cocktailRepository;
+    private final MyBarRepository myBarRepository;
+    private final CocktailCommentRepository cocktailCommentRepository;
+
 
     private static final int DEFAULT_SIZE = 20;
 
@@ -64,13 +70,23 @@ public class CocktailService {
         }
 
         return cocktails.stream()
-                .map(c -> new CocktailSummaryResponseDto(
-                        c.getId(),
-                        c.getCocktailName(),
-                        c.getCocktailNameKo(),
-                        c.getCocktailImgUrl(),
-                        c.getAlcoholStrength().getDescription()
-                ))
+                .map(c -> {
+                    // 해당 칵테일의 ACTIVE Keep 수
+                    Long keepCount = myBarRepository.countByCocktailAndStatus(c, KeepStatus.ACTIVE);
+
+                    // 해당 칵테일 댓글 수
+                    Long commentCount = cocktailCommentRepository.countByCocktail(c);
+
+                    return new CocktailSummaryResponseDto(
+                            c.getId(),
+                            c.getCocktailName(),
+                            c.getCocktailNameKo(),
+                            c.getCocktailImgUrl(),
+                            c.getAlcoholStrength().getDescription(),
+                            keepCount,
+                            commentCount
+                    );
+                })
                 .collect(Collectors.toList());
     }
 
