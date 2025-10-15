@@ -71,9 +71,6 @@ public class SecurityConfig {
                                 .requestMatchers(POST, "/user/auth/refresh").permitAll()
                                 .requestMatchers(POST, "/cocktails/search").permitAll()
 
-                                // share은 인증 필요
-                                .requestMatchers(GET, "/cocktails/{id}/share").authenticated()
-
                                 // 권한 불필요 - 조회 API
                                 .requestMatchers(GET, "/").permitAll()
                                 .requestMatchers(GET, "/actuator/**").permitAll()
