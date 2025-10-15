@@ -55,9 +55,7 @@ public class UserAuthController {
 
     @Operation(summary = "현재 로그인한 유저 정보 조회", description = "세션 유효성 검증 및 사용자 정보 반환")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "인증된 유저 정보 반환 성공"),
-            @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
-            @ApiResponse(responseCode = "500", description = "서버 내부 오류")
+            @ApiResponse(responseCode = "200", description = "사용자 정보 조회"),
     })
 
     @GetMapping("/me")

@@ -24,16 +24,17 @@ import com.back.domain.user.service.AbvScoreService;
 import com.back.global.file.dto.UploadedFileDto;
 import com.back.global.file.service.FileService;
 import com.back.global.rq.Rq;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -146,63 +147,73 @@ public class PostService {
     if (reqBody.content() != null && !reqBody.content().isBlank()) {
       post.updateContent(reqBody.content());
     }
+
+    List<String> addedImgUrls = List.of();
+    List<String> uploadedFileNames = List.of();
+
     if (images != null && !images.isEmpty()) {
       // 새 이미지 업로드
       List<UploadedFileDto> uploaded = fileService.uploadFiles(images);
-      List<String> uploadedFileNames = uploaded.stream().map(UploadedFileDto::fileName).toList();
+      addedImgUrls = uploaded.stream().map(UploadedFileDto::url).toList();
+      uploadedFileNames = uploaded.stream().map(UploadedFileDto::fileName).toList();
+    }
 
-      // 요청 DTO에서 "유지할 이미지 ID 목록" 꺼내기
-      List<Long> keepIds = Optional.ofNullable(reqBody.keepImageIds()).orElse(List.of());
+      // 요청 DTO에서 "유지할 이미지 URL 목록" 꺼내기
+      List<String> keepImageUrls = new ArrayList<>(
+          Optional.ofNullable(reqBody.keepImageUrls()).orElse(List.of()));
+    keepImageUrls.addAll(addedImgUrls);
 
-      // 현재 게시글의 이미지들을 (id -> 객체) 매핑으로 변환
-      Map<Long, PostImage> existingById = post.getImages().stream()
-          .collect(Collectors.toMap(PostImage::getId, Function.identity()));
+    // 🔹 현재 게시글의 모든 이미지 가져오기
+    List<PostImage> existingImages = new ArrayList<>(post.getImages());
 
-      // 삭제할 이미지 찾기
-      List<PostImage> toDelete = post.getImages().stream()
-          .filter(img -> !keepIds.contains(img.getId()))
+      // 삭제될 이미지 (DB + S3)
+      List<PostImage> toRemove = post.getImages().stream()
+          .filter(img -> !keepImageUrls.contains(img.getUrl()))
           .toList();
 
-      // 최종 이미지 리스트 구성
-      List<PostImage> finalImages = new ArrayList<>();
-      int order = 0;
-      for (Long keepId : keepIds) {
-        PostImage img = existingById.get(keepId);
-        if (img != null) {
-          img.updateSortOrder(order++);
-          finalImages.add(img);
-        }
-      }
-      for (UploadedFileDto u : uploaded) {
-        finalImages.add(PostImage.builder()
-            .post(post)
-            .fileName(u.fileName())
-            .url(u.url())
-            .sortOrder(order++)
-            .build()
-        );
-      }
-
-      // 삭제 예정 key 모음
-      List<String> deleteKeysAfterCommit = toDelete.stream()
+      List<String> deleteKeysAfterCommit = toRemove.stream()
           .map(PostImage::getFileName)
           .toList();
 
-      // DB에 반영
-      post.updateImages(finalImages);
+      toRemove.forEach(img -> img.updatePost(null)); // 관계 해제
+      post.getImages().removeAll(toRemove); // orphanRemoval 트리거
+
+      // 유지할 이미지 정렬
+      int order = 0;
+      for (String url : keepImageUrls) {
+        // 기존 이미지인지 확인
+        PostImage existing = existingImages.stream()
+            .filter(img -> img.getUrl().equals(url))
+            .findFirst()
+            .orElse(null);
+
+        if (existing != null) {
+          existing.updateSortOrder(order++);
+        } else {
+          // 새로 추가된 이미지
+          post.getImages().add(PostImage.builder()
+              .post(post)
+              .fileName(extractFileNameFromUrl(url)) // URL에서 파일명 추출 함수 아래 참고
+              .url(url)
+              .sortOrder(order++)
+              .build());
+        }
+      }
+
+    List<String> uploadedNames = new ArrayList<>(uploadedFileNames);
 
       // 트랜잭션 완료 후 처리
       TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
         @Override
         public void afterCompletion(int status) {
           if (status == STATUS_ROLLED_BACK) {
-            uploadedFileNames.forEach(fileService::deleteFile);
+            uploadedNames.forEach(fileService::deleteFile);
           } else if (status == STATUS_COMMITTED) {
             deleteKeysAfterCommit.forEach(fileService::deleteFile);
           }
         }
       });
-    }
+
     if (reqBody.videoUrl() != null && !reqBody.videoUrl().isBlank()) {
       post.updateVideo(reqBody.videoUrl());
     }
@@ -213,6 +224,13 @@ public class PostService {
 
     return new PostResponseDto(post);
   }
+
+  private String extractFileNameFromUrl(String url) {
+    if (url == null) return null;
+    int lastSlash = url.lastIndexOf('/');
+    return (lastSlash != -1) ? url.substring(lastSlash + 1) : url;
+  }
+
 
   // 게시글 삭제 로직
   @Transactional
@@ -270,6 +288,17 @@ public class PostService {
 
       return new PostLikeResponseDto(postLike.getStatus());
     }
+  }
+
+  // 사용자가 해당 게시글 여부 확인 로직
+  @Transactional(readOnly = true)
+  public Boolean getLike(Long postId) {
+    User user = rq.getActor();
+
+    Post post = postRepository.findById(postId)
+        .orElseThrow(() -> new NoSuchElementException("해당 게시글을 찾을 수 없습니다. ID: " + postId));
+
+    return postLikeRepository.existsByPostAndUser(post, user);
   }
 
   // 태그 추가 메서드
