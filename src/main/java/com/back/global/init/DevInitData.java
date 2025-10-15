@@ -79,13 +79,45 @@ public class DevInitData {
         User userB = userRepository.findByNickname("사용자B").orElseThrow();
         User userC = userRepository.findByNickname("사용자C").orElseThrow();
 
-        Category free = categoryRepository.findAll().stream()
-                .filter(c -> "자유".equals(c.getName()))
+        Category all = categoryRepository.findAll().stream()
+                .filter(c -> "전체".equals(c.getName()))
                 .findFirst()
                 .orElseGet(() -> categoryRepository.save(Category.builder()
-                        .name("자유")
-                        .description("자유 게시판")
+                        .name("전체")
+                        .description("전체 게시판")
                         .build()));
+
+      Category recipe = categoryRepository.findAll().stream()
+          .filter(c -> "레시피".equals(c.getName()))
+          .findFirst()
+          .orElseGet(() -> categoryRepository.save(Category.builder()
+              .name("레시피")
+              .description("레시피 게시판")
+              .build()));
+
+      Category tip = categoryRepository.findAll().stream()
+          .filter(c -> "팁".equals(c.getName()))
+          .findFirst()
+          .orElseGet(() -> categoryRepository.save(Category.builder()
+              .name("팁")
+              .description("팁 게시판")
+              .build()));
+
+      Category question = categoryRepository.findAll().stream()
+          .filter(c -> "질문".equals(c.getName()))
+          .findFirst()
+          .orElseGet(() -> categoryRepository.save(Category.builder()
+              .name("질문")
+              .description("질문 게시판")
+              .build()));
+
+      Category free = categoryRepository.findAll().stream()
+          .filter(c -> "자유".equals(c.getName()))
+          .findFirst()
+          .orElseGet(() -> categoryRepository.save(Category.builder()
+              .name("자유")
+              .description("자유 게시판")
+              .build()));
 
         Post postA = postRepository.save(Post.builder()
                 .category(free)
