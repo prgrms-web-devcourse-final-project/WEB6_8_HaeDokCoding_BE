@@ -26,7 +26,7 @@ public class CocktailShareController {
         Cocktail cocktail = cocktailService.getCocktailById(id);
 
         CocktailShareResponseDto responseDto = new CocktailShareResponseDto(
-                frontUrl + "/cocktails/" + cocktail.getId(),
+                frontUrl + "/recipe/" + cocktail.getId(),
                 cocktail.getCocktailNameKo(),
                 cocktail.getCocktailImgUrl()
         );
