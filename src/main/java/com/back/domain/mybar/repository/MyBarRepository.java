@@ -1,5 +1,6 @@
 package com.back.domain.mybar.repository;
 
+import com.back.domain.cocktail.entity.Cocktail;
 import com.back.domain.mybar.entity.MyBar;
 import com.back.domain.mybar.enums.KeepStatus;
 import org.springframework.data.domain.Page;
@@ -9,9 +10,9 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
-import java.util.List;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface MyBarRepository extends JpaRepository<MyBar, Long> {
@@ -56,4 +57,7 @@ public interface MyBarRepository extends JpaRepository<MyBar, Long> {
            and m.status = 'ACTIVE'
     """)
     int softDeleteByUserAndCocktail(Long userId, Long cocktailId);
+
+    // 특정 칵테일의 ACTIVE Keep 개수
+    Long countByCocktailAndStatus(Cocktail cocktail, KeepStatus status);
 }

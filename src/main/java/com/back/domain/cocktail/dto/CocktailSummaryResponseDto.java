@@ -1,21 +1,22 @@
 package com.back.domain.cocktail.dto;
 
-import com.back.domain.cocktail.entity.Cocktail;
-
 public record CocktailSummaryResponseDto(
         Long cocktailId,
         String cocktailName,
         String cocktailNameKo,
         String cocktailImgUrl,
-        String alcoholStrength // Enum 대신 String
+        String alcoholStrength,
+        Long keepCount,
+        Long commentCount
 ) {
-    public CocktailSummaryResponseDto(Cocktail cocktail) {
-        this(
-                cocktail.getId(),
-                cocktail.getCocktailName(),
-                cocktail.getCocktailNameKo(),
-                cocktail.getCocktailImgUrl(),
-                cocktail.getAlcoholStrength().getDescription() // 설명으로 변환
-        );
+
+   //5개 필드만 사용하는 경우 (keepCount, commentCount 기본값 0)
+
+    public CocktailSummaryResponseDto(Long cocktailId,
+                                      String cocktailName,
+                                      String cocktailNameKo,
+                                      String cocktailImgUrl,
+                                      String alcoholStrength) {
+        this(cocktailId, cocktailName, cocktailNameKo, cocktailImgUrl, alcoholStrength, 0L, 0L);
     }
 }
