@@ -90,7 +90,6 @@ public class SecurityConfig {
                                 // 나머지 모든 API는 인증 필요
                                 .anyRequest().authenticated()
 
-
 //                         회원 or 인증된 사용자만 가능
 //                        .requestMatchers("/admin/**").hasRole("ADMIN")
 
