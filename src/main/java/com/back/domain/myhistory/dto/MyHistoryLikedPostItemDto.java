@@ -3,10 +3,11 @@ package com.back.domain.myhistory.dto;
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.entity.PostImage;
 import com.back.domain.post.post.entity.PostLike;
-import java.time.LocalDateTime;
-import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Builder
