@@ -65,6 +65,7 @@ public class SecurityConfig {
                                 // OAuth, GET POST 둘 다 사용
                                 .requestMatchers("/oauth2/**").permitAll()
                                 .requestMatchers("/login/oauth2/**").permitAll()
+                                .requestMatchers("/h2-console/**").permitAll()
 
                                 //르프레시 갱신 및 칵테일 검색
                                 .requestMatchers(GET, "/user/auth/me").permitAll()
