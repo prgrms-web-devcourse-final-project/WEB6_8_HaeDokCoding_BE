@@ -17,6 +17,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -59,36 +62,38 @@ public class SecurityConfig {
                 .addFilterBefore(customAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
 
+                                // OAuth, GET POST 둘 다 사용
+                                .requestMatchers("/oauth2/**").permitAll()
+                                .requestMatchers("/login/oauth2/**").permitAll()
 
-                        .requestMatchers("/user/auth/logout").authenticated()
-                        /*
-                        .requestMatchers("/").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers("/oauth2/**").permitAll()
-                        .requestMatchers("/login/oauth2/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
-                        .requestMatchers("/user/auth/refresh").permitAll()
-                        .requestMatchers("/user/auth/me").permitAll()
+                                //르프레시 갱신 및 칵테일 검색
+                                .requestMatchers(POST, "/user/auth/refresh").permitAll()
+                                .requestMatchers(POST, "/cocktails/search").permitAll()
 
-                        // 권한 불필요 - 조회 API
-                        .requestMatchers(GET, "/cocktails/**").permitAll()
-                        .requestMatchers(POST, "/cocktails/search").permitAll()
-                        .requestMatchers(GET, "/posts").permitAll()
-                        .requestMatchers(GET, "/posts/{postId}").permitAll()
-                        .requestMatchers(GET, "/posts/{postId}/comments").permitAll()
-                        .requestMatchers(GET, "/posts/{postId}/comments/{commentId}").permitAll()
-                        .requestMatchers(GET, "/cocktails/{cocktailId}/comments").permitAll()
-                        .requestMatchers(GET, "/cocktails/{cocktailId}/comments/{cocktailCommentId}").permitAll()
+                                // share은 인증 필요
+                                .requestMatchers(GET, "/cocktails/{id}/share").authenticated()
 
-                        // 회원 or 인증된 사용자만 가능
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                                // 권한 불필요 - 조회 API
+                                .requestMatchers(GET, "/").permitAll()
+                                .requestMatchers(GET, "/actuator/**").permitAll()
 
-                        // 나머지 모든 API는 인증 필요
-                        .anyRequest().authenticated()
-                        */
-                        // 개발 편의성을 위해 모든 요청 허용
-                        .anyRequest().permitAll()
+                                .requestMatchers(GET, "/cocktails/**").permitAll()
+
+                                .requestMatchers(GET, "/posts").permitAll()
+                                .requestMatchers(GET, "/posts/{postId}").permitAll()
+                                .requestMatchers(GET, "/posts/{postId}/comments").permitAll()
+                                .requestMatchers(GET, "/posts/{postId}/comments/{commentId}").permitAll()
+                                .requestMatchers(GET, "/cocktails/{cocktailId}/comments").permitAll()
+                                .requestMatchers(GET, "/cocktails/{cocktailId}/comments/{cocktailCommentId}").permitAll()
+                                .requestMatchers(GET, "/category").permitAll()
+
+                                // 나머지 모든 API는 인증 필요
+                                .anyRequest().authenticated()
+
+
+//                         회원 or 인증된 사용자만 가능
+//                        .requestMatchers("/admin/**").hasRole("ADMIN")
+
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
