@@ -1,5 +1,7 @@
 package com.back.global.security;
 
+import com.back.global.rsData.RsData;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -76,18 +78,16 @@ public class SecurityConfig {
                                 .requestMatchers(GET, "/").permitAll()
                                 .requestMatchers(GET, "/actuator/**").permitAll()
 
-                                .requestMatchers(GET, "/cocktails/**").permitAll()
+                        .requestMatchers(GET, "/posts").permitAll()
+                        .requestMatchers(GET, "/posts/{postId}").permitAll()
+                        .requestMatchers(GET, "/posts/{postId}/comments").permitAll()
+                        .requestMatchers(GET, "/posts/{postId}/comments/{commentId}").permitAll()
+                        .requestMatchers(GET, "/cocktails/{cocktailId}/comments").permitAll()
+                        .requestMatchers(GET, "/cocktails/{cocktailId}/comments/{cocktailCommentId}").permitAll()
+                        .requestMatchers(GET, "/category").permitAll()
 
-                                .requestMatchers(GET, "/posts").permitAll()
-                                .requestMatchers(GET, "/posts/{postId}").permitAll()
-                                .requestMatchers(GET, "/posts/{postId}/comments").permitAll()
-                                .requestMatchers(GET, "/posts/{postId}/comments/{commentId}").permitAll()
-                                .requestMatchers(GET, "/cocktails/{cocktailId}/comments").permitAll()
-                                .requestMatchers(GET, "/cocktails/{cocktailId}/comments/{cocktailCommentId}").permitAll()
-                                .requestMatchers(GET, "/category").permitAll()
-
-                                // 나머지 모든 API는 인증 필요
-                                .anyRequest().authenticated()
+                        // 나머지 모든 API는 인증 필요
+                        .anyRequest().authenticated()
 
 
 //                         회원 or 인증된 사용자만 가능
@@ -110,12 +110,19 @@ public class SecurityConfig {
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setContentType("application/json;charset=UTF-8");
                             response.setStatus(401);
-                            response.getWriter().write("{\"code\":401,\"message\":\"로그인 후 이용해주세요.\"}");
+
+                            RsData<Void> rsData = RsData.of(401, "로그인 후 이용해주세요.");
+
+                            ObjectMapper mapper = new ObjectMapper();
+                            response.getWriter().write(mapper.writeValueAsString(rsData));
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setContentType("application/json;charset=UTF-8");
                             response.setStatus(403);
-                            response.getWriter().write("{\"code\":403,\"message\":\"권한이 없습니다.\"}");
+                            RsData<Void> rsData = RsData.of(403, "권한이 없습니다.");
+
+                            ObjectMapper mapper = new ObjectMapper();
+                            response.getWriter().write(mapper.writeValueAsString(rsData));
                         })
                 )
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
