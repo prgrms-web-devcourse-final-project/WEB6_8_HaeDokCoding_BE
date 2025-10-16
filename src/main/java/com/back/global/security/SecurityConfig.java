@@ -75,6 +75,7 @@ public class SecurityConfig {
                                 .requestMatchers(GET, "/cocktails").permitAll()
                                 .requestMatchers(GET, "/cocktails/{id}").permitAll()
                                 .requestMatchers(POST, "/cocktails/search").permitAll()
+                                .requestMatchers(GET, "/cocktails/{id}/share").permitAll()
 
                                 // 권한 불필요 - 조회 API
                                 .requestMatchers(GET, "/").permitAll()
