@@ -72,6 +72,8 @@ public class SecurityConfig {
                                 //르프레시 갱신 및 칵테일 검색
                                 .requestMatchers(GET, "/user/auth/me").permitAll()
                                 .requestMatchers(POST, "/user/auth/refresh").permitAll()
+                                .requestMatchers(GET, "/cocktails").permitAll()
+                                .requestMatchers(GET, "/cocktails/{id}").permitAll()
                                 .requestMatchers(POST, "/cocktails/search").permitAll()
 
                                 // 권한 불필요 - 조회 API
