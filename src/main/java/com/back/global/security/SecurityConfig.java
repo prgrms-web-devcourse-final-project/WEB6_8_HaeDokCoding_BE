@@ -64,23 +64,19 @@ public class SecurityConfig {
                 .addFilterBefore(customAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
 
-                        // OAuth, GET POST 둘 다 사용
-                        .requestMatchers("/oauth2/**").permitAll()
-                        .requestMatchers("/login/oauth2/**").permitAll()
+                                // OAuth, GET POST 둘 다 사용
+                                .requestMatchers("/oauth2/**").permitAll()
+                                .requestMatchers("/login/oauth2/**").permitAll()
+                                .requestMatchers("/h2-console/**").permitAll()
 
-                        //르프레시 갱신 및 칵테일 검색
-                        .requestMatchers(GET, "/user/auth/me").permitAll()
-                        .requestMatchers(POST, "/user/auth/refresh").permitAll()
-                        .requestMatchers(POST, "/cocktails/search").permitAll()
+                                //르프레시 갱신 및 칵테일 검색
+                                .requestMatchers(GET, "/user/auth/me").permitAll()
+                                .requestMatchers(POST, "/user/auth/refresh").permitAll()
+                                .requestMatchers(POST, "/cocktails/search").permitAll()
 
-                        // share은 인증 필요
-                        .requestMatchers(GET, "/cocktails/{id}/share").authenticated()
-
-                        // 권한 불필요 - 조회 API
-                        .requestMatchers(GET, "/").permitAll()
-                        .requestMatchers(GET, "/actuator/**").permitAll()
-
-                        .requestMatchers(GET, "/cocktails/**").permitAll()
+                                // 권한 불필요 - 조회 API
+                                .requestMatchers(GET, "/").permitAll()
+                                .requestMatchers(GET, "/actuator/**").permitAll()
 
                         .requestMatchers(GET, "/posts").permitAll()
                         .requestMatchers(GET, "/posts/{postId}").permitAll()

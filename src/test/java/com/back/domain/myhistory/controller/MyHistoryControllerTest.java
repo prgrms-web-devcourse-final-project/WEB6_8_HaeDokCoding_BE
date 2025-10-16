@@ -1,6 +1,7 @@
 package com.back.domain.myhistory.controller;
 
 import com.back.domain.myhistory.dto.*;
+import com.back.domain.post.post.enums.PostStatus;
 import com.back.domain.myhistory.service.MyHistoryService;
 import com.back.global.aspect.ResponseAspect;
 import com.back.global.jwt.JwtUtil;
@@ -245,14 +246,24 @@ class MyHistoryControllerTest {
     void getMyLikedPosts() throws Exception {
         SecurityUser principal = createPrincipal(13L);
         LocalDateTime likedAt = LocalDateTime.of(2025, 3, 10, 21, 5, 0);
+        LocalDateTime createdAt = likedAt.minusDays(2);
+        LocalDateTime updatedAt = likedAt.minusDays(1);
 
         MyHistoryLikedPostItemDto item = MyHistoryLikedPostItemDto.builder()
                 .id(70L)
+                .postId(501L)
+                .categoryName("칵테일")
+                .userNickName("하덕코딩")
                 .title("봄 추천 칵테일")
+                .content("상큼한 맛을 느껴보세요")
                 .imageUrls(List.of("https://example.com/spring.png"))
-                .likedAt(likedAt)
+                .createdAt(createdAt)
+                .updatedAt(updatedAt)
+                .status(PostStatus.PUBLIC)
                 .likeCount(88)
                 .commentCount(12)
+                .viewCount(345)
+                .likedAt(likedAt)
                 .build();
 
         MyHistoryLikedPostListDto responseDto = new MyHistoryLikedPostListDto(
@@ -274,11 +285,18 @@ class MyHistoryControllerTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items[0].id").value(70L))
+                .andExpect(jsonPath("$.data.items[0].postId").value(501L))
+                .andExpect(jsonPath("$.data.items[0].categoryName").value("칵테일"))
+                .andExpect(jsonPath("$.data.items[0].userNickName").value("하덕코딩"))
                 .andExpect(jsonPath("$.data.items[0].title").value("봄 추천 칵테일"))
+                .andExpect(jsonPath("$.data.items[0].content").value("상큼한 맛을 느껴보세요"))
                 .andExpect(jsonPath("$.data.items[0].imageUrls[0]").value("https://example.com/spring.png"))
-                .andExpect(jsonPath("$.data.items[0].likedAt").value(ISO_WITH_SECONDS.format(likedAt)))
-                .andExpect(jsonPath("$.data.items[0].likeCount").value(88))
+                .andExpect(jsonPath("$.data.items[0].createdAt").value(ISO_WITH_SECONDS.format(createdAt)))
+                .andExpect(jsonPath("$.data.items[0].updatedAt").value(ISO_WITH_SECONDS.format(updatedAt)))
+                .andExpect(jsonPath("$.data.items[0].status").value(PostStatus.PUBLIC.name()))
                 .andExpect(jsonPath("$.data.items[0].commentCount").value(12))
+                .andExpect(jsonPath("$.data.items[0].viewCount").value(345))
+                .andExpect(jsonPath("$.data.items[0].likedAt").value(ISO_WITH_SECONDS.format(likedAt)))
                 .andExpect(jsonPath("$.data.hasNext").value(true))
                 .andExpect(jsonPath("$.data.nextId").value(55L));
 
