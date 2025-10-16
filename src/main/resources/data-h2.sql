@@ -33,3 +33,12 @@ FROM CSVREAD(
         NULL,                                  -- 헤더 사용 여부 (NULL이면 첫 줄을 컬럼명으로 인식)
         'charset=UTF-8 fieldSeparator=, fieldDelimiter="'
      )
+);
+
+MERGE INTO CATEGORY KEY(ID) VALUES
+    (1, '전체', '전체게시판'),
+    (2, '레시피', '레시피게시판'),
+    (3, '팁', '팁게시판'),
+    (4, '질문', '질문게시판'),
+    (5, '자유', '자유게시판');
+
