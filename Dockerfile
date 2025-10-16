@@ -31,5 +31,8 @@ WORKDIR /app
 COPY --from=builder /app/build/libs/*.jar app.jar
 COPY --from=builder /app/.env .env
 
+# 타임존 설정
+ENV TZ=Asia/Seoul
+
 # 실행할 JAR 파일 지정
-ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Duser.timezone=Asia/Seoul", "-Dspring.profiles.active=prod", "-jar", "app.jar"]

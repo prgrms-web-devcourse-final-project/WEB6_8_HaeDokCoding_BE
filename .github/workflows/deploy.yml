@@ -168,7 +168,7 @@ jobs:
             docker pull $IMAGE
             docker stop $CONTAINER_1_NAME || true
             docker rm $CONTAINER_1_NAME || true
-            docker run -d --restart unless-stopped --name $CONTAINER_1_NAME --network $NET $IMAGE
+            docker run -d --restart unless-stopped --name $CONTAINER_1_NAME --network $NET -e TZ=Asia/Seoul $IMAGE
             {
               docker images --format '{{.Repository}}:{{.Tag}}' \
                 | grep -F "ghcr.io/${OWNER_LC}/${IMAGE_REPOSITORY}:" \
