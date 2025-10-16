@@ -69,28 +69,26 @@ public class SecurityConfig {
                                 .requestMatchers("/login/oauth2/**").permitAll()
                                 .requestMatchers("/h2-console/**").permitAll()
 
-                                //르프레시 갱신 및 칵테일 검색
+                                //리프레시 갱신 및 칵테일 검색
                                 .requestMatchers(GET, "/user/auth/me").permitAll()
                                 .requestMatchers(POST, "/user/auth/refresh").permitAll()
-                                .requestMatchers(GET, "/cocktails").permitAll()
-                                .requestMatchers(GET, "/cocktails/{id}").permitAll()
                                 .requestMatchers(POST, "/cocktails/search").permitAll()
-                                .requestMatchers(GET, "/cocktails/{id}/share").permitAll()
 
                                 // 권한 불필요 - 조회 API
                                 .requestMatchers(GET, "/").permitAll()
                                 .requestMatchers(GET, "/actuator/**").permitAll()
+                                .requestMatchers(GET, "/cocktails/**").permitAll()
 
-                        .requestMatchers(GET, "/posts").permitAll()
-                        .requestMatchers(GET, "/posts/{postId}").permitAll()
-                        .requestMatchers(GET, "/posts/{postId}/comments").permitAll()
-                        .requestMatchers(GET, "/posts/{postId}/comments/{commentId}").permitAll()
-                        .requestMatchers(GET, "/cocktails/{cocktailId}/comments").permitAll()
-                        .requestMatchers(GET, "/cocktails/{cocktailId}/comments/{cocktailCommentId}").permitAll()
-                        .requestMatchers(GET, "/category").permitAll()
+                                .requestMatchers(GET, "/posts").permitAll()
+                                .requestMatchers(GET, "/posts/{postId}").permitAll()
+                                .requestMatchers(GET, "/posts/{postId}/comments").permitAll()
+                                .requestMatchers(GET, "/posts/{postId}/comments/{commentId}").permitAll()
+                                .requestMatchers(GET, "/cocktails/{cocktailId}/comments").permitAll()
+                                .requestMatchers(GET, "/cocktails/{cocktailId}/comments/{cocktailCommentId}").permitAll()
+                                .requestMatchers(GET, "/category").permitAll()
 
-                        // 나머지 모든 API는 인증 필요
-                        .anyRequest().authenticated()
+                                // 나머지 모든 API는 인증 필요
+                                .anyRequest().authenticated()
 
 
 //                         회원 or 인증된 사용자만 가능
