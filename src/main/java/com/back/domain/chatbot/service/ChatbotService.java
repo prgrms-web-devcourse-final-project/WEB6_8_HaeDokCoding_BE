@@ -299,7 +299,7 @@ public class ChatbotService {
                     .user(analysisPrompt)
                     .options(OpenAiChatOptions.builder()
                             .withTemperature(0.7)
-                            .withMaxTokens(150)
+                            .withMaxTokens(400)
                             .build())
                     .call()
                     .content();
@@ -345,7 +345,7 @@ public class ChatbotService {
                     .user(messagePrompt)
                     .options(OpenAiChatOptions.builder()
                             .withTemperature(0.8)
-                            .withMaxTokens(100)
+                            .withMaxTokens(150)
                             .build())
                     .call()
                     .content();
@@ -610,11 +610,11 @@ public class ChatbotService {
                     .build();
             case RECOMMENDATION -> OpenAiChatOptions.builder()
                     .withTemperature(0.9)
-                    .withMaxTokens(250)
+                    .withMaxTokens(400)
                     .build();
             case QUESTION -> OpenAiChatOptions.builder()
                     .withTemperature(0.7)
-                    .withMaxTokens(200)
+                    .withMaxTokens(maxTokens)
                     .build();
             default -> OpenAiChatOptions.builder()
                     .withTemperature(temperature)
