@@ -68,7 +68,8 @@ public interface CocktailRepository extends JpaRepository<Cocktail, Long> {
             "WHERE (:keyword IS NULL OR :keyword = '' OR " +
             "       LOWER(c.cocktailName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "       LOWER(c.cocktailNameKo) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "       LOWER(c.ingredient) LIKE LOWER(CONCAT('%', :keyword, '%')))" +
+            "       LOWER(c.ingredient) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "       LOWER(c.cocktailStory) LIKE LOWER(CONCAT('%', :keyword, '%')))" +
             "  AND (:strengths IS NULL OR c.alcoholStrength IN :strengths) " + // 알코올 도수 필터를 담당
             "  AND (:types IS NULL OR c.cocktailType IN :types) " +            // 칵테일 타입 필터를 담당
             "  AND (:bases IS NULL OR c.alcoholBaseType IN :bases) ")  // 알코올 베이스 필터를 담당
