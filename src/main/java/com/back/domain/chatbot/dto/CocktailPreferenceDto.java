@@ -7,36 +7,19 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * LLM이 사용자 입력을 분석하여 추출한 칵테일 선호도 정보
- */
+
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CocktailPreferenceDto {
+public class CocktailPreferenceDto {  // 칵테일 선호 정보
 
-    /**
-     * 추출된 키워드 목록 (영문, 한글 혼합 가능)
-     * 예: ["sweet", "fruity", "달콤한", "tropical"]
-     */
+    //추출된 키워드 목록 (영문, 한글 혼합 가능)
     private List<String> keywords;
-
-    /**
-     * LLM이 추천한 칵테일 이름 목록
-     * 예: ["Mojito", "Daiquiri", "Pina Colada"]
-     */
+    //칵테일 이름 추천
     private List<String> suggestedCocktails;
-
-    /**
-     * 추출된 맛 프로필
-     * 예: "sweet_fruity", "bitter_strong", "refreshing"
-     */
+    //추출된 맛 프로필
     private String flavorProfile;
-
-    /**
-     * 추출된 분위기/상황
-     * 예: "party", "date", "relaxing"
-     */
+    //추출된 무드/상황
     private String mood;
 }
