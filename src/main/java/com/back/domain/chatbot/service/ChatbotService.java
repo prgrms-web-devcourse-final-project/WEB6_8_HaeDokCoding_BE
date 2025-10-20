@@ -2,6 +2,7 @@ package com.back.domain.chatbot.service;
 
 import com.back.domain.chatbot.dto.ChatRequestDto;
 import com.back.domain.chatbot.dto.ChatResponseDto;
+import com.back.domain.chatbot.dto.CocktailPreferenceDto;
 import com.back.domain.chatbot.dto.SaveBotMessageDto;
 import com.back.domain.chatbot.dto.StepRecommendationResponseDto;
 import com.back.domain.chatbot.entity.ChatConversation;
@@ -932,34 +933,57 @@ public class ChatbotService {
             AlcoholBaseType alcoholBaseType,
             String userMessage) {
 
-        List<AlcoholStrength> strengths = (alcoholStrength == null) ? null : List.of(alcoholStrength);
-        List<AlcoholBaseType> baseTypes = (alcoholBaseType == null) ? null : List.of(alcoholBaseType);
+        List<CocktailSummaryResponseDto> recommendations;
 
-        String keyword = null;
-        if (userMessage != null && !userMessage.trim().isEmpty()) {
-            String trimmed = userMessage.trim().toLowerCase();
-            if (!trimmed.equals("x") && !trimmed.equals("없음")) {
-                keyword = userMessage;
+        // 사용자가 의미있는 메시지를 입력한 경우 AI 기반 검색 사용
+        boolean hasValidMessage = userMessage != null
+                && !userMessage.trim().isEmpty()
+                && !userMessage.trim().equalsIgnoreCase("x")
+                && !userMessage.trim().equals("없음");
+
+        if (hasValidMessage) {
+            log.info("AI 기반 스마트 검색 시작 - 사용자 입력: {}", userMessage);
+
+            try {
+                // 1. AI로 사용자 선호도 분석
+                CocktailPreferenceDto preference = analyzeUserPreference(
+                        userMessage,
+                        alcoholStrength,
+                        alcoholBaseType
+                );
+
+                // 2. AI 분석 기반 스마트 검색
+                List<Cocktail> candidates = searchCocktailsWithAI(
+                        preference,
+                        alcoholStrength,
+                        alcoholBaseType
+                );
+
+                // 3. AI로 최종 순위 결정 (상위 3개)
+                List<Cocktail> topCocktails = rankCocktailsWithAI(userMessage, candidates);
+
+                recommendations = topCocktails.stream()
+                        .map(cocktail -> new CocktailSummaryResponseDto(
+                                cocktail.getId(),
+                                cocktail.getCocktailName(),
+                                cocktail.getCocktailNameKo(),
+                                cocktail.getCocktailImgUrl(),
+                                cocktail.getAlcoholStrength().getDescription()
+                        ))
+                        .collect(Collectors.toList());
+
+                log.info("AI 기반 검색 완료 - 추천 칵테일: {}개", recommendations.size());
+
+            } catch (Exception e) {
+                log.error("AI 기반 검색 중 오류 발생, 기본 검색으로 폴백: ", e);
+                // 오류 시 기본 키워드 검색으로 폴백
+                recommendations = performBasicSearch(alcoholStrength, alcoholBaseType, userMessage);
             }
+        } else {
+            // 입력이 없거나 "x", "없음"인 경우 기본 필터 검색
+            log.info("기본 필터 검색 사용 - 입력 없음");
+            recommendations = performBasicSearch(alcoholStrength, alcoholBaseType, null);
         }
-
-        Page<Cocktail> cocktailPage = cocktailRepository.searchWithFilters(
-                keyword,
-                strengths,
-                null,
-                baseTypes,
-                PageRequest.of(0, 3)
-        );
-
-        List<CocktailSummaryResponseDto> recommendations = cocktailPage.getContent().stream()
-                .map(cocktail -> new CocktailSummaryResponseDto(
-                        cocktail.getId(),
-                        cocktail.getCocktailName(),
-                        cocktail.getCocktailNameKo(),
-                        cocktail.getCocktailImgUrl(),
-                        cocktail.getAlcoholStrength().getDescription()
-                ))
-                .collect(Collectors.toList());
 
         String stepTitle = recommendations.isEmpty()
                 ? "조건에 맞는 칵테일을 찾을 수 없습니다 😢"
@@ -979,36 +1003,30 @@ public class ChatbotService {
         return new StepRecommendationResponseDto(
                 4,
                 stepTitle,
-                restartOption,  // RESTART 옵션 추가
+                restartOption,
                 recommendations,
                 true
         );
     }
-    private StepRecommendationResponseDto getFinalRecommendationsForNonAlcoholic(
-            CocktailType cocktailType,
-            String userMessage) {
 
-        // 논알콜 도수만 필터링
-        List<AlcoholStrength> strengths = List.of(AlcoholStrength.NON_ALCOHOLIC);
-        List<CocktailType> types = (cocktailType == null) ? null : List.of(cocktailType);
+    //기본 키워드 검색 수행 (AI 실패 시 폴백용)
+    private List<CocktailSummaryResponseDto> performBasicSearch(
+            AlcoholStrength alcoholStrength,
+            AlcoholBaseType alcoholBaseType,
+            String keyword) {
 
-        String keyword = null;
-        if (userMessage != null && !userMessage.trim().isEmpty()) {
-            String trimmed = userMessage.trim().toLowerCase();
-            if (!trimmed.equals("x") && !trimmed.equals("없음")) {
-                keyword = userMessage;
-            }
-        }
+        List<AlcoholStrength> strengths = (alcoholStrength == null) ? null : List.of(alcoholStrength);
+        List<AlcoholBaseType> baseTypes = (alcoholBaseType == null) ? null : List.of(alcoholBaseType);
 
         Page<Cocktail> cocktailPage = cocktailRepository.searchWithFilters(
                 keyword,
                 strengths,
-                types,  // 칵테일 타입 필터 적용
-                null,   // 베이스 타입은 null
+                null,
+                baseTypes,
                 PageRequest.of(0, 3)
         );
 
-        List<CocktailSummaryResponseDto> recommendations = cocktailPage.getContent().stream()
+        return cocktailPage.getContent().stream()
                 .map(cocktail -> new CocktailSummaryResponseDto(
                         cocktail.getId(),
                         cocktail.getCocktailName(),
@@ -1017,6 +1035,61 @@ public class ChatbotService {
                         cocktail.getAlcoholStrength().getDescription()
                 ))
                 .collect(Collectors.toList());
+    }
+    private StepRecommendationResponseDto getFinalRecommendationsForNonAlcoholic(
+            CocktailType cocktailType,
+            String userMessage) {
+
+        List<CocktailSummaryResponseDto> recommendations;
+
+        // 사용자가 의미있는 메시지를 입력한 경우 AI 기반 검색 사용
+        boolean hasValidMessage = userMessage != null
+                && !userMessage.trim().isEmpty()
+                && !userMessage.trim().equalsIgnoreCase("x")
+                && !userMessage.trim().equals("없음");
+
+        if (hasValidMessage) {
+            log.info("논알콜 AI 기반 스마트 검색 시작 - 사용자 입력: {}", userMessage);
+
+            try {
+                // 1. AI로 사용자 선호도 분석 (논알콜 전용)
+                CocktailPreferenceDto preference = analyzeUserPreference(
+                        userMessage,
+                        AlcoholStrength.NON_ALCOHOLIC,
+                        null  // 논알콜은 베이스 타입 없음
+                );
+
+                // 2. AI 분석 기반 스마트 검색 (논알콜 필터링)
+                List<Cocktail> candidates = searchCocktailsWithAIForNonAlcoholic(
+                        preference,
+                        cocktailType
+                );
+
+                // 3. AI로 최종 순위 결정 (상위 3개)
+                List<Cocktail> topCocktails = rankCocktailsWithAI(userMessage, candidates);
+
+                recommendations = topCocktails.stream()
+                        .map(cocktail -> new CocktailSummaryResponseDto(
+                                cocktail.getId(),
+                                cocktail.getCocktailName(),
+                                cocktail.getCocktailNameKo(),
+                                cocktail.getCocktailImgUrl(),
+                                cocktail.getAlcoholStrength().getDescription()
+                        ))
+                        .collect(Collectors.toList());
+
+                log.info("논알콜 AI 기반 검색 완료 - 추천 칵테일: {}개", recommendations.size());
+
+            } catch (Exception e) {
+                log.error("논알콜 AI 기반 검색 중 오류 발생, 기본 검색으로 폴백: ", e);
+                // 오류 시 기본 키워드 검색으로 폴백
+                recommendations = performBasicSearchForNonAlcoholic(cocktailType, userMessage);
+            }
+        } else {
+            // 입력이 없거나 "x", "없음"인 경우 기본 필터 검색
+            log.info("논알콜 기본 필터 검색 사용 - 입력 없음");
+            recommendations = performBasicSearchForNonAlcoholic(cocktailType, null);
+        }
 
         String stepTitle = recommendations.isEmpty()
                 ? "조건에 맞는 논알콜 칵테일을 찾을 수 없습니다 😢"
@@ -1036,9 +1109,350 @@ public class ChatbotService {
         return new StepRecommendationResponseDto(
                 4,
                 stepTitle,
-                restartOption,  // RESTART 옵션 추가
+                restartOption,
                 recommendations,
                 true
         );
+    }
+
+    private List<Cocktail> searchCocktailsWithAIForNonAlcoholic(
+            CocktailPreferenceDto preference,
+            CocktailType cocktailType) {
+
+        List<Cocktail> candidates = new ArrayList<>();
+        List<AlcoholStrength> strengths = List.of(AlcoholStrength.NON_ALCOHOLIC);
+        List<CocktailType> types = (cocktailType == null) ? null : List.of(cocktailType);
+
+        // 1차: LLM이 추천한 칵테일 이름으로 직접 검색
+        if (preference.getSuggestedCocktails() != null && !preference.getSuggestedCocktails().isEmpty()) {
+            for (String cocktailName : preference.getSuggestedCocktails()) {
+                if (candidates.size() >= 10) break;
+
+                Page<Cocktail> page = cocktailRepository.searchWithFilters(
+                        cocktailName,
+                        strengths,
+                        types,
+                        null,  // 논알콜은 베이스 타입 없음
+                        PageRequest.of(0, 1)
+                );
+
+                if (!page.isEmpty()) {
+                    Cocktail found = page.getContent().get(0);
+                    if (!candidates.contains(found)) {
+                        candidates.add(found);
+                        log.info("논알콜 1차 검색 성공: {} (추천 칵테일명)", cocktailName);
+                    }
+                }
+            }
+        }
+
+        // 2차: 키워드 기반 검색
+        if (candidates.size() < 10 && preference.getKeywords() != null && !preference.getKeywords().isEmpty()) {
+            for (String keyword : preference.getKeywords()) {
+                if (candidates.size() >= 10) break;
+
+                Page<Cocktail> page = cocktailRepository.searchWithFilters(
+                        keyword,
+                        strengths,
+                        types,
+                        null,
+                        PageRequest.of(0, 3)
+                );
+
+                for (Cocktail cocktail : page.getContent()) {
+                    if (candidates.size() >= 10) break;
+                    if (!candidates.contains(cocktail)) {
+                        candidates.add(cocktail);
+                        log.info("논알콜 2차 검색 성공: {} (키워드: {})", cocktail.getCocktailName(), keyword);
+                    }
+                }
+            }
+        }
+
+        // 3차: 부족하면 기본 필터로 보충
+        if (candidates.size() < 3) {
+            Page<Cocktail> page = cocktailRepository.searchWithFilters(
+                    null,
+                    strengths,
+                    types,
+                    null,
+                    PageRequest.of(0, 10)
+            );
+
+            for (Cocktail cocktail : page.getContent()) {
+                if (candidates.size() >= 10) break;
+                if (!candidates.contains(cocktail)) {
+                    candidates.add(cocktail);
+                    log.info("논알콜 3차 검색 성공: {} (기본 필터)", cocktail.getCocktailName());
+                }
+            }
+        }
+
+        log.info("논알콜 총 {}개 칵테일 후보 검색 완료", candidates.size());
+        return candidates;
+    }
+
+
+    private List<CocktailSummaryResponseDto> performBasicSearchForNonAlcoholic(
+            CocktailType cocktailType,
+            String keyword) {
+
+        List<AlcoholStrength> strengths = List.of(AlcoholStrength.NON_ALCOHOLIC);
+        List<CocktailType> types = (cocktailType == null) ? null : List.of(cocktailType);
+
+        Page<Cocktail> cocktailPage = cocktailRepository.searchWithFilters(
+                keyword,
+                strengths,
+                types,
+                null,
+                PageRequest.of(0, 3)
+        );
+
+        return cocktailPage.getContent().stream()
+                .map(cocktail -> new CocktailSummaryResponseDto(
+                        cocktail.getId(),
+                        cocktail.getCocktailName(),
+                        cocktail.getCocktailNameKo(),
+                        cocktail.getCocktailImgUrl(),
+                        cocktail.getAlcoholStrength().getDescription()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    private CocktailPreferenceDto analyzeUserPreference(
+            String userMessage,
+            AlcoholStrength alcoholStrength,
+            AlcoholBaseType alcoholBaseType) {
+
+        String strengthInfo = alcoholStrength != null
+                ? alcoholStrength.getDescription()
+                : "지정 안됨";
+        String baseInfo = alcoholBaseType != null
+                ? alcoholBaseType.getDescription()
+                : "지정 안됨";
+
+        String analysisPrompt = String.format("""
+                사용자가 다음과 같은 칵테일 요구사항을 입력했습니다:
+                "%s"
+
+                추가 정보:
+                - 선택된 도수: %s
+                - 선택된 베이스 술: %s
+
+                이 정보를 바탕으로 사용자가 원하는 칵테일을 찾기 위한 키워드와 추천 칵테일을 분석해주세요.
+
+                다음 JSON 형식으로만 응답하세요 (부가 설명 없이 JSON만):
+                {
+                  "keywords": ["키워드1", "키워드2", "키워드3"],
+                  "suggestedCocktails": ["칵테일이름1", "칵테일이름2", "칵테일이름3"],
+                  "flavorProfile": "맛프로필",
+                  "mood": "분위기"
+                }
+
+                주의사항:
+                - keywords: 사용자 입력에서 추출한 검색 키워드 (영문, 한글 혼합 가능, 최대 7개)
+                - suggestedCocktails: 실제 존재하는 유명한 칵테일 이름만 (영문, 최대 5개)
+                - flavorProfile: sweet, bitter, sour, fruity 등 맛 특성 (영문 단어 1-2개)
+                - mood: party, romantic, refreshing 등 분위기 (영문 단어 1개)
+                - JSON 형식만 출력하고 다른 텍스트는 포함하지 마세요
+                """,
+                userMessage,
+                strengthInfo,
+                baseInfo
+        );
+
+        try {
+            String response = chatClient.prompt()
+                    .system("당신은 칵테일 전문 분석가입니다. 사용자 요구사항을 정확히 분석하여 JSON 형식으로만 응답합니다.")
+                    .user(analysisPrompt)
+                    .options(OpenAiChatOptions.builder()
+                            .withTemperature(0.5)
+                            .withMaxTokens(500)
+                            .build())
+                    .call()
+                    .content();
+
+            // JSON 파싱
+            CocktailPreferenceDto preference = objectMapper.readValue(response, CocktailPreferenceDto.class);
+            log.info("AI 분석 결과 - keywords: {}, suggested: {}, flavor: {}, mood: {}",
+                    preference.getKeywords(),
+                    preference.getSuggestedCocktails(),
+                    preference.getFlavorProfile(),
+                    preference.getMood());
+
+            return preference;
+
+        } catch (Exception e) {
+            log.error("사용자 선호도 분석 중 오류: ", e);
+            // 오류 시 기본값 반환
+            return CocktailPreferenceDto.builder()
+                    .keywords(List.of(userMessage))
+                    .suggestedCocktails(List.of())
+                    .flavorProfile("unknown")
+                    .mood("casual")
+                    .build();
+        }
+    }
+
+    private List<Cocktail> searchCocktailsWithAI(
+            CocktailPreferenceDto preference,
+            AlcoholStrength alcoholStrength,
+            AlcoholBaseType alcoholBaseType) {
+
+        List<Cocktail> candidates = new ArrayList<>();
+        List<AlcoholStrength> strengths = (alcoholStrength == null) ? null : List.of(alcoholStrength);
+        List<AlcoholBaseType> baseTypes = (alcoholBaseType == null) ? null : List.of(alcoholBaseType);
+
+        // 1차: LLM이 추천한 칵테일 이름으로 직접 검색
+        if (preference.getSuggestedCocktails() != null && !preference.getSuggestedCocktails().isEmpty()) {
+            for (String cocktailName : preference.getSuggestedCocktails()) {
+                if (candidates.size() >= 10) break;
+
+                Page<Cocktail> page = cocktailRepository.searchWithFilters(
+                        cocktailName,
+                        strengths,
+                        null,
+                        baseTypes,
+                        PageRequest.of(0, 1)
+                );
+
+                if (!page.isEmpty()) {
+                    Cocktail found = page.getContent().get(0);
+                    if (!candidates.contains(found)) {
+                        candidates.add(found);
+                        log.info("1차 검색 성공: {} (추천 칵테일명)", cocktailName);
+                    }
+                }
+            }
+        }
+
+        // 2차: 키워드 기반 검색
+        if (candidates.size() < 10 && preference.getKeywords() != null && !preference.getKeywords().isEmpty()) {
+            for (String keyword : preference.getKeywords()) {
+                if (candidates.size() >= 10) break;
+
+                Page<Cocktail> page = cocktailRepository.searchWithFilters(
+                        keyword,
+                        strengths,
+                        null,
+                        baseTypes,
+                        PageRequest.of(0, 3)
+                );
+
+                for (Cocktail cocktail : page.getContent()) {
+                    if (candidates.size() >= 10) break;
+                    if (!candidates.contains(cocktail)) {
+                        candidates.add(cocktail);
+                        log.info("2차 검색 성공: {} (키워드: {})", cocktail.getCocktailName(), keyword);
+                    }
+                }
+            }
+        }
+
+        // 3차: 부족하면 기본 필터로 보충
+        if (candidates.size() < 3) {
+            Page<Cocktail> page = cocktailRepository.searchWithFilters(
+                    null,
+                    strengths,
+                    null,
+                    baseTypes,
+                    PageRequest.of(0, 10)
+            );
+
+            for (Cocktail cocktail : page.getContent()) {
+                if (candidates.size() >= 10) break;
+                if (!candidates.contains(cocktail)) {
+                    candidates.add(cocktail);
+                    log.info("3차 검색 성공: {} (기본 필터)", cocktail.getCocktailName());
+                }
+            }
+        }
+
+        log.info("총 {}개 칵테일 후보 검색 완료", candidates.size());
+        return candidates;
+    }
+
+    // 상위 3개 칵테일을 AI로 재정렬
+    private List<Cocktail> rankCocktailsWithAI(String userMessage, List<Cocktail> candidates) {
+        if (candidates.isEmpty()) {
+            return List.of();
+        }
+
+        if (candidates.size() <= 3) {
+            return candidates;
+        }
+
+        // 칵테일 후보 목록을 텍스트로 변환
+        StringBuilder candidatesText = new StringBuilder();
+        for (int i = 0; i < candidates.size(); i++) {
+            Cocktail c = candidates.get(i);
+            candidatesText.append(String.format(
+                    "%d. %s (%s) - 도수: %s, 베이스: %s\n",
+                    i,
+                    c.getCocktailNameKo() != null ? c.getCocktailNameKo() : c.getCocktailName(),
+                    c.getCocktailName(),
+                    c.getAlcoholStrength().getDescription(),
+                    c.getAlcoholBaseType() != null ? c.getAlcoholBaseType().getDescription() : "없음"
+            ));
+        }
+
+        String rankingPrompt = String.format("""
+                사용자 요청: "%s"
+
+                다음 칵테일 후보 중에서 사용자 요청에 가장 적합한 순서대로 3개의 인덱스만 선택해주세요:
+                %s
+
+                응답 형식 (대괄호 안에 인덱스 3개만, 예: [2,0,5]):
+                [인덱스1,인덱스2,인덱스3]
+
+                주의사항:
+                - 사용자 요청과의 적합도를 최우선으로 고려
+                - 정확히 3개의 인덱스만 반환
+                - 다른 텍스트 없이 대괄호 형식만 출력
+                """,
+                userMessage,
+                candidatesText.toString()
+        );
+
+        try {
+            String response = chatClient.prompt()
+                    .system("당신은 칵테일 추천 전문가입니다. 사용자 요청에 가장 적합한 칵테일을 선택합니다.")
+                    .user(rankingPrompt)
+                    .options(OpenAiChatOptions.builder()
+                            .withTemperature(0.3)
+                            .withMaxTokens(100)
+                            .build())
+                    .call()
+                    .content();
+
+            // 응답에서 인덱스 추출 (예: "[2,0,5]" → [2, 0, 5])
+            String cleaned = response.replaceAll("[^0-9,]", "");
+            String[] indices = cleaned.split(",");
+
+            List<Cocktail> ranked = new ArrayList<>();
+            for (String idx : indices) {
+                try {
+                    int index = Integer.parseInt(idx.trim());
+                    if (index >= 0 && index < candidates.size()) {
+                        ranked.add(candidates.get(index));
+                    }
+                } catch (NumberFormatException e) {
+                    log.warn("인덱스 파싱 실패: {}", idx);
+                }
+            }
+
+            if (ranked.size() >= 3) {
+                log.info("AI 재정렬 완료: {} 개 칵테일 선택", ranked.size());
+                return ranked.subList(0, 3);
+            } else {
+                log.warn("AI 재정렬 결과 부족, 기본 순서 사용");
+                return candidates.subList(0, Math.min(3, candidates.size()));
+            }
+
+        } catch (Exception e) {
+            log.error("칵테일 재정렬 중 오류: ", e);
+            // 오류 시 앞에서 3개만 반환
+            return candidates.subList(0, Math.min(3, candidates.size()));
+        }
     }
 }
