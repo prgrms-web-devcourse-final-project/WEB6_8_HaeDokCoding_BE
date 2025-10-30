@@ -22,7 +22,7 @@ variable "app_1_domain" {
 
 variable "s3_bucket_name" {
   description = "S3 bucket name for file storage"
-  default     = "app-s3-bucket"
+  default     = "app-s3-bucket-haedok2025"
 }
 
 variable "s3_public_read" {
